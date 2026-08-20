@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta - VoluntariApp</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/register.css">
+</head>
+
+<body>
+
+    <main class="registro-container">
+        <section class="registro-panel">
+            <a href="../index.html" class="volver">
+                ← Inicio
+            </a>
+
+            <h2>Únete a miles de personas que ya cambian el mundo.</h2>
+
+            <ul class="beneficios">
+                <li>Acceso a +380 ONGs verificadas</li>
+                <li>Mapa interactivo de oportunidades</li>
+                <li>Alertas personalizadas por causas</li>
+                <li>Historial y certificados de voluntarios</li>
+            </ul>
+        </section>
+        <section class="registro-form">
+            <h1>Crea tu cuenta</h1>
+            <p>Gratis para siempre. Sin tarjeta de crédito.</p>
+
+            <div class="toggle">
+                <button type="button">Soy voluntario/a</button>
+                <button type="button">Represento una ONG</button>
+            </div>
+            <form>
+                <label for="nombre">Tu nombre completo</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Maria Garcia" required>
+
+                <label for="email">Correo electrónico</label>
+                <input type="email" name="email" id="email" placeholder="tu@correo.com" required>
+
+                <label for="password">Contraseña</label>
+                <input type="password" name="password" id="password" placeholder="Mínimo 6 caracteres" required>
+
+                <label class="terminos">
+                    <input type="checkbox" name="terminos" required>
+                    Acepto los Términos de uso y la Política de privacidad
+                </label>
+
+                <button type="submit">Crear cuenta gratis</button>
+            </form>
+
+        </section>
+    </main>
+
+</body>
+
+</html>
