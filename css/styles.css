@@ -1,0 +1,80 @@
+/* IMPORTACION DE FUENTES */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+
+/* ESTILO GLOBAL */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+
+
+}
+
+/* CONTENEDOR GLOBAL PARA MANTENER MARGENES - AGREGAR A TODO */
+
+.navbar-background {
+    background-color: #f0f5f4;
+}
+
+.global-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    /* background-color: red; */
+}
+
+.navbar {
+    display: flex;
+    /* background-color: yellow; */
+    justify-content: center;
+    align-items: center;
+    gap: 18rem;
+    font-family: 'Nunito Sans';
+    font-weight: 500;
+    padding: 0.5rem;
+}
+
+.navbar .header-title-container {
+    /* background-color: blue; */
+    color: #5A7A72;
+}
+
+.header-list-container {
+    /* background-color: rgb(0, 217, 255); */
+    display: flex;
+    gap: 1rem;
+}
+
+.header-list-container li {
+    list-style-type: none;
+}
+
+.header-auth-container {
+    /* background-color: red; */
+    display: flex;
+    gap: 0.5rem;
+
+}
+
+.btn-login {
+    border: none;
+    background-color: transparent;
+    color: #0F2132;
+}
+
+.btn-login:hover {
+    cursor: pointer;
+}
+
+.btn-register {
+    border: none;
+    background-color: #1A7A5E;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+}
+
+.btn-register:hover {
+    cursor: pointer;
+}
