@@ -1,60 +1,156 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Crear Cuenta - VoluntariApp</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/register.css">
-</head>
+    <link rel="stylesheet" href="../css/register.css" />
+  </head>
 
-<body>
-
+  <body>
     <main class="registro-container">
-        <section class="registro-panel">
-            <a href="../index.html" class="volver">
-                ← Inicio
-            </a>
+      <section class="registro-panel">
+        <a href="../index.html" class="volver"> ← Inicio </a>
 
-            <h2>Únete a miles de personas que ya cambian el mundo.</h2>
+        <h2>Únete a miles de personas que ya cambian el mundo.</h2>
 
-            <ul class="beneficios">
-                <li>Acceso a +380 ONGs verificadas</li>
-                <li>Mapa interactivo de oportunidades</li>
-                <li>Alertas personalizadas por causas</li>
-                <li>Historial y certificados de voluntarios</li>
-            </ul>
-        </section>
-        <section class="registro-form">
-            <h1>Crea tu cuenta</h1>
-            <p>Gratis para siempre. Sin tarjeta de crédito.</p>
+        <ul class="beneficios">
+          <li>Acceso a +380 ONGs verificadas</li>
+          <li>Mapa interactivo de oportunidades</li>
+          <li>Alertas personalizadas por causas</li>
+          <li>Historial y certificados de voluntarios</li>
+        </ul>
+      </section>
 
-            <div class="toggle">
-                <button type="button">Soy voluntario/a</button>
-                <button type="button">Represento una ONG</button>
+      <section class="registro-form">
+        <div class="logo">
+          <!-- logo svg de app -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-heart text-primary-foreground fill-current"
+            data-fg-d3bl6=":0:node_modules/lucide-react:57:15:3696:68:e:Heart::::::Bi8G"
+          >
+            <path
+              d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+            ></path>
+          </svg>
+          <span class="logo-texto">Voluntari<strong>App</strong></span>
+        </div>
+
+        <h1>Crea tu cuenta</h1>
+
+        <div class="toggle">
+          <button type="button" id="btn-voluntario" class="active">🤝 Soy voluntario/a</button>
+          <button type="button" id="btn-ong">📋 Represento una ONG</button>
+        </div>
+
+        <form id="formulario-registro">
+          <!-- ============ CAMPOS VOLUNTARIO ============ -->
+          <div id="campos-voluntario">
+            <div class="campo">
+              <!-- se agrego div class = "campo" para el css -->
+              <label for="nombre">Tu nombre completo</label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                placeholder="Maria Garcia"
+                required
+              />
             </div>
-            <form>
-                <label for="nombre">Tu nombre completo</label>
-                <input type="text" id="nombre" name="nombre" placeholder="Maria Garcia" required>
 
-                <label for="email">Correo electrónico</label>
-                <input type="email" name="email" id="email" placeholder="tu@correo.com" required>
+            <div class="campo">
+              <!-- se agrego div class = "campo" para el css -->
+              <label for="email">Correo electrónico</label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                placeholder="tu@correo.com"
+                required
+              />
+            </div>
 
-                <label for="password">Contraseña</label>
-                <input type="password" name="password" id="password" placeholder="Mínimo 6 caracteres" required>
+            <div class="campo"> <!-- se agrego div class = "campo" para el css -->
+              <label for="password">Contraseña</label>
+              <div class="campo-password"><!-- se agrego div class = "campo-password" para el css -->
+                <input
+                  type="password"
+                  name="password"
+                  id="password"
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  aria-label="Mostrar contraseña"
+                >
+                  👁
+                </button>
+              </div>
+            </div>
+          </div>
 
-                <label class="terminos">
-                    <input type="checkbox" name="terminos" required>
-                    Acepto los Términos de uso y la Política de privacidad
-                </label>
+          <!-- ============ CAMPOS ONG (ocultos por defecto) ============ -->
+          <div id="campos-ong" hidden>
+            <div class="aviso-ong">
+              <span aria-hidden="true">🏢</span>
+              <p>El registro de ONGs requiere verificación manual. Completá el formulario y nuestro equipo te contactará dentro de las <strong>48 horas hábiles</strong>.</p>
+            </div>
 
-                <button type="submit">Crear cuenta gratis</button>
-            </form>
+            <div class="campo">
+              <label for="razon-social">Razón social / Nombre legal *</label>
+              <input type="text" id="razon-social" name="razon-social" placeholder="Ej: Fundación Solidaria del Sur">
+            </div>
 
-        </section>
+            <div class="campo">
+              <label for="cuit">CUIT *</label>
+              <input type="text" id="cuit" name="cuit" placeholder="30-12345678-9">
+            </div>
+
+            <div class="campo">
+              <label for="email-ong">Email de registro *</label>
+              <input type="email" id="email-ong" name="email-ong" placeholder="contacto@miong.org.ar">
+            </div>
+
+            <div class="fila-doble">
+              <div class="campo">
+                <label for="domicilio">Domicilio legal *</label>
+                <input type="text" id="domicilio" name="domicilio" placeholder="Av. Corrientes 1234, CABA">
+              </div>
+
+              <div class="campo campo-postal">
+                <label for="cp">C. Postal *</label>
+                <input type="text" id="cp" name="cp" placeholder="1043">
+              </div>
+            </div>
+
+            <!-- El mapa interactivo se agrega en un paso siguiente -->
+          </div>
+
+          <label class="terminos">
+            <input type="checkbox" name="terminos" required />
+            Acepto los Términos de uso y la Política de privacidad
+         </label>
+
+          <button type="submit" id="boton-enviar">Crear cuenta gratis <span aria-hidden="true">→</span></button>
+        </form>
+
+        <p class="login-link">¿Ya tenés cuenta? <a href="login.html">Iniciá sesión</a></p>
+
+      </section>
     </main>
 
-</body>
-
+    <script src="register.js"></script>
+    
+  </body>
 </html>
