@@ -272,22 +272,10 @@ form button[type="submit"]:focus-visible {
     margin-bottom: var(--space-lg);
 }
 
-.logo svg {
-    color: var(--color-primario);
-    stroke: var(--color-primario);
-    width: 1.5rem;
-    height: 1.5rem;
-}
-
-.logo-texto {
-    font-size: 1.125rem;
-    color: var(--color-texto);
-    font-weight: 400;
-}
-
-.logo-texto strong {
-    color: var(--color-primario);
-    font-weight: 700;
+.logo-imagen {
+    max-width: 200px;
+    height: auto;
+    display: block;
 }
 
 /* estilos del campo contraseña */
