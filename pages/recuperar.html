@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar contraseña | VoluntariApp</title>
+
+    <link rel="stylesheet" href="../css/recuperar.css">
+</head>
+
+<body>
+
+    <div class="auth-left"></div>
+
+    <div class="auth-right">
+        <div class="form-container">
+            <div class="logo-container">
+                <img src="../images/logo.png" alt="VoluntariApp Logo">
+            </div>
+
+            <h1>Recuperar contraseña</h1>
+            <p>Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecerla.</p>
+
+            <form id="recovery-form">
+                <label for="email">Correo electrónico</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="tu@correo.com"
+                    required
+                >
+
+                <button type="submit" id="boton-enviar">
+                    Enviar instrucciones <span aria-hidden="true">→</span>
+                </button>
+            </form>
+
+            <div class="back-to-login">
+                <a href="login.html">← Volver al inicio de sesión</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
