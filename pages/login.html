@@ -3,44 +3,35 @@
 
 <head>
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión | VoluntariApp</title>
 
-    <link rel="stylesheet" href="../css/login.css">
+    <link rel="stylesheet" href="/css/login.css">
 </head>
 
 <body>
     <main class="login-container">
 
-    <h1>Bienvenido de vuelta</h1>
-    <p>Inicia sesión para ver oportunidades y el mapa de ONGs.</p>
+        <h1>Bienvenido de vuelta</h1>
+        <p>Inicia sesión para ver oportunidades y el mapa de ONGs.</p>
 
-    <form>
-<label for="email">Correo electrónico</label>
-<input type="email" 
-id="email" 
-name="email" 
-placeholder="tu@correo.com"
-required
->
-<div class="password-header">
-    <label for="password">Contraseña</label>
-    <a href="#">¿La olvidaste?</a>
-</div>
-<div class="password-input">
-<input
-        type="password"
-        id="password"
-        name="password"
-        required
-    >
-<span class="eye">👁</span>
-</div>
-    <button type="submit">Iniciar sesión</button>
-</form>
-</main>
+        <form>
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" placeholder="tu@correo.com" required>
+            <div class="password-header">
+                <label for="password">Contraseña</label>
+                <a href="#">¿La olvidaste?</a>
+            </div>
+            <div class="password-input">
+                <input type="password" id="password" name="password" required>
+                <span class="eye">👁</span>
+            </div>
+            <button type="submit">Iniciar sesión</button>
+        </form>
+    </main>
 
-<script src="../login.js"></script>
+    <script src="../login.js"></script>
 
 </body>
+
 </html>

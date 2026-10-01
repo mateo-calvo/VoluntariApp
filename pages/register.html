@@ -36,44 +36,20 @@
           <!-- ============ CAMPOS VOLUNTARIO ============ -->
           <div id="campos-voluntario">
             <div class="campo">
-              <!-- se agrego div class = "campo" para el css -->
               <label for="nombre">Tu nombre completo</label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                placeholder="Maria Garcia"
-                required
-              />
+              <input type="text" id="nombre" name="nombre" placeholder="Maria Garcia" required />
             </div>
 
             <div class="campo">
-              <!-- se agrego div class = "campo" para el css -->
               <label for="email">Correo electrónico</label>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                placeholder="tu@correo.com"
-                required
-              />
+              <input type="email" name="email" id="email" placeholder="tu@correo.com" required />
             </div>
 
-            <div class="campo"> <!-- se agrego div class = "campo" para el css -->
+            <div class="campo">
               <label for="password">Contraseña</label>
-              <div class="campo-password"><!-- se agrego div class = "campo-password" para el css -->
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                />
-                <button
-                  type="button"
-                  class="toggle-password"
-                  aria-label="Mostrar contraseña"
-                >
+              <div class="campo-password">
+                <input type="password" name="password" id="password" placeholder="Mínimo 6 caracteres" required />
+                <button type="button" class="toggle-password" aria-label="Mostrar contraseña">
                   👁
                 </button>
               </div>
@@ -120,7 +96,7 @@
           <label class="terminos">
             <input type="checkbox" name="terminos" required />
             Acepto los Términos de uso y la Política de privacidad
-         </label>
+          </label>
 
           <button type="submit" id="boton-enviar">Crear cuenta gratis <span aria-hidden="true">→</span></button>
         </form>
@@ -131,6 +107,6 @@
     </main>
 
     <script src="register.js"></script>
-    
+
   </body>
 </html>
