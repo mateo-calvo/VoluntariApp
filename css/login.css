@@ -1,85 +1,475 @@
-* {
+/* ==========================================================================
+   login.css - Estilos de Iniciar Sesión para VoluntariApp
+   Adaptado a la estética de la Home Page y diseño split-screen
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+@import url('tokens.css');
+
+/* Tokens centralizados en tokens.css */
+
+/* Reset */
+*,
+*::before,
+*::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
 }
 
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-color: #ffffff;
+    font-family: var(--font-family);
+    color: var(--color-navy);
+    background-color: var(--color-bg-light);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
-.login-container {
+/* Layout Split Screen */
+.auth-layout {
+    display: flex;
+    min-height: 100vh;
     width: 100%;
-    max-width: 800px;
-    margin: 80px auto;
-    padding: 40px;
 }
 
-form {
+/* ==========================================================================
+   PANEL IZQUIERDO (BANNER HERO CON FOTO Y SOCIAL PROOF)
+   ========================================================================== */
+.auth-banner {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    background: 
+        linear-gradient(135deg, rgba(15, 33, 50, 0.85) 0%, rgba(15, 33, 50, 0.72) 100%),
+        url('../images/voluntarios.jpg') center/cover no-repeat;
+    color: var(--color-white);
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Enlace Volver al inicio */
+.banner-top .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.88);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: opacity var(--transition), transform var(--transition);
+}
+
+.banner-top .back-link:hover {
+    color: var(--color-white);
+    opacity: 1;
+    transform: translateX(-2px);
+}
+
+.banner-top .back-link svg {
+    flex-shrink: 0;
+}
+
+/* Frase central */
+.banner-quote-wrapper {
+    max-width: 480px;
+    margin: 40px 0;
+}
+
+.banner-quote {
+    font-size: clamp(28px, 3.2vw, 40px);
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--color-white);
+    margin-bottom: 16px;
+}
+
+.banner-author {
+    display: block;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* Social proof inferior */
+.banner-social-proof {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(15, 33, 50, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 10px 18px 10px 12px;
+    border-radius: var(--radius-full);
+    max-width: fit-content;
+}
+
+.social-proof-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+
+.social-proof-text {
     display: flex;
     flex-direction: column;
 }
-.login-container h1 {
-    font-size: 48px;
-    margin-bottom: 10px;
+
+.social-proof-text strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-white);
+    line-height: 1.2;
 }
 
-.login-container p {
-    font-size: 18px;
-    margin-bottom: 40px;
+.social-proof-text span {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.2;
 }
 
-label {
-    font-size: 16px;
+/* ==========================================================================
+   PANEL DERECHO (FORMULARIO DE LOGIN)
+   ========================================================================== */
+.auth-content {
+    flex: 1;
+    min-width: 0;
+    background-color: var(--color-bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+    overflow-y: auto;
+}
+
+.auth-form-card {
+    width: 100%;
+    max-width: 430px;
+}
+
+/* Header del Formulario */
+.auth-header {
+    margin-bottom: 28px;
+}
+
+.logo-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    text-decoration: none;
+}
+
+.auth-logo {
+    height: 38px;
+    width: auto;
+    display: block;
+}
+
+.auth-title {
+    font-size: clamp(26px, 2.5vw, 32px);
+    font-weight: 800;
+    color: var(--color-navy);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
     margin-bottom: 8px;
 }
 
-input {
-    height: 60px;
-    padding: 0 20px;
-    margin-bottom: 25px;
-    border: 1px solid #cccccc;
-    border-radius: 12px;
-    font-size: 16px;
+.auth-subtitle {
+    font-size: 15px;
+    color: var(--color-muted);
+    line-height: 1.5;
 }
 
-button {
-    height: 60px;
-    border: none;
-    border-radius: 12px;
-    background-color: #334e73;
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
+/* Formulario */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
-.password-header {
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group > label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-navy);
+    margin-bottom: 8px;
+}
+
+.password-label-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
+    margin-bottom: 8px;
 }
 
-.password-header a {
-    color: #555555;
-    text-decoration: none;
-    font-size: 16px;
+.password-label-row label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-navy);
 }
-.password-input {
+
+.forgot-link {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-green);
+    text-decoration: none;
+    transition: opacity var(--transition);
+}
+
+.forgot-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* Inputs */
+.form-group input {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    background-color: var(--color-input-bg);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--color-navy);
+    outline: none;
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+.form-group input::placeholder {
+    color: #8CA09A;
+}
+
+.form-group input:focus {
+    background-color: var(--color-white);
+    border-color: var(--color-green);
+    box-shadow: 0 0 0 3px rgba(26, 122, 94, 0.12);
+}
+
+/* Password wrapper con botón ojito */
+.password-input-wrapper {
     position: relative;
     width: 100%;
 }
 
-.password-input input {
-    width: 100%;
-    padding-right: 55px;
+.password-input-wrapper input {
+    padding-right: 50px;
 }
 
-.eye {
+.password-toggle {
     position: absolute;
-    right: 20px;
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 24px;
+    background: none;
+    border: none;
+    padding: 4px;
     cursor: pointer;
-    line-height: 1;
+    color: var(--color-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color var(--transition);
+}
+
+.password-toggle:hover {
+    color: var(--color-navy);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid var(--color-green);
+}
+
+/* Ocultar iconos nativos de contraseñas */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-textfield-decoration-container {
+    display: none;
+}
+
+/* Botón Iniciar Sesión (Navy oscuro como en el hero/footer y captura) */
+.btn-submit {
+    height: 52px;
+    width: 100%;
+    background-color: var(--color-navy);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: var(--shadow-btn);
+    transition: background-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    margin-top: 4px;
+}
+
+.btn-submit:hover {
+    background-color: var(--color-navy-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(15, 33, 50, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.btn-submit svg {
+    transition: transform var(--transition);
+}
+
+.btn-submit:hover svg {
+    transform: translateX(3px);
+}
+
+/* Accesos demo (solo para mostrar) */
+.demo-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 6px 0;
+}
+
+.demo-divider::before,
+.demo-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-border);
+}
+
+.demo-divider span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+.demo-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-demo {
+    flex: 1;
+    min-width: 140px;
+    height: 48px;
+    background-color: var(--color-white);
+    color: var(--color-navy);
+    border: 1.5px solid var(--color-input-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: border-color var(--transition), background-color var(--transition), box-shadow var(--transition);
+}
+
+.btn-demo:hover {
+    border-color: var(--color-green);
+    background-color: var(--color-green-light);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Footer con enlace a registro */
+.auth-footer {
+    margin-top: 28px;
+    text-align: center;
+}
+
+.auth-footer p {
+    font-size: 14px;
+    color: var(--color-muted);
+}
+
+.auth-footer a {
+    color: var(--color-green);
+    text-decoration: none;
+    font-weight: 700;
+    margin-left: 4px;
+    transition: opacity var(--transition);
+}
+
+.auth-footer a:hover {
+    opacity: 0.85;
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 900px) {
+    .auth-layout {
+        flex-direction: column;
+    }
+
+    .auth-banner {
+        padding: 32px 24px;
+        min-height: 280px;
+        justify-content: center;
+    }
+
+    .banner-quote-wrapper {
+        margin: 24px 0 16px 0;
+    }
+
+    .banner-quote {
+        font-size: 24px;
+    }
+
+    .banner-social-proof {
+        display: none;
+    }
+
+    .auth-content {
+        padding: 40px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-banner {
+        padding: 24px 16px;
+        min-height: 220px;
+    }
+
+    .banner-quote {
+        font-size: 20px;
+    }
+
+    .auth-content {
+        padding: 32px 16px;
+    }
+
+    .auth-title {
+        font-size: 24px;
+    }
+
+    .form-group input,
+    .btn-submit {
+        height: 48px;
+    }
 }

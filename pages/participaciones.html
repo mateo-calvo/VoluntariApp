@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis participaciones | VoluntariApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+  <header class="navbar-background">
+    <nav class="panel-navbar">
+      <a href="../index.html" class="logo" title="Volver al inicio">
+        <img src="../images/logo.png" alt="VoluntariApp">
+      </a>
+      <ul class="nav-links">
+        <li><a href="mapa.html">Mapa</a></li>
+        <li><a href="#" class="active-link">Mis participaciones</a></li>
+      </ul>
+      <div class="panel-user">
+        <div class="user-chip"><span class="avatar" id="user-avatar">V</span><span class="username" id="user-name"></span></div>
+        <a href="#" class="logout-link" id="logout-link">Salir</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="panel-main">
+    <h1 class="panel-title">Mis participaciones</h1>
+    <p class="panel-subtitle">Convocatorias en las que te anotaste como voluntario.</p>
+
+    <p class="form-error hidden" id="panel-error" role="alert"></p>
+    <p class="form-success hidden" id="panel-ok" role="status"></p>
+
+    <section class="panel-section">
+      <div class="card-list" id="parts-list"></div>
+      <div class="empty hidden" id="parts-empty">
+        Todavía no participás en ninguna convocatoria.
+        <br>
+        <a href="mapa.html" class="btn btn-primary">Explorar el mapa</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="participaciones.js"></script>
+</body>
+</html>

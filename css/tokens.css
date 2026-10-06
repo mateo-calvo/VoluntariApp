@@ -1,0 +1,92 @@
+/* ==========================================================================
+   tokens.css - Fuente única de diseño de VoluntariApp
+   Importado por styles.css, login.css, register.css, recuperar.css y mapa.css.
+   Paleta, tipografía, radios, sombras, transiciones y utilidades compartidas.
+   ========================================================================== */
+
+:root {
+    /* Paleta */
+    --color-navy: #0F2132;
+    --color-navy-hover: #19344d;
+    --color-green: #1A7A5E;
+    --color-green-hover: #145E48;
+    --color-green-light: #E1EEE8;
+    --color-green-soft: #DCEFE6;
+    --color-muted: #5A7A72;
+    --color-bg-light: #F0F5F4;
+    --color-bg-section: #e2eae8;
+    --color-bg-card: #FFFFFF;
+    --color-input-bg: #EBF1EF;
+    --color-input-border: #D5E1DD;
+    --color-border: #E2ECE8;
+    --color-border-soft: #e4e1e1;
+    --color-white: #FFFFFF;
+    --color-warning-bg: #FDF9EA;
+    --color-warning-border: #F3E7B7;
+    --color-warning-text: #70581B;
+    --color-error: #b3261e;
+    --color-error-bg: #fdecea;
+
+    /* Tipografía */
+    --font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Radios */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-card: 1.5rem;
+    --radius-full: 9999px;
+
+    /* Sombras y transiciones */
+    --shadow-sm: 0 2px 6px rgba(15, 33, 50, 0.05);
+    --shadow-md: 0 4px 14px rgba(15, 33, 50, 0.08);
+    --shadow-btn: 0 4px 12px rgba(15, 33, 50, 0.15);
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mensajes de formulario (reemplazo de alert()) */
+.form-error,
+.form-success {
+    font-size: 13.5px;
+    line-height: 1.5;
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin: 0;
+}
+.form-error {
+    background-color: var(--color-error-bg);
+    border: 1px solid #f5c6c2;
+    color: var(--color-error);
+    font-weight: 600;
+}
+.form-success {
+    background-color: var(--color-green-light);
+    border: 1px solid var(--color-input-border);
+    color: var(--color-green-hover);
+    font-weight: 600;
+}
+.hidden { display: none !important; }
+
+/* Toast flotante para avisos no bloqueantes (mapa, geo, participación) */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background-color: var(--color-navy);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 20px;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-btn);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition), transform var(--transition);
+    z-index: 2000;
+    max-width: min(92vw, 480px);
+    text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background-color: var(--color-green); }
+.toast.error { background-color: var(--color-error); }
