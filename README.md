@@ -2,55 +2,58 @@
 
 > Conectamos voluntarios con ONGs de Buenos Aires, Argentina.
 
-Plataforma web (demo funcional) que elimina la burocracia del voluntariado: cualquier persona descubre convocatorias en un mapa público y participa en minutos. Las ONGs se registran, completan su ficha y aparecen en el mapa. Un admin acepta o rechaza organizaciones.
-
-**Estado:** demo 100% estática (HTML + CSS + JS, sin backend). Los datos se guardan en el navegador (`localStorage`). Ideal para mostrar con pendrive o hosting estático.
+VoluntariApp es una plataforma web que elimina la burocracia del voluntariado: cualquier persona puede descubrir convocatorias en un mapa interactivo y participar en minutos, y las organizaciones gestionan su ficha pública y sus cupos desde su propio panel.
 
 ---
 
-## Qué puede hacer cada rol
+## Funcionalidades
 
-### Visitante (sin cuenta) — mapa público
-- Ver las **12 convocatorias** en el mapa interactivo (Leaflet + OpenStreetMap).
-- Buscar por nombre o barrio, filtrar por categoría y distancia, usar "Ubicación" (geolocalización).
-- Ver el detalle de cada convocatoria: descripción, lo que necesitan, cupos, web, donación y contacto.
+### Mapa público de convocatorias
+- 12 convocatorias geolocalizadas en CABA con Leaflet + OpenStreetMap.
+- Búsqueda por nombre o zona, filtros por categoría y distancia, geolocalización.
+- Detalle de cada convocatoria: descripción, necesidades, cupos disponibles, sitio web, donación y contacto.
 
-### Voluntario (con cuenta)
-- Botón **"Quiero participar"** en cada convocatoria (exige iniciar sesión; si no, te lleva al login y vuelve solo).
-- Panel **Mis participaciones**: lo que te anotaste, con fecha, link al mapa y opción de anular.
-- Estado "Ya estás participando ✓" y control de cupos (no baja de 0, no duplica).
+### Voluntarios
+- Registro e inicio de sesión.
+- **Quiero participar** en convocatorias (con retorno automático al mapa tras loguearse).
+- Panel **Mis participaciones**: historial con fecha, acceso al mapa y opción de anular.
 
-### ONG (con cuenta)
-- Registro en **2 pasos**: datos legales → perfil público (categoría, ubicación con autocompletado estilo Google Maps, descripción, necesidades, web, link de donación, contacto).
-- Aparece en el mapa con badge **"En revisión"** hasta que el admin la acepta.
-- Panel **Mi ONG**: editar la ficha pública cuando quieras.
+### ONGs
+- Registro en 2 pasos: datos legales + perfil público.
+- Autocompletado de ubicación estilo Google Maps (Nominatim + Photon, sin API key).
+- Aparecen en el mapa con badge "En revisión" hasta ser verificadas.
+- Panel **Mi ONG**: edición de ficha pública (categoría, ubicación, descripción, necesidades, web, donación, contacto, cupos).
 
-### Admin (dueño del servicio)
-- Panel **Administración**: números, lista de pendientes, **aceptar / revocar / rechazar** (reversible) ONGs y tabla de usuarios.
-- Aceptar saca el badge "En revisión"; rechazar oculta la ONG del mapa.
+### Administración
+- Panel con métricas, gestión de ONGs (**aceptar, revocar, rechazar**), y tabla de usuarios.
 
 ---
 
-## Vocabulario oficial del proyecto
+## Vocabulario del proyecto
 
-Hablamos como una ONG, no como un sistema corporativo:
-
-| ✅ Usamos | ❌ No usamos |
+| Término | Significado |
 |---|---|
-| cupos | plazas |
-| convocatorias (lo que publica la ONG) | candidaturas (eso lo presenta el voluntario) |
-| Quiero participar | Postularme |
-| Desarrollo social, Salud, Educación, Medioambiente, Infancias y juventudes, Derechos humanos | Ayuda social, Alimentos, Infancia... |
+| cupos | Lugares disponibles por convocatoria |
+| convocatoria | Oportunidad publicada por una ONG |
+| Quiero participar | Acción del voluntario para sumarse |
+| Categorías | Desarrollo social · Salud · Educación · Medioambiente · Infancias y juventudes · Derechos humanos |
 
 ---
 
-## Cómo probarlo (sin instalar nada)
+## Stack
 
-**Opción 1 — doble clic:** abrir `index.html` en el navegador.
+HTML · CSS (tokens centralizados en `css/tokens.css`) · JavaScript vanilla · Leaflet · Nominatim / Photon. Sin build ni dependencias: se abre directo en el navegador. Los datos de la demo se guardan en `localStorage`.
 
-**Opción 2 — hosting gratis:** arrastrar la carpeta a Netlify Drop, Vercel o GitHub Pages. Anda directo.
+---
 
-**Cuentas demo** (botones al pie del login, un clic y entrás):
+## Cómo ejecutarlo
+
+```bash
+# Opción 1: abrir index.html en el navegador
+# Opción 2: servir la carpeta (ej. VS Code Live Server o cualquier hosting estático)
+```
+
+### Cuentas demo
 
 | Rol | Email | Contraseña |
 |---|---|---|
@@ -58,55 +61,27 @@ Hablamos como una ONG, no como un sistema corporativo:
 | ONG | `ong@test.com` | `demo1234` |
 | Admin | `admin@test.com` | `demo1234` |
 
-> El mapa necesita internet (tiles de OpenStreetMap, Leaflet por CDN y el buscador de direcciones). Login, registro y paneles andan igual.
-
-**Guion de demo (90 segundos):** mapa en incógnito → filtrar → detalle con Donar/Web → Quiero participar → login demo → vuelve a la convocatoria → participás → ves "Ya estás participando ✓" → como admin aceptás una ONG nueva → aparece verificada.
+> El mapa y el buscador de direcciones requieren internet (tiles, CDN y geocodificación).
 
 ---
 
-## Estructura del proyecto
+## Estructura
 
 ```
-index.html                  # Landing (hero, cómo funciona, CTA, footer)
-pages/
-  login.html / login.js         # Login + accesos demo por rol
-  register.html / register.js   # Registro voluntario / ONG en 2 pasos + autocompletado (Nominatim + Photon)
-  recuperar.html                # Recupero de contraseña (demo)
-  mapa.html / mapa.js           # Mapa público de convocatorias (Leaflet)
-  participaciones.html/js       # Panel voluntario
-  mi-ong.html/js                # Panel ONG (ficha editable)
-  admin.html/js                 # Panel admin (aceptar/rechazar, stats, usuarios)
-css/
-  tokens.css                # Fuente única: colores, radios, sombras, toasts
-  styles.css                # Home · login.css / register.css / recuperar.css
-  mapa.css / panel.css      # Mapa y paneles
-images/                     # logo.png, img1/img2.avif, voluntarios.jpg
+index.html                  # Landing
+pages/                      # login · register · recuperar · mapa ·
+                            # participaciones · mi-ong · admin (+ sus .js)
+css/                        # tokens.css · styles · login · register ·
+                            # recuperar · mapa · panel
+images/                     # logo y fotos
 ```
 
-**Datos demo (navegador):** `va_users_demo` (usuarios), `va_ongs_demo` (ONGs registradas), `va_parts_demo` (participaciones), `va_session` en `sessionStorage`. Borrar datos del sitio = empezar de cero.
-
 ---
 
-## Diseño
+## Flujo de trabajo
 
-- **Paleta:** verde `#1A7A5E` · navy `#0F2132` · fondo `#F0F5F4` · verde claro `#E1EEE8`.
-- **Fuente:** Nunito Sans. **Idioma:** español argentino.
-- Tokens centralizados en `css/tokens.css` (importado por todos los CSS).
-
----
-
-## Trabajo en equipo (Git)
-
-- `main` es lo último revisado. Todo cambio va en rama `feature/...` + Pull Request (ej: `feature/paneles`, PR #5 de referencia).
-- Commits chicos y por tema (diseño / mapa / paneles), no un commit gigante.
-
----
-
-## Roadmap (después de la demo)
-
-- Backend Node.js + Express + MongoDB (código de referencia guardado fuera del repo): JWT, validaciones en servidor, verificación real.
-- `PATCH /api/auth/me` (editar perfil usuario), participantes por convocatoria para la ONG, motivo de rechazo visible.
-- Deploy backend (Render/Railway) + Mongo Atlas.
+- `main` contiene lo último revisado.
+- Todo cambio va en una rama `feature/...` + Pull Request contra `main`.
 
 ---
 
