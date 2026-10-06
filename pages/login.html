@@ -5,33 +5,132 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión | VoluntariApp</title>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/login.css">
 </head>
 
 <body>
-    <main class="login-container">
-
-        <h1>Bienvenido de vuelta</h1>
-        <p>Inicia sesión para ver oportunidades y el mapa de ONGs.</p>
-
-        <form>
-            <label for="email">Correo electrónico</label>
-            <input type="email" id="email" name="email" placeholder="tu@correo.com" required>
-            <div class="password-header">
-                <label for="password">Contraseña</label>
-                <a href="#">¿La olvidaste?</a>
+    <div class="auth-layout">
+        <!-- Panel izquierdo: Frase inspiradora, social proof y fondo de voluntarios -->
+        <aside class="auth-banner">
+            <div class="banner-top">
+                <a href="../index.html" class="back-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Volver al inicio</span>
+                </a>
             </div>
-            <div class="password-input">
-                <input type="password" id="password" name="password" required>
-                <span class="eye">👁</span>
+
+            <div class="banner-quote-wrapper">
+                <blockquote class="banner-quote">
+                    "Cada hora que donas es una vida que tocas."
+                </blockquote>
+                <cite class="banner-author">— Comunidad VoluntariApp</cite>
             </div>
-            <button type="submit">Iniciar sesión</button>
-        </form>
-    </main>
 
-    <script src="../login.js"></script>
+            <div class="banner-social-proof">
+                <img src="../images/img2.avif" alt="Voluntarios de la comunidad" class="social-proof-avatar">
+                <div class="social-proof-text">
+                    <strong>+12,400 voluntarios</strong>
+                    <span>ya marcaron la diferencia este año</span>
+                </div>
+            </div>
+        </aside>
 
+        <!-- Panel derecho: Formulario de inicio de sesión -->
+        <main class="auth-content">
+            <div class="auth-form-card">
+                <header class="auth-header">
+                    <a href="../index.html" class="logo-link" title="Volver al inicio">
+                        <img src="../images/logo.png" alt="VoluntariApp" class="auth-logo">
+                    </a>
+                    <h1 class="auth-title">Bienvenido de vuelta</h1>
+                    <p class="auth-subtitle">Inicia sesión para participar en convocatorias de voluntariado.</p>
+                </header>
+
+                <form id="login-form" class="auth-form" action="#" method="POST">
+                    <div class="form-group">
+                        <label for="email">Correo electrónico</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="tu@correo.com" 
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <div class="password-label-row">
+                            <label for="password">Contraseña</label>
+                            <a href="recuperar.html" class="forgot-link">¿La olvidaste?</a>
+                        </div>
+                        <div class="password-input-wrapper">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                placeholder="••••••••" 
+                                autocomplete="current-password"
+                                required
+                            >
+                            <button type="button" class="password-toggle" id="toggle-password" aria-label="Mostrar u ocultar contraseña">
+                                <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="form-error hidden" id="login-error" role="alert"></p>
+
+                    <button type="submit" class="btn-submit">
+                        <span>Iniciar sesión</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+
+                    <div class="demo-divider">
+                        <span>o probá la demo</span>
+                    </div>
+
+                    <div class="demo-buttons">
+                        <button type="button" class="btn-demo" id="btn-demo-voluntario">
+                            <span>🤝</span>
+                            <span>Entrar como voluntario</span>
+                        </button>
+                        <button type="button" class="btn-demo" id="btn-demo-ong">
+                            <span>🏢</span>
+                            <span>Entrar como ONG</span>
+                        </button>
+                        <button type="button" class="btn-demo" id="btn-demo-admin">
+                            <span>🛡️</span>
+                            <span>Entrar como admin</span>
+                        </button>
+                    </div>
+
+                </form>
+
+                <footer class="auth-footer">
+                    <p>¿Aún no tienes cuenta? <a href="register.html">Regístrate gratis</a></p>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <script src="login.js"></script>
 </body>
 
 </html>

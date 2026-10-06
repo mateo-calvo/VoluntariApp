@@ -528,8 +528,9 @@ a {
 
 /* FOOTER */
 .footer-background {
-    background-color: #0F2132;
-    color: #9FB0AC;
+    background-color: #FFFFFF;
+    color: #5A7A72;
+    border-top: 1px solid #E2ECE8;
 }
 
 .footer-container {
@@ -548,7 +549,6 @@ a {
 
 .footer-brand .logo img {
     height: 32px;
-    filter: brightness(1.2);
 }
 
 .footer-brand p {
@@ -567,7 +567,7 @@ a {
 .footer-col h4 {
     font-size: 15px;
     font-weight: 700;
-    color: #fff;
+    color: #0F2132;
     margin-bottom: 1rem;
 }
 
@@ -584,7 +584,7 @@ a {
 }
 
 .footer-col a:hover {
-    color: #fff;
+    color: #1A7A5E;
 }
 
 .footer-bottom {
@@ -593,7 +593,7 @@ a {
     justify-content: space-between;
     gap: 1rem;
     padding: 1.5rem 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid #E2ECE8;
     font-size: 13px;
 }
 
@@ -603,7 +603,7 @@ a {
 }
 
 .footer-legal a:hover {
-    color: #fff;
+    color: #1A7A5E;
 }
 
 /* RESPONSIVE */
