@@ -2,150 +2,112 @@
 
 > Conectamos voluntarios con ONGs de Buenos Aires, Argentina.
 
-VoluntariApp es una plataforma web que elimina la burocracia del voluntariado: cualquier persona puede descubrir organizaciones, conocer sus causas y postularse en minutos. Las ONGs gestionan sus plazas, voluntarios y donaciones desde un panel dedicado.
+Plataforma web (demo funcional) que elimina la burocracia del voluntariado: cualquier persona descubre convocatorias en un mapa público y participa en minutos. Las ONGs se registran, completan su ficha y aparecen en el mapa. Un admin acepta o rechaza organizaciones.
+
+**Estado:** demo 100% estática (HTML + CSS + JS, sin backend). Los datos se guardan en el navegador (`localStorage`). Ideal para mostrar con pendrive o hosting estático.
 
 ---
 
-## Capturas
+## Qué puede hacer cada rol
 
-| Landing Page | Mapa interactivo | Panel de ONG |
-|---|---|---|
-| Página principal con hero, estadísticas y ONGs destacadas | Mapa Leaflet con 12 ONGs en Buenos Aires | Dashboard de administración para organizaciones |
+### Visitante (sin cuenta) — mapa público
+- Ver las **12 convocatorias** en el mapa interactivo (Leaflet + OpenStreetMap).
+- Buscar por nombre o barrio, filtrar por categoría y distancia, usar "Ubicación" (geolocalización).
+- Ver el detalle de cada convocatoria: descripción, lo que necesitan, cupos, web, donación y contacto.
 
----
+### Voluntario (con cuenta)
+- Botón **"Quiero participar"** en cada convocatoria (exige iniciar sesión; si no, te lleva al login y vuelve solo).
+- Panel **Mis participaciones**: lo que te anotaste, con fecha, link al mapa y opción de anular.
+- Estado "Ya estás participando ✓" y control de cupos (no baja de 0, no duplica).
 
-## Funcionalidades
+### ONG (con cuenta)
+- Registro en **2 pasos**: datos legales → perfil público (categoría, ubicación con autocompletado estilo Google Maps, descripción, necesidades, web, link de donación, contacto).
+- Aparece en el mapa con badge **"En revisión"** hasta que el admin la acepta.
+- Panel **Mi ONG**: editar la ficha pública cuando quieras.
 
-### Para voluntarios
-- **Mapa interactivo** — visualización de ONGs en Buenos Aires con filtros por categoría y radio de distancia (geolocalización real o punto de referencia)
-- **Búsqueda** — por nombre de organización o barrio
-- **Perfil completo de ONG** — misión, contacto, plazas disponibles, estadísticas de impacto
-- **Solicitud de voluntariado** — formulario de postulación directo desde el mapa
-- **Donaciones** — soporte para CBU, Mercado Pago alias y Mercado Pago Link
-
-### Para ONGs
-- **Panel de administración** con 6 secciones:
-  - Resumen con KPIs (voluntarios, solicitudes, plazas, horas)
-  - Gestión de perfil público
-  - Creación y administración de plazas (presencial / remoto / híbrido)
-  - Revisión de solicitudes de candidatos
-  - Lista de voluntarios activos
-  - Configuración de campaña de donaciones
-
-### Para administradores del sistema
-- **Panel de control** para aprobar o rechazar solicitudes de nuevas ONGs
-- Vista de detalle con mapa de ubicación declarada
-- Historial completo de decisiones
-- Configuración de parámetros del sistema
-
-### Asistente virtual
-- Chatbot "Voli" disponible en todas las vistas
-- Responde preguntas frecuentes en español rioplatense
-- Chips de respuesta rápida e indicador de escritura
+### Admin (dueño del servicio)
+- Panel **Administración**: números, lista de pendientes, **aceptar / revocar / rechazar** (reversible) ONGs y tabla de usuarios.
+- Aceptar saca el badge "En revisión"; rechazar oculta la ONG del mapa.
 
 ---
 
-## ONGs incluidas (demo)
+## Vocabulario oficial del proyecto
 
-| Organización | Barrio | Categoría |
-|---|---|---|
-| Cruz Roja Argentina | Palermo | Emergencias |
-| UNICEF Argentina | Recoleta | Infancia |
-| Greenpeace Argentina | San Telmo | Medio ambiente |
-| Cáritas Buenos Aires | Flores | Pobreza |
-| Banco de Alimentos | La Boca | Alimentación |
-| Médicos Sin Fronteras | Barracas | Salud |
-| Aldeas Infantiles | Belgrano | Infancia |
-| Techo Argentina | Lomas de Zamora | Pobreza |
-| Fundación Huésped | Villa Crespo | Salud |
-| ACNUR Argentina | Microcentro | Refugiados |
-| Voluntarios Sin Fronteras | Quilmes | Cooperación |
-| Banco Solidario | San Isidro | Alimentación |
+Hablamos como una ONG, no como un sistema corporativo:
 
----
-
-## Stack tecnológico
-
-| Tecnología | Uso |
+| ✅ Usamos | ❌ No usamos |
 |---|---|
-| React 18 + TypeScript | Framework principal |
-| Vite | Bundler y dev server |
-| Tailwind CSS v4 | Estilos y design tokens |
-| Leaflet (vanilla) | Mapas interactivos |
-| Nominatim (OpenStreetMap) | Geocodificación y geocodificación inversa |
-| Lucide React | Iconografía |
-| pnpm | Gestor de paquetes |
+| cupos | plazas |
+| convocatorias (lo que publica la ONG) | candidaturas (eso lo presenta el voluntario) |
+| Quiero participar | Postularme |
+| Desarrollo social, Salud, Educación, Medioambiente, Infancias y juventudes, Derechos humanos | Ayuda social, Alimentos, Infancia... |
+
+---
+
+## Cómo probarlo (sin instalar nada)
+
+**Opción 1 — doble clic:** abrir `index.html` en el navegador.
+
+**Opción 2 — hosting gratis:** arrastrar la carpeta a Netlify Drop, Vercel o GitHub Pages. Anda directo.
+
+**Cuentas demo** (botones al pie del login, un clic y entrás):
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| Voluntario | `demo@voluntariapp.org` | `demo1234` |
+| ONG | `ong@test.com` | `demo1234` |
+| Admin | `admin@test.com` | `demo1234` |
+
+> El mapa necesita internet (tiles de OpenStreetMap, Leaflet por CDN y el buscador de direcciones). Login, registro y paneles andan igual.
+
+**Guion de demo (90 segundos):** mapa en incógnito → filtrar → detalle con Donar/Web → Quiero participar → login demo → vuelve a la convocatoria → participás → ves "Ya estás participando ✓" → como admin aceptás una ONG nueva → aparece verificada.
 
 ---
 
 ## Estructura del proyecto
 
 ```
-src/
-├── app/
-│   ├── App.tsx            # Orquestador principal, landing page, routing por estado
-│   ├── LoginPage.tsx      # Autenticación con roles
-│   ├── RegisterPage.tsx   # Registro de voluntarios y ONGs (con mapa)
-│   ├── MapView.tsx        # Vista principal de voluntarios con mapa
-│   ├── OngDashboard.tsx   # Panel de administración de ONG
-│   ├── AdminPanel.tsx     # Panel de administrador del sistema
-│   └── ChatBot.tsx        # Asistente virtual Voli
-├── imports/
-│   └── logo.png           # Logo oficial
-├── styles/
-│   ├── fonts.css          # Google Fonts (Mulish, Nunito Sans, Shanti)
-│   ├── theme.css          # Design tokens (paleta verde/navy)
-│   └── index.css          # Configuración Tailwind
+index.html                  # Landing (hero, cómo funciona, CTA, footer)
+pages/
+  login.html / login.js         # Login + accesos demo por rol
+  register.html / register.js   # Registro voluntario / ONG en 2 pasos + autocompletado (Nominatim + Photon)
+  recuperar.html                # Recupero de contraseña (demo)
+  mapa.html / mapa.js           # Mapa público de convocatorias (Leaflet)
+  participaciones.html/js       # Panel voluntario
+  mi-ong.html/js                # Panel ONG (ficha editable)
+  admin.html/js                 # Panel admin (aceptar/rechazar, stats, usuarios)
+css/
+  tokens.css                # Fuente única: colores, radios, sombras, toasts
+  styles.css                # Home · login.css / register.css / recuperar.css
+  mapa.css / panel.css      # Mapa y paneles
+images/                     # logo.png, img1/img2.avif, voluntarios.jpg
 ```
 
----
-
-## Instalación y uso
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/tu-usuario/voluntariapp.git
-cd voluntariapp
-
-# Instalar dependencias
-pnpm install
-
-# Iniciar servidor de desarrollo
-pnpm dev
-```
-
-La aplicación estará disponible en `http://localhost:5173`.
-
----
-
-## Credenciales de prueba
-
-| Rol | Email | Contraseña |
-|---|---|---|
-| Voluntario/a | cualquier email | cualquier contraseña |
-| ONG (Cruz Roja Argentina) | `testong@gmail.com` | `1234` |
-| Administrador del sistema | `admin@voluntariapp.com.ar` | `admin2024` |
+**Datos demo (navegador):** `va_users_demo` (usuarios), `va_ongs_demo` (ONGs registradas), `va_parts_demo` (participaciones), `va_session` en `sessionStorage`. Borrar datos del sitio = empezar de cero.
 
 ---
 
 ## Diseño
 
-- **Paleta:** verde `#1A7A5E` · navy `#0F2132` · fondo menta `#F0F5F4` · acento amarillo `#F0C843`
-- **Tipografías:** Mulish (títulos) · Nunito Sans (cuerpo/UI) · Shanti (etiquetas/badges)
-- **Idioma:** español argentino (voseo)
-- **Métodos de donación:** CBU · Mercado Pago alias · Mercado Pago Link
+- **Paleta:** verde `#1A7A5E` · navy `#0F2132` · fondo `#F0F5F4` · verde claro `#E1EEE8`.
+- **Fuente:** Nunito Sans. **Idioma:** español argentino.
+- Tokens centralizados en `css/tokens.css` (importado por todos los CSS).
 
 ---
 
-## Estadísticas de la plataforma (demo)
+## Trabajo en equipo (Git)
 
-- **12.400+** voluntarios activos
-- **380** ONGs registradas
-- **48** barrios de Buenos Aires cubiertos
-- **2.1M** horas donadas
+- `main` es lo último revisado. Todo cambio va en rama `feature/...` + Pull Request (ej: `feature/paneles`, PR #5 de referencia).
+- Commits chicos y por tema (diseño / mapa / paneles), no un commit gigante.
 
 ---
 
-## Licencia
+## Roadmap (después de la demo)
 
-MIT © 2026 VoluntariApp
+- Backend Node.js + Express + MongoDB (código de referencia guardado fuera del repo): JWT, validaciones en servidor, verificación real.
+- `PATCH /api/auth/me` (editar perfil usuario), participantes por convocatoria para la ONG, motivo de rechazo visible.
+- Deploy backend (Render/Railway) + Mongo Atlas.
+
+---
+
+MIT · 2026 VoluntariApp
