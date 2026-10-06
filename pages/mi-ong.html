@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi ONG | VoluntariApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+  <header class="navbar-background">
+    <nav class="panel-navbar">
+      <a href="../index.html" class="logo" title="Volver al inicio">
+        <img src="../images/logo.png" alt="VoluntariApp">
+      </a>
+      <ul class="nav-links">
+        <li><a href="mapa.html">Mapa</a></li>
+        <li><a href="#" class="active-link">Mi ONG</a></li>
+      </ul>
+      <div class="panel-user">
+        <div class="user-chip"><span class="avatar" id="user-avatar">O</span><span class="username" id="user-name"></span></div>
+        <a href="#" class="logout-link" id="logout-link">Salir</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="panel-main">
+    <h1 class="panel-title">Mi ONG <span class="badge warn hidden" id="ong-estado">En revisión</span></h1>
+    <p class="panel-subtitle">Completá y mantené actualizada tu ficha pública: es lo que ven los voluntarios en el mapa.</p>
+
+    <p class="form-error hidden" id="panel-error" role="alert"></p>
+    <p class="form-success hidden" id="panel-ok" role="status"></p>
+
+    <section class="panel-section">
+      <h2>Ficha pública</h2>
+      <form id="ong-form" class="panel-card form-grid" action="#" method="POST">
+        <div class="form-group">
+          <label for="f-nombre">Nombre público *</label>
+          <input type="text" id="f-nombre" required maxlength="80">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-categoria">Categoría *</label>
+            <select id="f-categoria">
+              <option value="desarrollo-social">Desarrollo social</option>
+              <option value="salud">Salud</option>
+              <option value="educacion">Educación</option>
+              <option value="medioambiente">Medioambiente</option>
+              <option value="infancias">Infancias y juventudes</option>
+              <option value="derechos">Derechos humanos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-barrio">Barrio / localidad *</label>
+            <input type="text" id="f-barrio" required maxlength="80">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="f-descripcion">Descripción (máx. 280) *</label>
+          <input type="text" id="f-descripcion" required maxlength="280">
+        </div>
+        <div class="form-group">
+          <label for="f-necesidades">Qué voluntarios necesitan</label>
+          <input type="text" id="f-necesidades" maxlength="140">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-web">Sitio web</label>
+            <input type="url" id="f-web" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label for="f-pago">Link de donación</label>
+            <input type="url" id="f-pago" placeholder="https://...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="f-contacto">Contacto *</label>
+          <input type="text" id="f-contacto" required maxlength="80">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-cupos">Cupos por convocatoria</label>
+            <input type="number" id="f-cupos" min="1" max="500" value="5">
+          </div>
+        </div>
+        <div class="row">
+          <button type="submit" class="btn btn-primary" id="ong-guardar">Guardar cambios</button>
+          <a class="btn btn-secondary" href="mapa.html">Ver mi ficha en el mapa</a>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-section">
+      <h2>Datos de la cuenta</h2>
+      <div class="panel-card">
+        <p class="meta" id="ong-cuenta"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="mi-ong.js"></script>
+</body>
+</html>
