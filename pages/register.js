@@ -37,6 +37,12 @@ function activarOng() {
 btnVoluntario.addEventListener('click', activarVoluntario);
 btnOng.addEventListener('click', activarOng);
 
+// Si llegamos desde "Soy una ONG", activamos automáticamente el modo ONG
+const params = new URLSearchParams(window.location.search);
+if (params.get('tipo') === 'ong') {
+    activarOng();
+}
+
 
 // ---------- Ojito de mostrar/ocultar contraseña ----------
 const botonOjito = document.querySelector('.toggle-password');
