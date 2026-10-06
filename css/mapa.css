@@ -1,0 +1,556 @@
+/* ==========================================================================
+   mapa.css - Mapa interactivo (vista post-login) para VoluntariApp
+   Alineado al sistema de diseño de home / login / register:
+   Nunito Sans, paleta navy/verde, radios, sombras y botones compartidos.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+@import url('tokens.css');
+
+/* Tokens centralizados en tokens.css */
+
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+    font-family: var(--font-family);
+    color: var(--color-navy);
+    background-color: var(--color-bg-light);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ==========================================================================
+   HEADER — reutiliza .navbar-background / .navbar de la home (tema claro)
+   ========================================================================== */
+.navbar-background {
+    background-color: #f0f5f4;
+    border-bottom: 1px solid var(--color-border-soft);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.map-header { flex-shrink: 0; }
+
+.map-navbar {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.5rem 24px;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: none;
+}
+
+.logo { display: flex; align-items: center; flex-shrink: 0; }
+.logo img { height: 40px; width: auto; display: block; }
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    color: var(--color-muted);
+    flex-shrink: 0;
+}
+.nav-links a { transition: color var(--transition); }
+.nav-links a:hover { color: var(--color-navy); }
+.nav-links .active-link { color: var(--color-green); font-weight: 800; }
+
+.map-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Buscador — mismo comportamiento que los inputs de login/register */
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    width: min(340px, 30vw);
+    padding: 0 14px;
+    background-color: var(--color-input-bg);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-muted);
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.search-box:focus-within {
+    background-color: var(--color-white);
+    border-color: var(--color-green);
+    box-shadow: 0 0 0 3px rgba(26, 122, 94, 0.12);
+}
+.search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--color-navy);
+}
+.search-box input::placeholder { color: #8CA09A; }
+
+/* Pills de filtro — variante compacta de .btn-ong (secundario de la home) */
+.pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 14px;
+    background-color: var(--color-white);
+    border: 1.5px solid var(--color-input-border);
+    border-radius: var(--radius-md);
+    color: var(--color-navy);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+.pill-btn:hover {
+    border-color: var(--color-green);
+    box-shadow: var(--shadow-sm);
+}
+.pill-btn svg { color: var(--color-muted); }
+
+.category-select-hidden {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+
+/* Usuario logueado */
+.map-header-user {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-input-bg);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.icon-btn:hover { background-color: var(--color-white); border-color: var(--color-green); color: var(--color-navy); }
+
+.user-chip { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-green);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+}
+.logout-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-muted);
+    padding: 0.5rem;
+    transition: color var(--transition);
+}
+.logout-link:hover { color: var(--color-navy); }
+
+/* Acciones de invitado — reutilizan botones de la home */
+.guest-actions { display: flex; align-items: center; gap: 0.5rem; }
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity var(--transition);
+    font-weight: 600;
+    text-decoration: none;
+}
+.btn:hover { opacity: 0.8; }
+.btn-login { background-color: transparent; color: var(--color-navy); padding: 0.5rem; }
+.btn-register {
+    background-color: var(--color-green);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+}
+
+/* ==========================================================================
+   LAYOUT
+   ========================================================================== */
+.map-layout { display: flex; flex: 1; min-height: 0; }
+
+/* ==========================================================================
+   SIDEBAR — lista de ONGs como cards (estilo .how-work-card de la home)
+   ========================================================================== */
+.ong-sidebar {
+    width: 322px;
+    flex-shrink: 0;
+    background: var(--color-bg-card);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+    z-index: 50;
+}
+
+.sidebar-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+.sidebar-head h2 { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.sidebar-head p { font-size: 13px; color: var(--color-muted); margin-top: 3px; }
+.sidebar-close {
+    background: var(--color-input-bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    font-size: 13px;
+    padding: 6px 9px;
+    cursor: pointer;
+    transition: color var(--transition);
+}
+.sidebar-close:hover { color: var(--color-navy); }
+
+.ong-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    background: var(--color-bg-light);
+}
+
+.ong-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 15px;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+}
+.ong-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.ong-card.active {
+    border: 1.5px solid var(--color-green);
+    background-color: #EAF4EF;
+    box-shadow: var(--shadow-md);
+}
+
+/* Avatar del emoji — estilo badge de la home */
+.ong-emoji {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    background-color: var(--color-green-light);
+    border-radius: var(--radius-md);
+}
+.ong-info { flex: 1; min-width: 0; }
+.ong-name {
+    font-size: 14.5px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ong-barrio { font-size: 13px; color: var(--color-muted); margin-top: 2px; line-height: 1.4; }
+.ong-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    color: var(--color-muted);
+    margin-top: 5px;
+}
+.ong-meta .rating { color: #9a6b12; font-weight: 800; }
+.ong-dist { font-size: 12.5px; color: var(--color-muted); margin-top: 2px; }
+
+/* Badge de cupos — idéntico a .badge-ong de la home */
+.ong-cupos {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 8px;
+    padding: 0.3rem 0.75rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-green-light);
+    color: var(--color-green);
+    font-size: 12px;
+    font-weight: 800;
+}
+.ong-arrow { color: #9FB0AC; font-size: 18px; margin-top: 2px; }
+
+/* Panel detalle */
+.ong-detail {
+    position: absolute;
+    inset: 0;
+    background: var(--color-white);
+    overflow-y: auto;
+    padding: 22px 20px;
+    border-right: 1px solid var(--color-border);
+}
+.ong-detail.hidden { display: none; }
+.detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-input-bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-navy);
+    cursor: pointer;
+    margin-bottom: 14px;
+    transition: background-color var(--transition);
+}
+.detail-back:hover { background: var(--color-green-light); }
+.detail-category {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.9rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-green-light);
+    color: var(--color-green);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.ong-detail h2 { font-size: 20px; font-weight: 800; line-height: 1.3; letter-spacing: -0.01em; }
+.ong-detail .detail-desc { font-size: 14.5px; color: var(--color-muted); margin: 10px 0 6px; line-height: 1.6; }
+.detail-row { font-size: 13.5px; margin-top: 7px; }
+.detail-actions { display: flex; gap: 0.75rem; margin-top: 18px; }
+
+/* Botones — mismos que la home: .btn-voluntario (verde) y .btn-ong (secundario) */
+.btn-primary {
+    flex: 1;
+    background-color: var(--color-green);
+    color: #fff;
+    border: none;
+    border-radius: 0.6rem;
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity var(--transition), background-color var(--transition);
+}
+.btn-primary:hover { opacity: 0.88; background-color: var(--color-green-hover); }
+.btn-secondary {
+    flex: 1;
+    background-color: transparent;
+    color: var(--color-navy);
+    border: 1.5px solid #cdd8d3;
+    border-radius: 0.6rem;
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color var(--transition), background-color var(--transition);
+}
+.btn-secondary:hover { border-color: var(--color-green); background-color: var(--color-green-light); }
+.btn-primary:disabled {
+    background-color: var(--color-input-border);
+    color: var(--color-muted);
+    cursor: default;
+    opacity: 1;
+}
+.btn-primary:disabled:hover { background-color: var(--color-input-border); opacity: 1; }
+
+/* Badge de revisión + links públicos del detalle */
+.review-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-warning-bg);
+    border: 1px solid var(--color-warning-border);
+    color: var(--color-warning-text);
+    font-size: 11.5px;
+    font-weight: 800;
+    vertical-align: middle;
+}
+.detail-links { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.detail-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--color-green);
+}
+.detail-link:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   MAPA LEAFLET
+   ========================================================================== */
+.map-wrapper { flex: 1; position: relative; min-width: 0; background: var(--color-bg-section); }
+#map { position: absolute; inset: 0; z-index: 1; }
+
+/* Pines personalizados */
+.custom-pin {
+    width: 34px;
+    height: 44px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    filter: drop-shadow(0 2px 4px rgba(15, 33, 50, 0.35));
+}
+.custom-pin span {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.custom-pin i { transform: rotate(45deg); font-style: normal; font-size: 15px; line-height: 1; }
+.custom-pin.active span { outline: 3px solid rgba(26, 122, 94, 0.35); }
+
+/* Popups con el radio/shadow de las cards de la home */
+.leaflet-popup-content-wrapper { border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.leaflet-popup-content { font-family: var(--font-family); margin: 14px 16px; line-height: 1.5; color: var(--color-navy); }
+.leaflet-popup-content strong { font-size: 14px; }
+.leaflet-popup-content .popup-cupos {
+    display: inline-block;
+    margin-top: 7px;
+    background: var(--color-green-light);
+    color: var(--color-green);
+    font-weight: 800;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+}
+
+/* Tarjetas flotantes — cards blancas + verde sólido (como .btn-register) */
+.map-stats {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 500;
+}
+.stat-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 12px 18px;
+    min-width: 142px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+}
+.stat-label { display: block; font-size: 12px; font-weight: 700; color: var(--color-muted); }
+.stat-number { font-size: 24px; font-weight: 800; line-height: 1.25; }
+.stat-green { background: var(--color-green); border-color: var(--color-green); color: #fff; }
+.stat-green .stat-label { color: rgba(255, 255, 255, 0.85); }
+
+/* FAB mobile — estilo pill verde/navy como .btn-ongs / .btn-submit */
+.fab-list {
+    display: none;
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    background-color: var(--color-navy);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 0.9rem 1.75rem;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-btn);
+    transition: background-color var(--transition), transform var(--transition);
+}
+.fab-list:hover { background-color: var(--color-navy-hover); transform: translateX(-50%) translateY(-1px); }
+
+/* ==========================================================================
+   RESPONSIVE — mismos breakpoints que la home (960px / 600px)
+   ========================================================================== */
+@media (max-width: 1100px) {
+    .map-nav-links { display: none; }
+}
+
+@media (max-width: 900px) {
+    body { overflow: auto; height: auto; min-height: 100vh; }
+    .map-navbar { flex-wrap: wrap; gap: 0.6rem; padding: 0.6rem 16px; }
+    .map-header-controls { flex-wrap: wrap; order: 3; width: 100%; }
+    .search-box { width: 100%; }
+    .map-header-user .username, .logout-link { display: none; }
+
+    .map-layout { min-height: calc(100vh - 130px); }
+    .ong-sidebar {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        transform: translateX(-105%);
+        transition: transform var(--transition);
+        box-shadow: var(--shadow-md);
+        border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    }
+    .ong-sidebar.open { transform: translateX(0); }
+    .fab-list { display: block; }
+    .map-wrapper { min-height: 70vh; }
+    .map-stats { top: 12px; right: 12px; }
+    .stat-card { min-width: 118px; padding: 9px 13px; }
+    .stat-number { font-size: 19px; }
+}
+
+@media (max-width: 600px) {
+    .detail-actions { flex-direction: column; }
+    .pill-btn span { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+}
