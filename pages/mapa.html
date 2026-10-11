@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa de ONGs | VoluntariApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin="" />
+  <link rel="stylesheet" href="../css/mapa.css">
+</head>
+<body>
+  <!-- ===== HEADER: mismo diseño que home (navbar-background claro) ===== -->
+  <header class="navbar-background map-header">
+    <nav class="navbar map-navbar">
+      <a href="../index.html" class="logo map-logo" title="Volver al inicio">
+        <img src="../images/logo.png" alt="VoluntariApp">
+      </a>
+
+      <ul class="nav-links map-nav-links">
+        <li><a href="../index.html#como-funciona">Cómo funciona</a></li>
+        <li><a href="#" class="active-link">ONGs</a></li>
+        <li><a href="#">Causas</a></li>
+      </ul>
+
+      <div class="map-header-controls">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="search-input" placeholder="Buscar ONG o ciudad..." autocomplete="off">
+        </div>
+
+        <button class="pill-btn" id="filter-category-btn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          <span id="filter-category-label">Todas</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <!-- Dropdown real de categorías -->
+        <select id="category-select" class="category-select-hidden" aria-label="Filtrar por categoría">
+          <option value="todas">Todas</option>
+          <option value="desarrollo-social">Desarrollo social</option>
+          <option value="salud">Salud</option>
+          <option value="educacion">Educación</option>
+          <option value="medioambiente">Medioambiente</option>
+          <option value="infancias">Infancias y juventudes</option>
+          <option value="derechos">Derechos humanos</option>
+        </select>
+
+        <button class="pill-btn" id="locate-btn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path><circle cx="12" cy="12" r="8"></circle></svg>
+          <span>Ubicación</span>
+        </button>
+
+        <button class="pill-btn" id="distance-btn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+          <span id="distance-label">Distancia</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <select id="distance-select" class="category-select-hidden" aria-label="Filtrar por distancia">
+          <option value="0">Distancia</option>
+          <option value="3">Hasta 3 km</option>
+          <option value="5">Hasta 5 km</option>
+          <option value="10">Hasta 10 km</option>
+        </select>
+      </div>
+
+      <div class="map-header-user">
+        <a class="pill-btn hidden" id="panel-link" href="participaciones.html">Mi panel</a>
+        <div class="user-chip hidden" id="user-area"><span class="avatar" id="user-avatar">V</span><span class="username" id="user-name"></span></div>
+        <a href="../index.html" class="logout-link hidden" id="logout-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Salir
+        </a>
+        <div class="guest-actions" id="guest-actions">
+          <a href="login.html" class="btn btn-login">Iniciar Sesión</a>
+          <a href="register.html" class="btn btn-register">Unite Gratis</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="map-layout">
+    <!-- ===== SIDEBAR IZQUIERDO ===== -->
+    <aside class="ong-sidebar" id="ong-sidebar">
+      <div class="sidebar-head">
+        <div>
+          <h2 id="results-count">Convocatorias abiertas</h2>
+          <p>Selecciona una convocatoria para ver detalles</p>
+        </div>
+        <button class="sidebar-close" id="sidebar-close" aria-label="Cerrar panel">✕</button>
+      </div>
+      <div class="ong-list" id="ong-list"><!-- Renderizado por mapa.js --></div>
+
+      <!-- Panel de detalle (se muestra al seleccionar) -->
+      <div class="ong-detail hidden" id="ong-detail"></div>
+    </aside>
+
+    <!-- ===== MAPA LEAFLET ===== -->
+    <main class="map-wrapper">
+      <div id="map"></div>
+
+      <!-- Tarjetas flotantes derecha (como en captura) -->
+      <div class="map-stats">
+        <div class="stat-card">
+          <span class="stat-label">Convocatorias en el mapa</span>
+          <strong class="stat-number" id="stat-convs">12</strong>
+        </div>
+        <div class="stat-card stat-green">
+          <span class="stat-label">Cupos disponibles</span>
+          <strong class="stat-number" id="stat-cupos">125</strong>
+        </div>
+      </div>
+
+      <!-- Botón reabrir lista en mobile -->
+      <button class="fab-list" id="fab-list" type="button">☰ Ver ONGs</button>
+    </main>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+  <script src="mapa.js"></script>
+</body>
+</html>

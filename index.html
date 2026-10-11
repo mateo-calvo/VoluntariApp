@@ -20,8 +20,8 @@
                 <li><a href="#">Causas</a></li>
             </ul>
             <div class="header-auth-container">
-                <button class="btn btn-login">Iniciar Sesión</button>
-                <button class="btn btn-register">Unite Gratis</button>
+                <a href="./pages/login.html" class="btn btn-login">Iniciar Sesión</a>
+                <a href="./pages/register.html" class="btn btn-register">Unite Gratis</a>
             </div>
         </nav>
     </header>
@@ -37,8 +37,8 @@
                         <p class="hero-description">VoluntariApp conecta a personas como tú con ONGs que necesitan
                             exactamente lo que sabes hacer. Sin burocracia. Sin barreras. Solo impacto real.</p>
                         <div class="hero-connect-container">
-                            <button class="btn btn-voluntario">Quiero ser voluntario</button>
-                            <button class="btn btn-ong">Soy una ONG</button>
+                            <a href="./pages/register.html" class="btn btn-voluntario">Quiero ser voluntario</a>
+                            <a href="./pages/register.html?tipo=ong" class="btn btn-ong">Soy una ONG</a>
                         </div>
                         <p class="hero-social-proof"><span>+12,400</span> voluntarios ya marcaron la diferencia</p>
                     </div>
@@ -60,27 +60,139 @@
         <div class="global-container">
             <div class="how-work-container">
                 <div class="how-work-container-part-one">
-                    <div>Como funciona</div>
+                    <div class="how-work-label">Cómo funciona</div>
                     <h1 class="how-work-title">Tres pasos para empezar a impactar.</h1>
                     <p class="hero-description">Diseñado para que en menos de 10 minutos ya estés conectado con una
                         causa
                         que realmente te importe.</p>
                     <div class="how-work-explore-container">
-                        <a href="">Explorar oportunidades</a>
+                        <a href="" class="how-work-explore-link">Explorar oportunidades <span>→</span></a>
                     </div>
                 </div>
                 <div>
                     <div class="how-work-container-part-two">
                         <div class="how-work-cards-container">
-                            <div>carta 1</div>
-                            <div>carta 2</div>
-                            <div>carta 3</div>
+                            <article class="how-work-card">
+                                <span class="how-work-card-number">01</span>
+                                <div class="how-work-card-content">
+                                    <h2>Crea tu perfil</h2>
+                                    <p>Cuéntanos tus habilidades, disponibilidad y las causas que más te importan.</p>
+                                </div>
+                            </article>
+                            <article class="how-work-card">
+                                <span class="how-work-card-number">02</span>
+                                <div class="how-work-card-content">
+                                    <h2>Descubre oportunidades</h2>
+                                    <p>Explora proyectos cercanos a ti o en remoto. Filtra por causa, duración y
+                                        habilidades.</p>
+                                </div>
+                            </article>
+                            <article class="how-work-card">
+                                <span class="how-work-card-number">03</span>
+                                <div class="how-work-card-content">
+                                    <h2>Conecta y actúa</h2>
+                                    <p>Contacta directamente con la ONG, coordina tu participación y genera impacto
+                                        real.</p>
+                                </div>
+                            </article>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <section class="ongs-background">
+        <div class="global-container">
+            <div class="ongs-container">
+                <div class="ongs-media">
+                    <img src="images/voluntarios.jpg" alt="Manos unidas de voluntarios">
+                    <div class="ongs-quote">
+                        <p class="ongs-quote-text">"Pasamos de 8 a 70 voluntarios en 4 meses"</p>
+                        <p class="ongs-quote-author">— Cáritas Buenos Aires</p>
+                    </div>
+                </div>
+                <div class="ongs-content">
+                    <div class="how-work-label">Para organizaciones</div>
+                    <h2 class="ongs-title">¿Gestionas una ONG?<br><span>Encuentra tu equipo.</span></h2>
+                    <p class="hero-description">Publica tus necesidades, describe los perfiles que buscas y recibe
+                        solicitudes de voluntarios verificados.</p>
+                    <ul class="ongs-checklist">
+                        <li>Perfil de organización verificado y público</li>
+                        <li>Gestión de solicitudes y comunicación directa</li>
+                        <li>Panel de métricas e impacto en tiempo real</li>
+                        <li>Publicación ilimitada de oportunidades</li>
+                    </ul>
+                    <a href="#" class="btn btn-ongs">Registrar mi organización <span>→</span></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-background">
+        <div class="global-container">
+            <div class="cta-container">
+                <h2 class="cta-title">El mundo necesita<br>lo que tú puedes dar.</h2>
+                <p class="cta-subtitle">Únete a miles de personas que cada semana dedican unas horas a construir una
+                    sociedad más justa y solidaria.</p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-voluntario">Quiero ser voluntario</a>
+                    <a href="#" class="btn btn-ong btn-ong-light">Explorar oportunidades</a>
+                </div>
+                <p class="cta-note">Gratis siempre para voluntarios · Sin tarjeta · En 10 minutos</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer-background">
+        <div class="global-container">
+            <div class="footer-container">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <img src="images/logo.png" alt="VoluntariApp">
+                    </a>
+                    <p>Conectamos voluntarios con ONGs para construir un mundo más justo y solidario.</p>
+                </div>
+                <div class="footer-columns">
+                    <div class="footer-col">
+                        <h4>Plataforma</h4>
+                        <ul>
+                            <li><a href="#">Cómo funciona</a></li>
+                            <li><a href="#">Buscar ONGs</a></li>
+                            <li><a href="#">Causas</a></li>
+                            <li><a href="#">Mapa de oportunidades</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Organizaciones</h4>
+                        <ul>
+                            <li><a href="#">Registrar ONG</a></li>
+                            <li><a href="#">Gestión de voluntarios</a></li>
+                            <li><a href="#">Recursos</a></li>
+                            <li><a href="#">Precios</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Compañía</h4>
+                        <ul>
+                            <li><a href="#">Sobre nosotros</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="#">Prensa</a></li>
+                            <li><a href="#">Contacto</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 VoluntariApp. Todos los derechos reservados.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacidad</a>
+                    <a href="#">Términos</a>
+                    <a href="#">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>

@@ -35,7 +35,27 @@
                 <button type="submit" id="boton-enviar">
                     Enviar instrucciones <span aria-hidden="true">→</span>
                 </button>
+
+                <p id="recovery-ok" hidden style="margin-top:12px;font-size:14px;font-weight:700;color:#145E48;background:#E1EEE8;border-radius:8px;padding:10px 14px;"></p>
             </form>
+
+            <script>
+                document.getElementById('recovery-form').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    var email = document.getElementById('email').value.trim();
+                    if (!email) return;
+                    var btn = document.getElementById('boton-enviar');
+                    btn.disabled = true;
+                    btn.textContent = 'Enviando...';
+                    setTimeout(function () {
+                        var ok = document.getElementById('recovery-ok');
+                        ok.textContent = 'Te enviamos las instrucciones a ' + email + '. Revisa tu bandeja.';
+                        ok.hidden = false;
+                        btn.textContent = 'Enviado ✓';
+                        setTimeout(function () { window.location.href = 'login.html'; }, 2000);
+                    }, 800);
+                });
+            </script>
 
             <div class="back-to-login">
                 <a href="login.html">← Volver al inicio de sesión</a>

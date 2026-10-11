@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración | VoluntariApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/panel.css">
+</head>
+<body>
+  <header class="navbar-background">
+    <nav class="panel-navbar">
+      <a href="../index.html" class="logo" title="Volver al inicio">
+        <img src="../images/logo.png" alt="VoluntariApp">
+      </a>
+      <ul class="nav-links">
+        <li><a href="mapa.html">Mapa</a></li>
+        <li><a href="#" class="active-link">Administración</a></li>
+      </ul>
+      <div class="panel-user">
+        <div class="user-chip"><span class="avatar" id="user-avatar">A</span><span class="username" id="user-name"></span></div>
+        <a href="#" class="logout-link" id="logout-link">Salir</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="panel-main">
+    <h1 class="panel-title">Administración</h1>
+    <p class="panel-subtitle">Aceptá o rechazá ONGs y mirá el estado de la plataforma.</p>
+
+    <p class="form-error hidden" id="panel-error" role="alert"></p>
+    <p class="form-success hidden" id="panel-ok" role="status"></p>
+
+    <section class="panel-section">
+      <div class="stats-row">
+        <div class="stat-card highlight"><strong id="st-pendientes">0</strong><span>Pendientes</span></div>
+        <div class="stat-card"><strong id="st-verificadas">0</strong><span>Verificadas</span></div>
+        <div class="stat-card"><strong id="st-usuarios">0</strong><span>Usuarios</span></div>
+        <div class="stat-card"><strong id="st-parts">0</strong><span>Participaciones</span></div>
+      </div>
+    </section>
+
+    <section class="panel-section">
+      <h2>ONGs pendientes de revisión</h2>
+      <div class="card-list" id="ongs-pendientes"></div>
+      <div class="empty hidden" id="ongs-pendientes-vacio">No hay ONGs pendientes. 🎉</div>
+    </section>
+
+    <section class="panel-section">
+      <h2>ONGs verificadas</h2>
+      <div class="card-list" id="ongs-verificadas"></div>
+      <div class="empty hidden" id="ongs-verificadas-vacio">Todavía no hay ONGs verificadas en la demo.</div>
+    </section>
+
+    <section class="panel-section">
+      <h2>ONGs rechazadas</h2>
+      <div class="card-list" id="ongs-rechazadas"></div>
+      <div class="empty hidden" id="ongs-rechazadas-vacio">Ninguna rechazada.</div>
+    </section>
+
+    <section class="panel-section">
+      <h2>Usuarios registrados</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Nombre</th><th>Email</th><th>Rol</th></tr>
+          </thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

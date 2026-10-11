@@ -1,136 +1,385 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Crear Cuenta - VoluntariApp</title>
-    <link rel="stylesheet" href="../css/register.css" />
-  </head>
 
-  <body>
-    <main class="registro-container">
-      <section class="registro-panel">
-        <a href="../index.html" class="volver"> ← Inicio </a>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta | VoluntariApp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/register.css">
+</head>
 
-        <h2>Únete a miles de personas que ya cambian el mundo.</h2>
-
-        <ul class="beneficios">
-          <li>Acceso a +380 ONGs verificadas</li>
-          <li>Mapa interactivo de oportunidades</li>
-        </ul>
-      </section>
-
-      <section class="registro-form">
-        <div class="logo">
-          <a href="../index.html" class="volver"> <img src="../images/logo.png" alt="VoluntariApp" class="logo-imagen" /> </a>
-        </div>
-
-        <h1>Crea tu cuenta</h1>
-
-        <div class="toggle">
-          <button type="button" id="btn-voluntario" class="active">🤝 Soy voluntario/a</button>
-          <button type="button" id="btn-ong">📋 Represento una ONG</button>
-        </div>
-
-        <form id="formulario-registro">
-          <!-- ============ CAMPOS VOLUNTARIO ============ -->
-          <div id="campos-voluntario">
-            <div class="campo">
-              <!-- se agrego div class = "campo" para el css -->
-              <label for="nombre">Tu nombre completo</label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                placeholder="Maria Garcia"
-                required
-              />
+<body>
+    <div class="auth-layout">
+        <!-- Panel izquierdo: Beneficios, propuesta de valor y social proof -->
+        <aside class="auth-banner">
+            <div class="banner-top">
+                <a href="../index.html" class="back-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Volver al inicio</span>
+                </a>
             </div>
 
-            <div class="campo">
-              <!-- se agrego div class = "campo" para el css -->
-              <label for="email">Correo electrónico</label>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                placeholder="tu@correo.com"
-                required
-              />
+            <div class="banner-quote-wrapper">
+                <div class="banner-badge">Únete a la comunidad</div>
+                <blockquote class="banner-quote">
+                    "Tu tiempo <span>cambia</span> el mundo. Sé parte del impacto."
+                </blockquote>
+                <p class="banner-desc">Conecta con causas que necesitan lo que sabes hacer. Sin burocracia ni barreras.</p>
+                <ul class="banner-checklist">
+                    <li>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Más de 380 ONGs verificadas</span>
+                    </li>
+                    <li>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Oportunidades presenciales y virtuales</span>
+                    </li>
+                    <li>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>Certificados de horas e impacto medible</span>
+                    </li>
+                </ul>
             </div>
 
-            <div class="campo"> <!-- se agrego div class = "campo" para el css -->
-              <label for="password">Contraseña</label>
-              <div class="campo-password"><!-- se agrego div class = "campo-password" para el css -->
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                />
-                <button
-                  type="button"
-                  class="toggle-password"
-                  aria-label="Mostrar contraseña"
-                >
-                  👁
-                </button>
-              </div>
+            <div class="banner-social-proof">
+                <img src="../images/img2.avif" alt="Voluntarios" class="social-proof-avatar">
+                <div class="social-proof-text">
+                    <strong>+12,400 voluntarios</strong>
+                    <span>ya marcaron la diferencia este año</span>
+                </div>
             </div>
-          </div>
+        </aside>
 
-          <!-- ============ CAMPOS ONG (ocultos por defecto) ============ -->
-          <div id="campos-ong" hidden>
-            <div class="aviso-ong">
-              <span aria-hidden="true">🏢</span>
-              <p>El registro de ONGs requiere verificación manual. Completá el formulario y nuestro equipo te contactará dentro de las <strong>48 horas hábiles</strong>.</p>
+        <!-- Panel derecho: Formulario de registro -->
+        <main class="auth-content">
+            <div class="auth-form-card">
+                <header class="auth-header">
+                    <a href="../index.html" class="logo-link" title="Volver al inicio">
+                        <img src="../images/logo.png" alt="VoluntariApp" class="auth-logo">
+                    </a>
+                    <h1 class="auth-title">Crea tu cuenta</h1>
+                    <p class="auth-subtitle">Súmate a la red de voluntariado más grande del país.</p>
+                </header>
+
+                <!-- Selector de tipo de cuenta: Voluntario u ONG -->
+                <div class="role-toggle" role="tablist" aria-label="Tipo de cuenta">
+                    <button type="button" id="btn-voluntario" class="role-tab active" role="tab" aria-selected="true">
+                        <span class="role-icon">🤝</span>
+                        <span>Soy voluntario/a</span>
+                    </button>
+                    <button type="button" id="btn-ong" class="role-tab" role="tab" aria-selected="false">
+                        <span class="role-icon">🏢</span>
+                        <span>Represento una ONG</span>
+                    </button>
+                </div>
+
+                <form id="formulario-registro" class="auth-form" action="#" method="POST">
+                    <!-- ============ CAMPOS VOLUNTARIO ============ -->
+                    <div id="campos-voluntario" class="form-fields-container">
+                        <div class="form-group">
+                            <label for="nombre">Tu nombre completo</label>
+                            <input 
+                                type="text" 
+                                id="nombre" 
+                                name="nombre" 
+                                placeholder="María García" 
+                                autocomplete="name"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Correo electrónico</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                placeholder="tu@correo.com" 
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Contraseña</label>
+                            <div class="password-input-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="••••••••" 
+                                    minlength="6"
+                                    autocomplete="new-password"
+                                    required
+                                >
+                                <button type="button" class="password-toggle toggle-password-voluntario" aria-label="Mostrar u ocultar contraseña">
+                                    <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="password-hint">Mínimo 6 caracteres</span>
+                        </div>
+                    </div>
+
+                    <!-- ============ CAMPOS ONG: PASO 1 (datos legales) ============ -->
+                    <div id="campos-ong" class="form-fields-container" style="display: none;">
+                    <div id="ong-paso-1">
+                        <p class="step-indicator">Paso 1 de 2 · Datos legales</p>
+
+                        <div class="form-group">
+                            <label for="razon-social">Razón social / Nombre legal *</label>
+                            <input 
+                                type="text" 
+                                id="razon-social" 
+                                name="razon-social" 
+                                placeholder="Ej: Fundación Solidaria del Sur"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cuit">CUIT *</label>
+                            <input 
+                                type="text" 
+                                id="cuit" 
+                                name="cuit" 
+                                placeholder="30-12345678-9"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email-ong">Email institucional de la ONG *</label>
+                            <input 
+                                type="email" 
+                                id="email-ong" 
+                                name="email-ong" 
+                                placeholder="contacto@miong.org.ar"
+                                autocomplete="email"
+                            >
+                        </div>
+
+                        <div class="form-row-double">
+                            <div class="form-group form-group-grow">
+                                <label for="domicilio">Domicilio legal *</label>
+                                <div class="ubicacion-box">
+                                    <input 
+                                        type="text" 
+                                        id="domicilio" 
+                                        name="domicilio" 
+                                        placeholder="Av. Corrientes 1234, CABA"
+                                        autocomplete="off"
+                                        role="combobox"
+                                        aria-expanded="false"
+                                        aria-controls="domicilio-sugerencias"
+                                        aria-autocomplete="list"
+                                    >
+                                    <ul class="ubicacion-sugerencias hidden" id="domicilio-sugerencias" role="listbox" aria-label="Direcciones sugeridas"></ul>
+                                </div>
+                            </div>
+
+                            <div class="form-group form-group-postal">
+                                <label for="cp">C. Postal *</label>
+                                <input 
+                                    type="text" 
+                                    id="cp" 
+                                    name="cp" 
+                                    placeholder="1043"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password-ong">Contraseña de acceso *</label>
+                            <div class="password-input-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="password-ong" 
+                                    name="password-ong" 
+                                    placeholder="••••••••" 
+                                    minlength="6"
+                                    autocomplete="new-password"
+                                >
+                                <button type="button" class="password-toggle toggle-password-ong" aria-label="Mostrar u ocultar contraseña">
+                                    <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="password-hint">Mínimo 6 caracteres</span>
+                        </div>
+
+                        <div class="ong-notice">
+                            <span class="notice-icon" aria-hidden="true">🏢</span>
+                            <p>El registro de ONGs requiere validación. Completá los datos y te contactaremos dentro de las <strong>48 hs hábiles</strong>.</p>
+                        </div>
+                    </div><!-- /ong-paso-1 -->
+
+                    <!-- ============ CAMPOS ONG: PASO 2 (perfil público) ============ -->
+                    <div id="ong-paso-2" style="display: none;">
+                        <p class="step-indicator">Paso 2 de 2 · Perfil público</p>
+
+                        <div class="form-group">
+                            <label for="categoria-ong">Categoría principal *</label>
+                            <select id="categoria-ong" name="categoria-ong">
+                                <option value="desarrollo-social">Desarrollo social</option>
+                                <option value="salud">Salud</option>
+                                <option value="educacion">Educación</option>
+                                <option value="medioambiente">Medioambiente</option>
+                                <option value="infancias">Infancias y juventudes</option>
+                                <option value="derechos">Derechos humanos</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="barrio-ong">Ubicación *</label>
+                            <div class="ubicacion-box">
+                                <input
+                                    type="text"
+                                    id="barrio-ong"
+                                    name="barrio-ong"
+                                    placeholder="Escribí calle, barrio o ciudad…"
+                                    autocomplete="off"
+                                    role="combobox"
+                                    aria-expanded="false"
+                                    aria-controls="ubicacion-sugerencias"
+                                    aria-autocomplete="list"
+                                >
+                                <ul class="ubicacion-sugerencias hidden" id="ubicacion-sugerencias" role="listbox" aria-label="Ubicaciones sugeridas"></ul>
+                            </div>
+                            <input type="hidden" id="lat-ong" name="lat-ong">
+                            <input type="hidden" id="lng-ong" name="lng-ong">
+                            <span class="ubicacion-elegida hidden" id="ubicacion-elegida"></span>
+                            <span class="ubicacion-error hidden" id="ubicacion-error" role="alert"></span>
+                            <div class="ubicacion-fallback hidden" id="ubicacion-fallback">
+                                <label for="barrio-ong-manual">Elegí tu barrio</label>
+                                <select id="barrio-ong-manual" name="barrio-ong-manual">
+                                    <option value="Palermo, CABA">Palermo</option>
+                                    <option value="Recoleta, CABA">Recoleta</option>
+                                    <option value="Belgrano, CABA">Belgrano</option>
+                                    <option value="Villa Crespo, CABA">Villa Crespo</option>
+                                    <option value="Retiro, CABA">Retiro</option>
+                                    <option value="Puerto Madero, CABA">Puerto Madero</option>
+                                    <option value="San Telmo, CABA">San Telmo</option>
+                                    <option value="La Boca, CABA">La Boca</option>
+                                    <option value="Barracas, CABA">Barracas</option>
+                                    <option value="Flores, CABA">Flores</option>
+                                    <option value="Flores Sur, CABA">Flores Sur</option>
+                                    <option value="Villa Lugano, CABA">Villa Lugano</option>
+                                </select>
+                            </div>
+                            <span class="ubicacion-credit">Búsqueda de ubicaciones: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcion-ong">Descripción (máx. 280 caracteres) *</label>
+                            <input
+                                type="text"
+                                id="descripcion-ong"
+                                name="descripcion-ong"
+                                placeholder="Qué hace tu organización"
+                                maxlength="280"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="necesidades-ong">Qué voluntarios necesitan</label>
+                            <input
+                                type="text"
+                                id="necesidades-ong"
+                                name="necesidades-ong"
+                                placeholder="Ej: apoyo escolar, logística, difusión"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="web-ong">Sitio web</label>
+                            <input
+                                type="url"
+                                id="web-ong"
+                                name="web-ong"
+                                placeholder="https://miong.org.ar"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pago-ong">Link de donación / pago</label>
+                            <input
+                                type="url"
+                                id="pago-ong"
+                                name="pago-ong"
+                                placeholder="https://link.mercadopago.com.ar/..."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contacto-ong">Contacto (email o WhatsApp) *</label>
+                            <input
+                                type="text"
+                                id="contacto-ong"
+                                name="contacto-ong"
+                                placeholder="contacto@miong.org.ar o +54 9 11 ..."
+                            >
+                        </div>
+                    </div><!-- /ong-paso-2 -->
+                    </div><!-- /campos-ong -->
+
+                    <!-- Navegación por pasos (solo modo ONG) -->
+                    <p class="form-error hidden" id="register-error" role="alert"></p>
+                    <div class="step-nav" id="step-nav" style="display: none;">
+                        <button type="button" class="btn-back hidden" id="btn-volver">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                            <span>Volver</span>
+                        </button>
+                        <button type="button" class="btn-next" id="btn-siguiente">
+                            <span>Siguiente</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </div>
+
+                    <div id="paso-final">
+                    <!-- Términos y condiciones -->
+                    <label class="terms-checkbox">
+                        <input type="checkbox" id="terminos" name="terminos" required>
+                        <span>Acepto los <a href="#" target="_blank">Términos de uso</a> y la <a href="#" target="_blank">Política de privacidad</a></span>
+                    </label>
+
+                    <!-- Botón de envío -->
+                    <p class="form-success hidden" id="register-ok" role="status"></p>
+                    <button type="submit" id="boton-enviar" class="btn-submit">
+                        <span class="btn-text">Crear cuenta gratis</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                    </div><!-- /paso-final -->
+
+                </form>
+
+                <footer class="auth-footer">
+                    <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+                </footer>
             </div>
-
-            <div class="campo">
-              <label for="razon-social">Razón social / Nombre legal *</label>
-              <input type="text" id="razon-social" name="razon-social" placeholder="Ej: Fundación Solidaria del Sur">
-            </div>
-
-            <div class="campo">
-              <label for="cuit">CUIT *</label>
-              <input type="text" id="cuit" name="cuit" placeholder="30-12345678-9">
-            </div>
-
-            <div class="campo">
-              <label for="email-ong">Email de registro *</label>
-              <input type="email" id="email-ong" name="email-ong" placeholder="contacto@miong.org.ar">
-            </div>
-
-            <div class="fila-doble">
-              <div class="campo">
-                <label for="domicilio">Domicilio legal *</label>
-                <input type="text" id="domicilio" name="domicilio" placeholder="Av. Corrientes 1234, CABA">
-              </div>
-
-              <div class="campo campo-postal">
-                <label for="cp">C. Postal *</label>
-                <input type="text" id="cp" name="cp" placeholder="1043">
-              </div>
-            </div>
-
-            <!-- El mapa interactivo se agrega en un paso siguiente -->
-          </div>
-
-          <label class="terminos">
-            <input type="checkbox" name="terminos" required />
-            Acepto los Términos de uso y la Política de privacidad
-         </label>
-
-          <button type="submit" id="boton-enviar">Crear cuenta gratis <span aria-hidden="true">→</span></button>
-        </form>
-
-        <p class="login-link">¿Ya tenés cuenta? <a href="login.html">Iniciá sesión</a></p>
-
-      </section>
-    </main>
+        </main>
+    </div>
 
     <script src="register.js"></script>
-    
-  </body>
+</body>
+
 </html>

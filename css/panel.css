@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+@import url('tokens.css');
+
+/* ==========================================================================
+   panel.css - Paneles Mis participaciones / Mi ONG / Administración
+   Mismo sistema visual que home + mapa (tokens centralizados).
+   ========================================================================== */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-navy);
+  background-color: var(--color-bg-light);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* Header claro como la home */
+.navbar-background {
+  background-color: #f0f5f4;
+  border-bottom: 1px solid var(--color-border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.panel-navbar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.5rem 24px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.logo img { height: 40px; width: auto; display: block; }
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  color: var(--color-muted);
+}
+.nav-links a:hover { color: var(--color-navy); }
+.nav-links .active-link { color: var(--color-green); font-weight: 800; }
+
+.panel-user {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-left: auto;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-green);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+.username { font-size: 14px; font-weight: 700; }
+.logout-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-muted);
+  padding: 0.5rem;
+}
+.logout-link:hover { color: var(--color-navy); }
+
+/* Contenido */
+.panel-main {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.panel-title {
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.panel-subtitle {
+  color: var(--color-muted);
+  font-size: 15px;
+  margin-top: 6px;
+  margin-bottom: 24px;
+}
+
+/* Tarjetas de stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  text-align: center;
+}
+.stat-card strong { display: block; font-size: 28px; font-weight: 800; }
+.stat-card span { font-size: 12.5px; font-weight: 700; color: var(--color-muted); }
+.stat-card.highlight { background: var(--color-green); border-color: var(--color-green); color: #fff; }
+.stat-card.highlight span { color: rgba(255,255,255,.85); }
+
+/* Secciones y cards */
+.panel-section { margin-bottom: 28px; }
+.panel-section > h2 { font-size: 19px; font-weight: 800; margin-bottom: 12px; }
+
+.card-list { display: flex; flex-direction: column; gap: 12px; }
+
+.panel-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+}
+.panel-card h3 { font-size: 16px; font-weight: 800; }
+.panel-card .meta { font-size: 13.5px; color: var(--color-muted); margin-top: 4px; line-height: 1.55; }
+.panel-card .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-green-light);
+  color: var(--color-green);
+  font-size: 12px;
+  font-weight: 800;
+}
+.badge.warn {
+  background-color: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning-text);
+}
+.badge.muted { background-color: var(--color-input-bg); color: var(--color-muted); }
+
+/* Botones (home) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1.25rem;
+  transition: opacity var(--transition), background-color var(--transition), border-color var(--transition);
+  text-decoration: none;
+}
+.btn:hover { opacity: 0.88; }
+.btn-primary { background-color: var(--color-green); color: #fff; }
+.btn-primary:hover { background-color: var(--color-green-hover); opacity: 1; }
+.btn-secondary { background-color: transparent; color: var(--color-navy); border: 1.5px solid #cdd8d3; }
+.btn-secondary:hover { border-color: var(--color-green); }
+.btn-danger { background-color: transparent; color: var(--color-error); border: 1.5px solid #f5c6c2; }
+.btn-danger:hover { background-color: var(--color-error-bg); }
+.btn-sm { padding: 0.45rem 0.9rem; font-size: 13px; }
+
+/* Formularios (register) */
+.form-grid { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; }
+.form-group > label { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.form-group input,
+.form-group select {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px;
+  background-color: var(--color-input-bg);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--color-navy);
+  outline: none;
+  transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus {
+  background-color: var(--color-white);
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 3px rgba(26, 122, 94, 0.12);
+}
+.form-row { display: flex; gap: 14px; }
+.form-row .form-group { flex: 1; }
+
+/* Tablas (admin usuarios) */
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th, .data-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.data-table th { font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); }
+.table-wrap {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.empty {
+  background: var(--color-white);
+  border: 1px dashed var(--color-input-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 14.5px;
+}
+.empty .btn { margin-top: 14px; }
+
+@media (max-width: 600px) {
+  .panel-navbar .nav-links { display: none; }
+  .panel-main { padding: 24px 16px 48px; }
+  .form-row { flex-direction: column; }
+}
