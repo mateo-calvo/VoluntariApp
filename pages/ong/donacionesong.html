@@ -6,11 +6,44 @@
     <title>Donaciones</title>
     <link rel="stylesheet" href="../../css/ong.css">
 </head>
-<body>
+<body data-page="donaciones">
 
-    <div id="sidebar-container"></div> <!-- este es el navbar lateral traido del archivo js -->
-    <main>
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
 
+    <main class="main-content">
+        <div class="donaciones">
+
+            <!-- Título + botón editar -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Donaciones</h2>
+                    <p>Configura cómo los visitantes pueden apoyar económicamente tu organización.</p>
+                </div>
+                <button type="button" class="btn-primario" id="btn-editar-donaciones" onclick="toggleEdicionDonaciones()"></button>
+            </section>
+
+            <!-- Interruptor de donaciones públicas (lo rellena el JS) -->
+            <section class="card donaciones-publicas" id="donaciones-publicas"></section>
+
+            <!-- Totales (los rellena el JS) -->
+            <section class="stats-grid stats-grid--3" id="donaciones-stats"></section>
+
+            <!-- Barra de progreso (la rellena el JS) -->
+            <section class="card donaciones-progreso" id="donaciones-progreso"></section>
+
+            <!-- Métodos de pago y objetivo -->
+            <section class="card donaciones-config">
+                <h3>Métodos de pago</h3>
+                <div id="donaciones-metodos"></div>
+
+                <div class="campo">
+                    <label for="donaciones-objetivo">Objetivo (ARS)</label>
+                    <input type="text" inputmode="numeric" id="donaciones-objetivo" readonly>
+                </div>
+            </section>
+
+        </div>
     </main>
 
     <script src="../../js/ong.js"></script>

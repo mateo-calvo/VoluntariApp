@@ -6,11 +6,29 @@
     <title>Voluntarios</title>
     <link rel="stylesheet" href="../../css/ong.css">
 </head>
-<body>
+<body data-page="voluntarios">
 
-    <div id="sidebar-container"></div> <!-- este es el navbar lateral traido del archivo js -->
-    <main>
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
 
+    <main class="main-content">
+        <div class="voluntarios">
+
+            <!-- Título -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Voluntarios activos</h2>
+                    <p id="voluntarios-subtitulo"></p>
+                </div>
+            </section>
+
+            <!-- Totales (los rellena el JS) -->
+            <section class="voluntarios-stats" id="voluntarios-stats"></section>
+
+            <!-- Lista de voluntarios (la rellena el JS) -->
+            <section class="voluntarios-lista" id="voluntarios-lista"></section>
+
+        </div>
     </main>
 
     <script src="../../js/ong.js"></script>

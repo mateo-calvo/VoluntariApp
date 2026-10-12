@@ -6,11 +6,29 @@
     <title>Solicitudes</title>
     <link rel="stylesheet" href="../../css/ong.css">
 </head>
-<body>
+<body data-page="solicitudes">
 
-    <div id="sidebar-container"></div> <!-- este es el navbar lateral traido del archivo js -->
-    <main>
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
 
+    <main class="main-content">
+        <div class="solicitudes">
+
+            <!-- Título -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Solicitudes de voluntariado</h2>
+                    <p id="solicitudes-subtitulo"></p>
+                </div>
+            </section>
+
+            <!-- Filtros (los rellena el JS) -->
+            <section class="filtros" id="solicitudes-filtros"></section>
+
+            <!-- Lista de solicitudes (la rellena el JS) -->
+            <section class="solicitudes-lista" id="solicitudes-lista"></section>
+
+        </div>
     </main>
 
     <script src="../../js/ong.js"></script>

@@ -6,11 +6,27 @@
     <title>Vacantes</title>
     <link rel="stylesheet" href="../../css/ong.css">
 </head>
-<body>
+<body data-page="vacantes">
 
-    <div id="sidebar-container"></div> <!-- este es el navbar lateral traido del archivo js -->
-    <main>
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
 
+    <main class="main-content">
+        <div class="vacantes">
+
+            <!-- Título + botón nueva vacante -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Vacantes de voluntariado</h2>
+                    <p>Gestiona las posiciones abiertas para nuevos voluntarios.</p>
+                </div>
+                <button type="button" class="btn-primario" id="btn-nueva-vacante" onclick="nuevaVacante()"></button>
+            </section>
+
+            <!-- Lista de vacantes (la rellena el JS) -->
+            <section class="vacantes-lista" id="vacantes-lista"></section>
+
+        </div>
     </main>
 
     <script src="../../js/ong.js"></script>
