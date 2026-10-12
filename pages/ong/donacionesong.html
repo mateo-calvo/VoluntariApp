@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donaciones</title>
+    <link rel="stylesheet" href="../../css/ong.css">
+</head>
+<body data-page="donaciones">
+
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
+
+    <main class="main-content">
+        <div class="donaciones">
+
+            <!-- Título + botón editar -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Donaciones</h2>
+                    <p>Configura cómo los visitantes pueden apoyar económicamente tu organización.</p>
+                </div>
+                <button type="button" class="btn-primario" id="btn-editar-donaciones" onclick="toggleEdicionDonaciones()"></button>
+            </section>
+
+            <!-- Interruptor de donaciones públicas (lo rellena el JS) -->
+            <section class="card donaciones-publicas" id="donaciones-publicas"></section>
+
+            <!-- Totales (los rellena el JS) -->
+            <section class="stats-grid stats-grid--3" id="donaciones-stats"></section>
+
+            <!-- Barra de progreso (la rellena el JS) -->
+            <section class="card donaciones-progreso" id="donaciones-progreso"></section>
+
+            <!-- Métodos de pago y objetivo -->
+            <section class="card donaciones-config">
+                <h3>Métodos de pago</h3>
+                <div id="donaciones-metodos"></div>
+
+                <div class="campo">
+                    <label for="donaciones-objetivo">Objetivo (ARS)</label>
+                    <input type="text" inputmode="numeric" id="donaciones-objetivo" readonly>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="../../js/ong.js"></script>
+</body>
+</html>

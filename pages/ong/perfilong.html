@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi perfil</title>
+    <link rel="stylesheet" href="../../css/ong.css">
+</head>
+<body data-page="perfil">
+
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
+
+    <main class="main-content">
+        <div class="perfil">
+
+            <!-- Título + botón editar -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Perfil de la organización</h2>
+                    <p>Esta información se muestra a los voluntarios en el mapa.</p>
+                </div>
+                <button type="button" class="btn-primario" id="btn-editar" onclick="toggleEdicionPerfil()"></button>
+            </section>
+
+            <!-- Banner + logo -->
+            <section class="perfil-banner">
+                <img id="perfil-banner-img" class="perfil-banner-img" alt="Banner de la organización">
+            </section>
+
+            <!-- Datos de la organización -->
+            <section class="card perfil-datos">
+                <fieldset id="perfil-campos" class="form-campos" disabled>
+                    <div class="form-grid">
+                        <div class="campo">
+                            <label for="perfil-nombre">Nombre de la organización</label>
+                            <input type="text" id="perfil-nombre">
+                        </div>
+                        <div class="campo">
+                            <label for="perfil-categoria">Categoría</label>
+                            <select id="perfil-categoria"></select>
+                        </div>
+                        <div class="campo">
+                            <label for="perfil-ciudad">Ciudad</label>
+                            <input type="text" id="perfil-ciudad">
+                        </div>
+                        <div class="campo">
+                            <label for="perfil-telefono">Teléfono</label>
+                            <input type="tel" id="perfil-telefono">
+                        </div>
+                        <div class="campo campo--ancho">
+                            <label for="perfil-web">Sitio web</label>
+                            <input type="text" id="perfil-web">
+                        </div>
+                        <div class="campo campo--ancho">
+                            <label for="perfil-mision">Misión</label>
+                            <textarea id="perfil-mision" rows="4"></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+            </section>
+
+            <!-- Información de la cuenta -->
+            <section class="perfil-cuenta">
+                <h3>Información de la cuenta</h3>
+                <ul class="cuenta-lista" id="cuenta-lista"></ul>
+            </section>
+
+        </div>
+    </main>
+
+    <script src="../../js/ong.js"></script>
+</body>
+</html>
