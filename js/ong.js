@@ -53,9 +53,9 @@ const datosPerfil = {
 
 // ===== DATOS DE VACANTES =====
 const datosVacantes = [
-  { id: 1, titulo: "Coordinador de emergencias", horas: 10, modalidad: "Presencial", solicitudes: 3, estado: "activa" },
-  { id: 2, titulo: "Asistente social",           horas: 8,  modalidad: "Presencial", solicitudes: 2, estado: "activa" },
-  { id: 3, titulo: "Conductor de ambulancia",    horas: 12, modalidad: "Presencial", solicitudes: 1, estado: "inactiva" }
+  { id: 1, titulo: "Coordinador de emergencias", horas: 10, modalidad: "Presencial", descripcion: "Coordina al equipo de voluntarios durante operativos de emergencia.", solicitudes: 3, estado: "activa" },
+  { id: 2, titulo: "Asistente social",           horas: 8,  modalidad: "Presencial", descripcion: "Acompaña a familias en la gestión de ayuda y trámites.", solicitudes: 2, estado: "activa" },
+  { id: 3, titulo: "Conductor de ambulancia",    horas: 12, modalidad: "Presencial", descripcion: "Conduce la ambulancia en traslados programados y de emergencia.", solicitudes: 1, estado: "inactiva" }
 ];
 
 // ===== DATOS DE SOLICITUDES =====
@@ -125,6 +125,7 @@ const iconos = {
   tendencia: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>`,
   tarjeta: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>`,
   copiar: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  cerrar: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
   ubicacion: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`
 };
 
@@ -238,6 +239,51 @@ function cerrarSesion() {
   // después: avisar al backend y borrar el token (localStorage) antes de redirigir
   window.location.href = '../login.html';
 }
+
+// ===== UTILIDADES =====
+// Convierte texto escrito por una persona en texto seguro para meter dentro de un innerHTML
+function escaparHTML(texto) {
+  return String(texto).replace(/[&<>"']/g, caracter => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[caracter]));
+}
+
+// ===== VENTANA EMERGENTE (reutilizable) =====
+function abrirModal(titulo, cuerpoHTML) {
+  cerrarModal();
+
+  const fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  fondo.id = 'modal-fondo';
+  fondo.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <div class="modal-cabecera">
+        <h3 id="modal-titulo">${titulo}</h3>
+        <button type="button" class="btn-icono btn-icono--suave" onclick="cerrarModal()" aria-label="Cerrar">${iconos.cerrar}</button>
+      </div>
+      <div class="modal-cuerpo">${cuerpoHTML}</div>
+    </div>
+  `;
+
+  // Cerrar al hacer clic en el fondo oscuro (no dentro de la ventana)
+  fondo.addEventListener('click', (e) => {
+    if (e.target === fondo) cerrarModal();
+  });
+
+  document.body.appendChild(fondo);
+  document.body.classList.add('modal-abierto');
+}
+
+function cerrarModal() {
+  const fondo = document.getElementById('modal-fondo');
+  if (fondo) fondo.remove();
+  document.body.classList.remove('modal-abierto');
+}
+
+// Cerrar con la tecla Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarModal();
+});
 
 // ===== RESUMEN =====
 function iniciales(nombre) {
@@ -391,7 +437,7 @@ function renderVacantes() {
         <article class="vacante-card ${activa ? '' : 'vacante-card--inactiva'}">
           <div class="vacante-card-info">
             <div class="vacante-card-titulo">
-              <h3>${v.titulo}</h3>
+              <h3>${escaparHTML(v.titulo)}</h3>
               <span class="badge badge--${v.estado}">${activa ? 'Activa' : 'Inactiva'}</span>
             </div>
             <div class="vacante-meta">
@@ -429,9 +475,67 @@ function eliminarVacante(id) {
   // después: DELETE /api/vacantes/:id
 }
 
+const modalidadesVacante = ["Presencial", "Remoto", "Mixto"];
+
 function nuevaVacante() {
-  console.log("Abrir formulario de nueva vacante");
-  // pendiente: formulario / ventana para crear una vacante
+  abrirModal('Nueva vacante', `
+    <div class="config-campos">
+      <div class="campo">
+        <label for="vacante-titulo">Título</label>
+        <input type="text" id="vacante-titulo" maxlength="80" placeholder="Ej: Coordinador de emergencias">
+      </div>
+
+      <div class="form-grid">
+        <div class="campo">
+          <label for="vacante-horas">Horas por semana</label>
+          <input type="number" id="vacante-horas" min="1" max="40" placeholder="Ej: 10">
+        </div>
+        <div class="campo">
+          <label for="vacante-modalidad">Modalidad</label>
+          <select id="vacante-modalidad">
+            ${modalidadesVacante.map(m => `<option value="${m}">${m}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="vacante-descripcion">Descripción</label>
+        <textarea id="vacante-descripcion" rows="4" maxlength="500" placeholder="Describe las tareas que hará el voluntario"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-acciones">
+      <p id="vacante-mensaje" class="config-mensaje config-mensaje--error" role="alert"></p>
+      <button type="button" class="btn-borde" onclick="cerrarModal()">Cancelar</button>
+      <button type="button" class="btn-primario" onclick="guardarNuevaVacante()">Publicar vacante</button>
+    </div>
+  `);
+
+  document.getElementById('vacante-titulo').focus();
+}
+
+function guardarNuevaVacante() {
+  const titulo = document.getElementById('vacante-titulo').value.trim();
+  const horas = parseInt(document.getElementById('vacante-horas').value, 10);
+  const modalidad = document.getElementById('vacante-modalidad').value;
+  const descripcion = document.getElementById('vacante-descripcion').value.trim();
+  const mensaje = document.getElementById('vacante-mensaje');
+
+  if (titulo.length < 3) {
+    mensaje.textContent = 'Escribe un título (mínimo 3 caracteres).';
+    return;
+  }
+  if (!(horas >= 1 && horas <= 40)) {
+    mensaje.textContent = 'Las horas por semana deben estar entre 1 y 40.';
+    return;
+  }
+
+  const nuevoId = datosVacantes.reduce((mayor, v) => Math.max(mayor, v.id), 0) + 1;
+  datosVacantes.unshift({ id: nuevoId, titulo, horas, modalidad, descripcion, solicitudes: 0, estado: 'activa' });
+
+  cerrarModal();
+  renderVacantes();
+  // después: enviar la vacante al backend (POST /api/vacantes)
 }
 
 // ===== SOLICITUDES =====
