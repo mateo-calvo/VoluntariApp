@@ -633,8 +633,38 @@ function responderSolicitud(id, nuevoEstado) {
 }
 
 function verSolicitud(id) {
-  console.log("Ver detalle de la solicitud", id);
-  // pendiente: ventana o página con el detalle del voluntario
+  const s = datosSolicitudes.find(sol => sol.id === id);
+  const estado = estadosSolicitud[s.estado];
+  const pendiente = s.estado === 'pendiente';
+
+  abrirModal('Solicitud de voluntariado', `
+    <div class="detalle-persona">
+      ${s.foto
+        ? `<img src="${escaparHTML(s.foto)}" alt="${escaparHTML(s.nombre)}" class="solicitud-avatar solicitud-avatar--grande">`
+        : `<div class="solicitud-avatar solicitud-avatar--inicial solicitud-avatar--grande">${escaparHTML(iniciales(s.nombre))}</div>`}
+      <div>
+        <h4>${escaparHTML(s.nombre)}</h4>
+        <a href="mailto:${escaparHTML(s.email)}">${escaparHTML(s.email)}</a>
+      </div>
+    </div>
+
+    <dl class="detalle-datos">
+      <div class="detalle-fila"><dt>Vacante</dt><dd>${escaparHTML(s.puesto)}</dd></div>
+      <div class="detalle-fila"><dt>Disponibilidad</dt><dd>${escaparHTML(s.disponibilidad)}</dd></div>
+      <div class="detalle-fila"><dt>Fecha de solicitud</dt><dd>${escaparHTML(s.fecha)}</dd></div>
+      <div class="detalle-fila"><dt>Estado</dt><dd><span class="badge badge--${s.estado}">${iconos[estado.icono]}${estado.texto}</span></dd></div>
+    </dl>
+
+    <div class="modal-acciones">
+      ${pendiente ? `
+        <button type="button" class="btn-borde btn-borde--peligro" onclick="responderSolicitud(${s.id}, 'rechazada'); cerrarModal()">${iconos.rechazar}Rechazar</button>
+        <button type="button" class="btn-primario" onclick="responderSolicitud(${s.id}, 'aceptada'); cerrarModal()">${iconos.aceptar}Aceptar</button>
+      ` : `
+        <button type="button" class="btn-borde" onclick="cerrarModal()">Cerrar</button>
+      `}
+    </div>
+  `);
+  // después: pedir al backend el detalle completo (GET /api/solicitudes/:id)
 }
 
 // ===== VOLUNTARIOS =====
