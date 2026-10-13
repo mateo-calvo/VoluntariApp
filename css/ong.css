@@ -1181,7 +1181,8 @@ body {
   font-weight: 500;
 }
 
-.solicitud-card .badge {
+.solicitud-card .badge,
+.detalle-fila .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1189,7 +1190,8 @@ body {
   padding: 2px 8px;
 }
 
-.solicitud-card .badge svg {
+.solicitud-card .badge svg,
+.detalle-fila .badge svg {
   width: 12px;
   height: 12px;
 }
@@ -1287,6 +1289,54 @@ body.modal-abierto {
 .modal-acciones .btn-borde {
   padding: 10px 16px;
   font-size: 13px;
+}
+
+/* ===== DETALLE DE SOLICITUD (dentro de la ventana emergente) ===== */
+.detalle-persona {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.detalle-persona h4 {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.detalle-persona a {
+  font-size: 13px;
+  color: var(--ong-primario);
+  text-decoration: none;
+}
+
+.detalle-persona a:hover {
+  text-decoration: underline;
+}
+
+.detalle-datos {
+  margin: 0;
+}
+
+.detalle-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--ong-borde);
+  font-size: 13px;
+}
+
+.detalle-fila dt {
+  color: var(--ong-texto-suave);
+}
+
+.detalle-fila dd {
+  margin: 0;
+  font-weight: 500;
+  text-align: right;
 }
 
 /* ===== VACANTES ===== */
