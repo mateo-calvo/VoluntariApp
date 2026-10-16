@@ -11,8 +11,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorBox = document.getElementById('login-error');
 
     const params = new URLSearchParams(window.location.search);
-    const next = params.get('next') || 'mapa.html';
     const convId = params.get('conv');
+
+    // ?next= solo se acepta si es EXACTAMENTE una de estas páginas propias.
+    // Cualquier otra cosa (https://..., javascript:..., //otro-sitio) se ignora:
+    // evita redirigir a sitios externos o ejecutar código desde la URL.
+    const NEXT_PERMITIDOS = ['mapa.html', 'admin.html', 'mi-ong.html', 'participaciones.html'];
+    const nextParam = params.get('next');
+    const next = NEXT_PERMITIDOS.includes(nextParam) ? nextParam : null;
+
+    // Sin next válido, el destino depende del rol de la sesión.
+    const DESTINO_POR_ROL = {
+        admin: 'admin.html',
+        ong: 'mi-ong.html',
+        voluntario: 'mapa.html',
+    };
 
     // Cuentas demo del seed (solo para mostrar)
     const DEMO_ACCOUNTS = {
@@ -33,11 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
         errorBox.classList.remove('hidden');
     }
 
-    function redirectAfterLogin() {
+    function redirectAfterLogin(session) {
+        const destino = next || DESTINO_POR_ROL[session?.rol] || 'mapa.html';
         if (convId) {
-            window.location.href = `${next}?conv=${encodeURIComponent(convId)}`;
+            window.location.href = `${destino}?conv=${encodeURIComponent(convId)}`;
         } else {
-            window.location.href = next;
+            window.location.href = destino;
         }
     }
 
@@ -56,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function entrarConSesion(session) {
         sessionStorage.setItem('va_session', JSON.stringify(session));
-        redirectAfterLogin();
+        redirectAfterLogin(session);
     }
 
     // Toggle de visibilidad de la contraseña
@@ -114,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res.ok && data.token) {
                     sessionStorage.setItem('va_token', data.token);
                     sessionStorage.setItem('va_session', JSON.stringify(data.user));
-                    redirectAfterLogin();
+                    redirectAfterLogin(data.user);
                     return;
                 }
                 if (res.status === 401) {
