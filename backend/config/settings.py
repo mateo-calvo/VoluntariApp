@@ -91,6 +91,12 @@ DATABASES = {
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
 
+# DRF: errores siempre como { "message": "..." } (ver config/exceptions.py).
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'config.exceptions.json_message_exception_handler',
+}
+
+
 # CORS: solo el frontend servido por Live Server puede llamar a la API.
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5501',

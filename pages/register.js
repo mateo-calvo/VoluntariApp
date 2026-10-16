@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.');
 
                     try {
-                        await apiPost('/api/auth/register-voluntario', { nombre, email, password });
+                        await apiPost(API_URL + '/api/auth/register-voluntario', { nombre, email, password });
                     } catch (err) {
                         if (err instanceof TypeError) {
                             // Modo demo: guarda local
