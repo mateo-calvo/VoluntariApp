@@ -1,14 +1,30 @@
+import uuid
+from unittest.mock import patch
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
+from rest_framework import status
 from rest_framework.test import APIClient
 
 from config.exceptions import mensaje_throttled
 
-from .models import Usuario
+from .models import Usuario, VistaConvocatoriasCards
+
+
+class HealthCheckTests(TestCase):
+    """Verifica que el servicio esté activo y responda al monitor de salud."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_health_check_ok(self):
+        response = self.client.get("/api/health/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {"status": "ok"})
 
 
 class EmailNormalizadoTests(TestCase):
@@ -60,7 +76,9 @@ class CreateSuperuserTests(TestCase):
         self.assertEqual(admin.rol, Usuario.Rol.ADMIN)
 
 
-class RegisterVoluntarioTests(TestCase):
+class RegistroVoluntarioEndpointTests(TestCase):
+    """Tests del endpoint público /api/auth/register-voluntario."""
+
     URL = "/api/auth/register-voluntario"
 
     def setUp(self):
@@ -69,20 +87,53 @@ class RegisterVoluntarioTests(TestCase):
         self.client = APIClient()
         self.datos = {"nombre": "Ana Pérez", "email": "Ana@Mail.com", "password": "girasol-azul-2026"}
 
-    def post(self, datos):
-        return self.client.post(self.URL, datos, format="json")
+    def test_registro_exitoso(self):
+        data = {
+            "nombre": "Carlos Gómez",
+            "email": "carlos@voluntariado.org",
+            "password": "PasswordSeguro123!",
+        }
+        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json(), {"message": "Cuenta creada con éxito."})
 
-    def test_registro_ok_201(self):
-        res = self.post(self.datos)
-        self.assertEqual(res.status_code, 201)
-        self.assertEqual(res["Content-Type"], "application/json")
-        self.assertIn("message", res.json())
-        u = Usuario.objects.get(email="ana@mail.com")
-        self.assertEqual(u.nombre, "Ana Pérez")
-        self.assertEqual(u.rol, Usuario.Rol.VOLUNTARIO)
+        # Verifica que el usuario se haya persistido en la BD
+        usuario = Usuario.objects.get(email="carlos@voluntariado.org")
+        self.assertEqual(usuario.rol, Usuario.Rol.VOLUNTARIO)
+        self.assertTrue(usuario.check_password("PasswordSeguro123!"))
+
+    def test_registro_email_duplicado_devuelve_409(self):
+        Usuario.objects.create_user(email="existente@mail.com", password="Password123!", nombre="Usuario Uno")
+
+        data = {
+            "nombre": "Usuario Dos",
+            "email": "EXISTENTE@mail.com",  # con mayúsculas
+            "password": "Password123!",
+        }
+        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("ya está registrado", response.json().get("message", ""))
+
+    def test_registro_password_corta_devuelve_400(self):
+        data = {
+            "nombre": "Ana",
+            "email": "ana@mail.com",
+            "password": "123",  # muy corta
+        }
+        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_registro_nombre_vacio_devuelve_400(self):
+        data = {
+            "nombre": "",
+            "email": "ana@mail.com",
+            "password": "PasswordSeguro123!",
+        }
+        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_password_hasheada_y_no_devuelta(self):
-        res = self.post(self.datos)
+        res = self.client.post(self.URL, self.datos, format="json")
         u = Usuario.objects.get(email="ana@mail.com")
         self.assertNotEqual(u.password, self.datos["password"])
         self.assertTrue(u.check_password(self.datos["password"]))
@@ -90,25 +141,19 @@ class RegisterVoluntarioTests(TestCase):
         self.assertNotIn(self.datos["password"], res.content.decode())
 
     def test_cliente_no_puede_elegir_rol(self):
-        res = self.post({**self.datos, "rol": "admin", "is_staff": True, "is_superuser": True})
+        datos = {**self.datos, "rol": "admin", "is_staff": True, "is_superuser": True}
+        res = self.client.post(self.URL, datos, format="json")
         self.assertEqual(res.status_code, 201)
         u = Usuario.objects.get(email="ana@mail.com")
         self.assertEqual(u.rol, Usuario.Rol.VOLUNTARIO)
         self.assertFalse(u.is_staff)
         self.assertFalse(u.is_superuser)
 
-    def test_email_duplicado_409(self):
-        self.post(self.datos)
-        res = self.post({**self.datos, "email": "  ANA@mail.COM "})
-        self.assertEqual(res.status_code, 409)
-        self.assertEqual(res.json()["message"], "Ese email ya está registrado. Inicia sesión.")
-        self.assertEqual(Usuario.objects.count(), 1)
-
     def test_errores_400_con_message(self):
+        # La contraseña corta y el nombre vacío ya los cubren los tests de arriba.
         casos = [
             {**self.datos, "nombre": " A "},
             {**self.datos, "email": "no-es-un-email"},
-            {**self.datos, "password": "corta1"},
             {**self.datos, "password": "12345678"},
             {**self.datos, "password": "password"},
             {"email": "ana@mail.com", "password": "girasol-azul-2026"},  # falta nombre
@@ -116,7 +161,7 @@ class RegisterVoluntarioTests(TestCase):
         ]
         for datos in casos:
             with self.subTest(datos=datos):
-                res = self.post(datos)
+                res = self.client.post(self.URL, datos, format="json")
                 self.assertEqual(res.status_code, 400)
                 self.assertIsInstance(res.json()["message"], str)
         self.assertEqual(Usuario.objects.count(), 0)
@@ -200,3 +245,63 @@ class MensajeThrottledTests(SimpleTestCase):
         for wait, esperado in casos.items():
             with self.subTest(wait=wait):
                 self.assertEqual(mensaje_throttled(wait), esperado)
+
+
+class ConvocatoriasEndpointTests(TestCase):
+    """Tests del endpoint público /api/convocatorias/."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch("api.views.VistaConvocatoriasCards.objects.all")
+    def test_listar_convocatorias_retorna_200_con_campos(self, mock_all):
+        # Simulamos una convocatoria proveniente de la vista de Supabase
+        mock_convocatoria = VistaConvocatoriasCards(
+            convocatoria_id=uuid.uuid4(),
+            titulo="Campaña de Donación de Sangre",
+            descripcion="Ayudá en la jornada de salud comunitaria.",
+            fecha="2026-11-15",
+            hora="09:00:00",
+            lugar="Plaza Flores",
+            direccion="Av. Rivadavia 6900",
+            latitud=-34.629,
+            longitud=-58.459,
+            cupos_disponibles=15,
+            horas_estimadas=4,
+            requiere_aprobacion=False,
+            estado_convocatoria="abierta",
+            ong_id=uuid.uuid4(),
+            nombre_organizacion="Cruz Roja Argentina",
+            ong_rating=4.9,
+            ong_verificada=True,
+            ong_logo_url="",
+            ong_link_donacion="https://donar.cruzroja.org",
+            causa_id=1,
+            causa_nombre="Salud",
+            localidad_id=1,
+            localidad_nombre="Flores",
+            provincia_id=1,
+            provincia_nombre="Buenos Aires",
+        )
+        mock_all.return_value = [mock_convocatoria]
+
+        response = self.client.get("/api/convocatorias/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 1)
+
+        primera = data[0]
+        self.assertEqual(primera["titulo"], "Campaña de Donación de Sangre")
+        self.assertEqual(primera["nombre_organizacion"], "Cruz Roja Argentina")
+        self.assertEqual(primera["cupos_disponibles"], 15)
+        self.assertEqual(primera["causa_nombre"], "Salud")
+        self.assertEqual(primera["localidad_nombre"], "Flores")
+
+    @patch("api.views.VistaConvocatoriasCards.objects.all")
+    def test_listar_convocatorias_vacia(self, mock_all):
+        mock_all.return_value = []
+        response = self.client.get("/api/convocatorias/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), [])

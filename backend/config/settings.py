@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -49,7 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'usuarios',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -92,8 +93,15 @@ DATABASES = {
     )
 }
 
-# Usuario propio (usuarios.Usuario): login con email y campo rol.
-AUTH_USER_MODEL = 'usuarios.Usuario'
+# Base en memoria para tests: ultra rápida (milisegundos) y sin tocar Supabase
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+
+# Usuario propio (api.Usuario): login con email y campo rol.
+AUTH_USER_MODEL = 'api.Usuario'
 
 
 # DRF: errores siempre como { "message": "..." } (ver config/exceptions.py).
@@ -113,6 +121,8 @@ REST_FRAMEWORK = {
 
 # CORS: solo el frontend servido por Live Server puede llamar a la API.
 CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
     'http://127.0.0.1:5501',
     'http://localhost:5501',
 ]
