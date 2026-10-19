@@ -1,21 +1,6 @@
 // mapa.js — Mapa público de convocatorias con Leaflet + OSM
-// Fuente primaria: API (server/). Fallback demo: seed local + ONGs de va_ongs_demo.
+// Conectado a la API de Django (Supabase)
 // Participar ("Quiero participar") exige sesión de voluntario.
-
-const SEED = [
-  { id: 1, nombre: "Cruz Roja Argentina — Palermo", barrio: "Palermo, CABA", categoria: "salud", emoji: "🚑", iconBg: "#c0392b", lat: -34.5731, lng: -58.422, voluntarios: 541, rating: 4.9, distancia: 4.8, cupos: 12, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Atención en emergencias, primeros auxilios y campañas de donación de sangre en Palermo.", necesidades: "Primeros auxilios, logística" },
-  { id: 2, nombre: "UNICEF Argentina — Recoleta", barrio: "Recoleta, CABA", categoria: "infancias", emoji: "👶", iconBg: "#2471a3", lat: -34.5884, lng: -58.393, voluntarios: 312, rating: 4.8, distancia: 2.0, cupos: 8, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Programas de infancia, educación y protección de derechos de niños y adolescentes.", necesidades: "Apoyo escolar, difusión" },
-  { id: 3, nombre: "Greenpeace Argentina — San Telmo", barrio: "San Telmo, CABA", categoria: "medioambiente", emoji: "🌿", iconBg: "#1e8449", lat: -34.6214, lng: -58.3735, voluntarios: 189, rating: 4.7, distancia: 2.1, cupos: 5, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Activismo ambiental, limpieza de espacios verdes y concientización climática.", necesidades: "Limpiezas, concientización" },
-  { id: 4, nombre: "Cáritas Buenos Aires — Flores", barrio: "Flores, CABA", categoria: "desarrollo-social", emoji: "🤲", iconBg: "#ca6f1e", lat: -34.629, lng: -58.459, voluntarios: 423, rating: 4.9, distancia: 8.2, cupos: 15, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Apoyo alimentario, ropero comunitario y acompañamiento a familias vulnerables.", necesidades: "Cocina, ropero, acompañamiento" },
-  { id: 5, nombre: "Banco de Alimentos — La Boca", barrio: "La Boca, CABA", categoria: "desarrollo-social", emoji: "🍎", iconBg: "#cb4335", lat: -34.6345, lng: -58.3632, voluntarios: 298, rating: 4.8, distancia: 4.0, cupos: 20, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Recuperación y distribución de alimentos a comedores y merenderos.", necesidades: "Clasificación, reparto" },
-  { id: 6, nombre: "Médicos Sin Fronteras — Barracas", barrio: "Barracas, CABA", categoria: "salud", emoji: "💊", iconBg: "#c0392b", lat: -34.6475, lng: -58.3853, voluntarios: 210, rating: 4.8, distancia: 5.3, cupos: 7, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Atención médica humanitaria y operativos de salud barriales.", necesidades: "Salud, administración" },
-  { id: 7, nombre: "Fundación Sí — Belgrano", barrio: "Belgrano, CABA", categoria: "desarrollo-social", emoji: "🏠", iconBg: "#ca6f1e", lat: -34.5627, lng: -58.4568, voluntarios: 176, rating: 4.7, distancia: 6.5, cupos: 10, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Inclusión social, residencias universitarias y recorridas nocturnas.", necesidades: "Recorridas, cocina" },
-  { id: 8, nombre: "TECHO Argentina — Villa Crespo", barrio: "Villa Crespo, CABA", categoria: "desarrollo-social", emoji: "🏡", iconBg: "#1A7A5E", lat: -34.599, lng: -58.445, voluntarios: 342, rating: 4.9, distancia: 3.4, cupos: 18, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Construcción de viviendas de emergencia junto a familias de barrios populares.", necesidades: "Construcción, relevamiento" },
-  { id: 9, nombre: "Educar 2050 — Retiro", barrio: "Retiro, CABA", categoria: "educacion", emoji: "📚", iconBg: "#7d3c98", lat: -34.5917, lng: -58.3731, voluntarios: 154, rating: 4.6, distancia: 1.5, cupos: 6, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Apoyo escolar, tutorías y programas de terminalidad educativa.", necesidades: "Tutorías" },
-  { id: 10, nombre: "Amnistía Internacional — Puerto Madero", barrio: "Puerto Madero, CABA", categoria: "derechos", emoji: "🕊️", iconBg: "#2471a3", lat: -34.6083, lng: -58.3625, voluntarios: 132, rating: 4.7, distancia: 3.0, cupos: 4, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Defensa de derechos humanos, investigación y campañas globales.", necesidades: "Investigación, firmas" },
-  { id: 11, nombre: "Fundación Huella — La Boca Sur", barrio: "La Boca, CABA", categoria: "medioambiente", emoji: "🐾", iconBg: "#1e8449", lat: -34.6275, lng: -58.358, voluntarios: 98, rating: 4.5, distancia: 4.6, cupos: 9, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Rescate animal, castraciones y adopción responsable.", necesidades: "Tránsito, traslados" },
-  { id: 12, nombre: "Sonrisas Solidarias — Flores Sur", barrio: "Flores Sur, CABA", categoria: "infancias", emoji: "🧸", iconBg: "#7d3c98", lat: -34.645, lng: -58.445, voluntarios: 121, rating: 4.6, distancia: 9.1, cupos: 11, verificada: true, web: "", linkPago: "", contacto: "", descripcion: "Jornadas lúdicas y apoyo a comedores infantiles los fines de semana.", necesidades: "Juegos, cocina" },
-];
 
 const CABA_CENTER = [-34.6037, -58.3816];
 const CATEGORIA_LABELS = {
@@ -26,7 +11,35 @@ const CATEGORIA_LABELS = {
   'infancias': 'Infancias y juventudes',
   'derechos': 'Derechos humanos',
 };
-const state = { search: "", categoria: "todas", maxDistancia: 0, selectedId: null, items: [...SEED] };
+const CATEGORIA_ESTILOS = {
+  'salud': { emoji: '🚑', iconBg: '#c0392b' },
+  'infancias': { emoji: '👶', iconBg: '#2471a3' },
+  'medioambiente': { emoji: '🌿', iconBg: '#1e8449' },
+  'desarrollo-social': { emoji: '🤲', iconBg: '#ca6f1e' },
+  'educacion': { emoji: '📚', iconBg: '#7d3c98' },
+  'derechos': { emoji: '🕊️', iconBg: '#2471a3' },
+};
+
+function normalizarCategoria(causa) {
+  if (!causa) return 'desarrollo-social';
+  const c = causa.toLowerCase();
+  if (c.includes('salud')) return 'salud';
+  if (c.includes('educa')) return 'educacion';
+  if (c.includes('ambiente') || c.includes('animal') || c.includes('ecolog')) return 'medioambiente';
+  if (c.includes('infan') || c.includes('niñ') || c.includes('joven')) return 'infancias';
+  if (c.includes('derecho') || c.includes('human')) return 'derechos';
+  return 'desarrollo-social';
+}
+
+const state = {
+  search: "",
+  categoria: "todas",
+  maxDistancia: 0,
+  selectedId: null,
+  items: [],
+  isLoading: true,
+  error: null,
+};
 
 function haversineKm(a, b, c, d) {
   const R = 6371;
@@ -88,78 +101,62 @@ function toast(msg, type = '') {
   toast._t = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
-// ---- Carga de datos: API primero, demo local como respaldo ----
+// ---- Carga de datos: API de Django (Supabase) con manejo de errores ----
 async function loadItems() {
+  state.isLoading = true;
+  state.error = null;
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 4000);
-    const res = await fetch('/api/convocatorias', { signal: ctrl.signal });
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+
+    const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+    const res = await fetch(`${baseUrl}/api/convocatorias/`, { signal: ctrl.signal });
     clearTimeout(timer);
-    if (!res.ok) throw new Error('API no disponible');
+
+    if (!res.ok) throw new Error(`El servidor respondió con código ${res.status}`);
     const data = await res.json();
-    if (Array.isArray(data) && data.length) {
+    if (Array.isArray(data)) {
       state.items = data.map(mapApiItem);
+      state.isLoading = false;
       return;
     }
-    throw new Error('Sin datos');
-  } catch {
-    state.items = [...SEED, ...loadDemoOngs()];
+    throw new Error('Respuesta inválida');
+  } catch (err) {
+    console.error('Error al cargar convocatorias:', err);
+    state.items = [];
+    state.isLoading = false;
+    state.error = 'No pudimos cargar las convocatorias desde el servidor.';
+    toast('No pudimos conectar con el servidor. Reintentá nuevamente.', 'error');
   }
 }
 
+// Adaptador: traduce las columnas de vista_convocatorias_cards al formato del mapa
 function mapApiItem(c) {
-  const ong = c.ong || {};
-  return {
-    id: c._id || c.id,
-    nombre: c.titulo || ong.nombrePublico || 'Convocatoria',
-    barrio: c.barrio || ong.barrio || '',
-    categoria: c.categoria || ong.categoria || 'desarrollo-social',
-    emoji: c.emoji || '🤝',
-    iconBg: c.iconBg || '#1A7A5E',
-    lat: c.lat ?? ong.lat ?? CABA_CENTER[0],
-    lng: c.lng ?? ong.lng ?? CABA_CENTER[1],
-    voluntarios: c.voluntarios ?? 0,
-    rating: c.rating ?? 5.0,
-    distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], c.lat ?? CABA_CENTER[0], c.lng ?? CABA_CENTER[1]),
-    cupos: c.cuposDisponibles ?? c.cupos ?? 0,
-    verificada: ong.verificada ?? true,
-    web: ong.web || c.web || '',
-    linkPago: ong.linkPago || '',
-    contacto: ong.contacto || '',
-    descripcion: c.descripcion || ong.descripcion || '',
-    necesidades: c.necesidades || ong.necesidades || '',
-  };
-}
+  const cat = normalizarCategoria(c.causa_nombre || c.categoria);
+  const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
+  const lat = parseFloat(c.latitud ?? c.lat) || CABA_CENTER[0];
+  const lng = parseFloat(c.longitud ?? c.lng) || CABA_CENTER[1];
 
-// ONGs registradas en modo demo (register sin backend)
-function loadDemoOngs() {
-  try {
-    const ongs = JSON.parse(localStorage.getItem('va_ongs_demo') || '[]');
-    return ongs
-      .filter((o) => o.estado !== 'rechazada')
-      .map((o, i) => ({
-      id: `demo-${i}-${(o.cuit || i).toString().replace(/\D/g, '')}`,
-      nombre: o.nombrePublico || o.razonSocial,
-      barrio: o.barrio,
-      categoria: o.categoria || 'desarrollo-social',
-      emoji: '🏢',
-      iconBg: '#1A7A5E',
-      lat: o.lat ?? CABA_CENTER[0],
-      lng: o.lng ?? CABA_CENTER[1],
-      voluntarios: 0,
-      rating: 5.0,
-      distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], o.lat ?? CABA_CENTER[0], o.lng ?? CABA_CENTER[1]),
-      cupos: o.cupos ?? 5,
-      verificada: o.verificada === true,
-      web: o.web || '',
-      linkPago: o.linkPago || '',
-      contacto: o.contacto || '',
-      descripcion: o.descripcion || '',
-      necesidades: o.necesidades || '',
-    }));
-  } catch {
-    return [];
-  }
+  return {
+    id: c.convocatoria_id || c.id,
+    nombre: c.nombre_organizacion ? `${c.nombre_organizacion} — ${c.titulo}` : (c.titulo || 'Convocatoria'),
+    barrio: [c.localidad_nombre, c.provincia_nombre].filter(Boolean).join(', ') || c.lugar || c.direccion || '',
+    categoria: cat,
+    emoji: estilo.emoji,
+    iconBg: estilo.iconBg,
+    lat: lat,
+    lng: lng,
+    voluntarios: c.voluntarios ?? 0,
+    rating: parseFloat(c.ong_rating || 5.0),
+    distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], lat, lng),
+    cupos: c.cupos_disponibles ?? c.cupos ?? 0,
+    verificada: c.ong_verificada ?? true,
+    web: c.web || '',
+    linkPago: c.ong_link_donacion || '',
+    contacto: c.direccion || c.lugar || '',
+    descripcion: c.descripcion || '',
+    necesidades: c.necesidades || '',
+  };
 }
 
 // ---- Mapa Leaflet ----
@@ -220,10 +217,50 @@ function renderMarkers(list) {
 
 function renderList(list) {
   const container = document.getElementById("ong-list");
-  document.getElementById("results-count").textContent =
+  const countEl = document.getElementById("results-count");
+  const statConvs = document.getElementById("stat-convs");
+  const statCupos = document.getElementById("stat-cupos");
+
+  if (state.isLoading) {
+    if (countEl) countEl.textContent = "Cargando...";
+    if (statConvs) statConvs.textContent = "--";
+    if (statCupos) statCupos.textContent = "--";
+    container.innerHTML = `
+      <div style="padding: 40px 18px; text-align: center; color: #5A7A72;">
+        <p style="font-size: 26px; margin-bottom: 8px;">⏳</p>
+        <p style="font-size: 15px; font-weight: 600;">Cargando...</p>
+      </div>`;
+    return;
+  }
+
+  if (state.error) {
+    if (countEl) countEl.textContent = "Error al conectar";
+    if (statConvs) statConvs.textContent = "0";
+    if (statCupos) statCupos.textContent = "0";
+    container.innerHTML = `
+      <div style="padding: 32px 18px; text-align: center;">
+        <p style="font-size: 30px; margin-bottom: 10px;">⚠️</p>
+        <p style="font-size: 15px; font-weight: 700; color: #c0392b; margin-bottom: 6px;">No se pudieron cargar las convocatorias</p>
+        <p style="font-size: 13px; color: #5A7A72; margin-bottom: 16px;">Hubo un problema al conectar con el servidor.</p>
+        <button id="btn-reintentar" class="btn-primary" style="padding: 8px 20px; font-size: 13px; border-radius: 9999px; cursor: pointer;">
+          ↻ Reintentar
+        </button>
+      </div>`;
+
+    container.querySelector("#btn-reintentar")?.addEventListener("click", async () => {
+      state.isLoading = true;
+      state.error = null;
+      refresh(false);
+      await loadItems();
+      refresh(false);
+    });
+    return;
+  }
+
+  if (countEl) countEl.textContent =
     `${list.length} convocatoria${list.length === 1 ? '' : 's'} abierta${list.length === 1 ? '' : 's'}`;
-  document.getElementById("stat-convs").textContent = list.length;
-  document.getElementById("stat-cupos").textContent = list.reduce((acc, o) => acc + o.cupos, 0);
+  if (statConvs) statConvs.textContent = list.length;
+  if (statCupos) statCupos.textContent = list.reduce((acc, o) => acc + o.cupos, 0);
 
   if (!list.length) {
     container.innerHTML = `<p style="padding:18px;font-size:14px;color:#5A7A72">Sin resultados. Probá con otra búsqueda o filtro.</p>`;
@@ -498,9 +535,10 @@ document.getElementById("sidebar-close").addEventListener("click", () => sidebar
 document.getElementById("fab-list").addEventListener("click", () => sidebar.classList.toggle("open"));
 if (window.innerWidth > 900) sidebar.classList.add("open");
 
-// Inicio: header + datos (API o demo) + retorno ?conv=
+// Inicio: header + datos reales (API) + retorno ?conv=
 (async function init() {
   renderHeader();
+  refresh(false); // Muestra estado de carga de inmediato
   await loadItems();
   refresh(false);
   const convId = new URLSearchParams(window.location.search).get('conv');
