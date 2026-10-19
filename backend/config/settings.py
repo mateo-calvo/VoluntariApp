@@ -107,6 +107,15 @@ AUTH_USER_MODEL = 'api.Usuario'
 # DRF: errores siempre como { "message": "..." } (ver config/exceptions.py).
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'config.exceptions.json_message_exception_handler',
+    # Límite de intentos por IP. 20/hora y no menos: en una demo todo el curso
+    # comparte el wifi, o sea la misma IP.
+    'DEFAULT_THROTTLE_RATES': {
+        'registro': '20/hour',
+    },
+    # 0 = usar la IP real de la conexión e ignorar X-Forwarded-For, que lo
+    # escribe el cliente y permitiría saltear el límite. Al desplegar detrás
+    # de un proxy, poner acá cuántos proxies hay delante de Django.
+    'NUM_PROXIES': 0,
 }
 
 

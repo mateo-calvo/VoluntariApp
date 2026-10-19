@@ -1,11 +1,12 @@
 from django.db import IntegrityError
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .models import Usuario, VistaConvocatoriasCards
 from .serializers import RegistroVoluntarioSerializer, VistaConvocatoriasCardsSerializer
+from .throttles import RegistroThrottle
 
 MSG_EMAIL_EXISTE = "Ese email ya está registrado. Inicia sesión."
 
@@ -23,6 +24,7 @@ def primer_error(errores):
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([RegistroThrottle])  # máx. 20 intentos por hora por IP (ver settings.py)
 def register_voluntario(request):
     """Registro público de un voluntario."""
     serializer = RegistroVoluntarioSerializer(data=request.data)
