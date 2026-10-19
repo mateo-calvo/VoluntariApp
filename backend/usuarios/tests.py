@@ -1,8 +1,12 @@
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APIClient
+
+from config.exceptions import mensaje_throttled
 
 from .models import Usuario
 
@@ -60,6 +64,8 @@ class RegisterVoluntarioTests(TestCase):
     URL = "/api/auth/register-voluntario"
 
     def setUp(self):
+        # El contador del throttling vive en la caché y sobrevive entre tests: lo reiniciamos.
+        cache.clear()
         self.client = APIClient()
         self.datos = {"nombre": "Ana Pérez", "email": "Ana@Mail.com", "password": "girasol-azul-2026"}
 
@@ -126,3 +132,71 @@ class RegisterVoluntarioTests(TestCase):
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res["Content-Type"], "application/json")
         self.assertIn("message", res.json())
+
+
+class RegisterThrottlingTests(TestCase):
+    """Límite de intentos por IP en el registro (frena la enumeración de emails)."""
+
+    URL = "/api/auth/register-voluntario"
+    # Se lee de settings ("20/hour" → 20) para que los tests sigan valiendo si cambia el límite.
+    LIMITE = int(settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["registro"].split("/")[0])
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+
+    def post(self, datos=None, **extra):
+        # Datos vacíos → 400: gastan intentos sin crear usuarios.
+        return self.client.post(self.URL, datos or {}, format="json", **extra)
+
+    def agotar_limite(self, **extra):
+        for _ in range(self.LIMITE):
+            self.assertEqual(self.post(**extra).status_code, 400)
+
+    def test_pasado_el_limite_responde_429_con_message(self):
+        self.agotar_limite()
+        res = self.post()
+        self.assertEqual(res.status_code, 429)
+        self.assertEqual(res["Content-Type"], "application/json")
+        self.assertTrue(res.json()["message"].startswith("Demasiados intentos."))
+        self.assertIn("Retry-After", res)
+
+    def test_429_no_crea_usuario(self):
+        self.agotar_limite()
+        datos = {"nombre": "Ana Pérez", "email": "ana@mail.com", "password": "girasol-azul-2026"}
+        res = self.post(datos)
+        self.assertEqual(res.status_code, 429)
+        self.assertFalse(Usuario.objects.exists())
+
+    def test_429_no_revela_si_el_email_existe(self):
+        Usuario.objects.create_user(email="ana@mail.com", password="girasol-azul-2026", nombre="Ana")
+        self.agotar_limite()
+        res = self.post({"nombre": "Ana", "email": "ana@mail.com", "password": "girasol-azul-2026"})
+        self.assertEqual(res.status_code, 429)  # no 409: bloqueado no dice nada del email
+        self.assertNotIn("registrado", res.json()["message"])
+
+    def test_cambiar_x_forwarded_for_no_saltea_el_limite(self):
+        # Un atacante manda una "IP" inventada distinta en cada pedido.
+        for i in range(self.LIMITE):
+            self.assertEqual(self.post(HTTP_X_FORWARDED_FOR=f"10.0.0.{i}").status_code, 400)
+        res = self.post(HTTP_X_FORWARDED_FOR="10.0.0.250")
+        self.assertEqual(res.status_code, 429)
+
+    def test_el_limite_es_por_ip(self):
+        self.agotar_limite(REMOTE_ADDR="192.168.0.10")
+        self.assertEqual(self.post(REMOTE_ADDR="192.168.0.10").status_code, 429)
+        self.assertEqual(self.post(REMOTE_ADDR="192.168.0.20").status_code, 400)
+
+
+class MensajeThrottledTests(SimpleTestCase):
+    def test_redondea_minutos_para_arriba(self):
+        casos = {
+            None: "Demasiados intentos. Intenta de nuevo más tarde.",
+            0.4: "Demasiados intentos. Intenta de nuevo en 1 minuto.",
+            60: "Demasiados intentos. Intenta de nuevo en 1 minuto.",
+            61: "Demasiados intentos. Intenta de nuevo en 2 minutos.",
+            3598: "Demasiados intentos. Intenta de nuevo en 60 minutos.",
+        }
+        for wait, esperado in casos.items():
+            with self.subTest(wait=wait):
+                self.assertEqual(mensaje_throttled(wait), esperado)
