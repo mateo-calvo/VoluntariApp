@@ -83,7 +83,6 @@ const datosDonaciones = {
   recaudado: 23450,
   objetivo: 50000,
   metodos: [
-    { id: "cbu",   etiqueta: "CBU — Transferencia bancaria",        valor: "0209999900000000000001",    icono: "tarjeta", mono: true },
     { id: "alias", etiqueta: "Mercado Pago — Alias de cuenta",      valor: "voluntarios.cruzroja",      logo: "alias",    letra: "" },
     { id: "link",  etiqueta: "Mercado Pago Link — Enlace de pago",  valor: "mpago.la/cruzrojaargentina", logo: "link",     letra: "P" }
   ]
