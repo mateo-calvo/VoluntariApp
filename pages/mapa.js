@@ -138,25 +138,25 @@ function loadDemoOngs() {
     return ongs
       .filter((o) => o.estado !== 'rechazada')
       .map((o, i) => ({
-      id: `demo-${i}-${(o.cuit || i).toString().replace(/\D/g, '')}`,
-      nombre: o.nombrePublico || o.razonSocial,
-      barrio: o.barrio,
-      categoria: o.categoria || 'desarrollo-social',
-      emoji: '🏢',
-      iconBg: '#1A7A5E',
-      lat: o.lat ?? CABA_CENTER[0],
-      lng: o.lng ?? CABA_CENTER[1],
-      voluntarios: 0,
-      rating: 5.0,
-      distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], o.lat ?? CABA_CENTER[0], o.lng ?? CABA_CENTER[1]),
-      cupos: o.cupos ?? 5,
-      verificada: o.verificada === true,
-      web: o.web || '',
-      linkPago: o.linkPago || '',
-      contacto: o.contacto || '',
-      descripcion: o.descripcion || '',
-      necesidades: o.necesidades || '',
-    }));
+        id: `demo-${i}-${(o.cuit || i).toString().replace(/\D/g, '')}`,
+        nombre: o.nombrePublico || o.razonSocial,
+        barrio: o.barrio,
+        categoria: o.categoria || 'desarrollo-social',
+        emoji: '🏢',
+        iconBg: '#1A7A5E',
+        lat: o.lat ?? CABA_CENTER[0],
+        lng: o.lng ?? CABA_CENTER[1],
+        voluntarios: 0,
+        rating: 5.0,
+        distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], o.lat ?? CABA_CENTER[0], o.lng ?? CABA_CENTER[1]),
+        cupos: o.cupos ?? 5,
+        verificada: o.verificada === true,
+        web: o.web || '',
+        linkPago: o.linkPago || '',
+        contacto: o.contacto || '',
+        descripcion: o.descripcion || '',
+        necesidades: o.necesidades || '',
+      }));
   } catch {
     return [];
   }
