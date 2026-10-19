@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -91,6 +92,13 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+
+# Base en memoria para tests: ultra rápida (milisegundos) y sin tocar Supabase
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
 
 # Usuario propio (api.Usuario): login con email y campo rol.
 AUTH_USER_MODEL = 'api.Usuario'
