@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'usuarios',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -92,8 +92,8 @@ DATABASES = {
     )
 }
 
-# Usuario propio (usuarios.Usuario): login con email y campo rol.
-AUTH_USER_MODEL = 'usuarios.Usuario'
+# Usuario propio (api.Usuario): login con email y campo rol.
+AUTH_USER_MODEL = 'api.Usuario'
 
 
 # DRF: errores siempre como { "message": "..." } (ver config/exceptions.py).

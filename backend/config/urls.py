@@ -22,5 +22,5 @@ from .views import health
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health),
-    path('api/auth/', include('usuarios.urls')),
+    path('api/', include('api.urls')),
 ]
