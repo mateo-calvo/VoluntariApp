@@ -117,12 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Intento contra la API real (con timeout: en hosting estático
                 // o pendrive falla rápido y se usa el modo demo local)
-                const res = await fetch('/api/auth/login', {
+                const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
                     signal: AbortSignal.timeout(5000),
                 });
+
                 const data = await res.json().catch(() => ({}));
 
                 if (res.ok && data.token) {
@@ -143,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 throw new Error(data.message || 'Respuesta inválida del servidor');
-                } catch (err) {
+            } catch (err) {
                 // Modo demo (sin backend): cualquier cuenta válida entra
                 try {
                     const demo = demoLogin(email, password);

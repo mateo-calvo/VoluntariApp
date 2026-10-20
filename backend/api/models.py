@@ -102,3 +102,48 @@ class VistaConvocatoriasCards(models.Model):
 
     def __str__(self):
         return f"{self.titulo} ({self.nombre_organizacion})"
+
+
+class Provincia(models.Model):
+    id = models.SmallIntegerField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = "provincias"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
+class Localidad(models.Model):
+    id = models.IntegerField(primary_key=True)
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.DO_NOTHING,
+        db_column="provincia_id",
+        related_name="localidades",
+    )
+    nombre = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = "localidades"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.provincia.nombre})"
+
+class Administrador(models.Model):
+    id = models.UUIDField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+    apellido = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = "administradores"
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} (Admin)"

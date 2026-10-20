@@ -431,6 +431,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
     gap: 14px;
 }
 
+.form-row-double > .form-group {
+    flex: 1;
+    min-width: 0;
+}
+
 .form-row-double .form-group-grow {
     flex: 1;
 }
