@@ -18,6 +18,7 @@
                 <li><a href="#">Cómo funciona</a></li>
                 <li><a href="#">ONGs</a></li>
                 <li><a href="#">Causas</a></li>
+                <li><button type="button" class="btn btn-donar" id="donar-open" aria-haspopup="dialog">Donar</button></li>
             </ul>
             <div class="header-auth-container">
                 <a href="./pages/login.html" class="btn btn-login">Iniciar Sesión</a>
@@ -194,6 +195,57 @@
             </div>
         </div>
     </footer>
+
+    <!-- MODAL DONAR -->
+    <dialog class="donar-modal" id="donar-modal" aria-labelledby="donar-title">
+        <form class="donar-form" id="donar-form" novalidate>
+            <button type="button" class="donar-close" data-donar-close aria-label="Cerrar">×</button>
+
+            <div class="donar-body" id="donar-body">
+                <h2 class="donar-title" id="donar-title">Apoyá a VoluntariApp</h2>
+                <p class="donar-description">Tu donación ayuda a que más voluntarios y organizaciones se conecten.
+                    Elegí cómo querés aportar.</p>
+
+                <div class="donar-toggle" role="group" aria-label="Tipo de donación">
+                    <button type="button" class="donar-toggle-btn is-active" data-tipo="unica"
+                        aria-pressed="true">Una vez</button>
+                    <button type="button" class="donar-toggle-btn" data-tipo="mensual"
+                        aria-pressed="false">Todos los meses</button>
+                </div>
+
+                <div class="donar-amounts" role="group" aria-label="Monto">
+                    <button type="button" class="donar-amount" data-monto="2000">$2.000</button>
+                    <button type="button" class="donar-amount is-active" data-monto="5000">$5.000</button>
+                    <button type="button" class="donar-amount" data-monto="10000">$10.000</button>
+                    <button type="button" class="donar-amount" data-monto="20000">$20.000</button>
+                </div>
+
+                <label class="donar-custom" for="donar-custom-input">
+                    <span>Otro monto</span>
+                    <div class="donar-custom-field">
+                        <span class="donar-custom-prefix">$</span>
+                        <input type="number" id="donar-custom-input" inputmode="numeric" min="1000" step="100"
+                            placeholder="Mínimo $1.000">
+                    </div>
+                </label>
+
+                <p class="donar-hint" id="donar-hint">Se cobra una sola vez.</p>
+                <p class="donar-error" id="donar-error" role="alert" hidden></p>
+
+                <button type="submit" class="btn btn-register donar-submit" id="donar-submit">Donar $5.000</button>
+            </div>
+
+            <div class="donar-success" id="donar-success" hidden>
+                <h2 class="donar-title">Completá tu donación</h2>
+                <p class="donar-description" id="donar-success-text"></p>
+                <a href="#" class="btn btn-register donar-submit" id="donar-mp-link" target="_blank"
+                    rel="noopener noreferrer">Ir a Mercado Pago</a>
+                <button type="button" class="btn btn-login donar-submit" data-donar-close>Cerrar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="js/donar.js" defer></script>
 </body>
 
 </html>
