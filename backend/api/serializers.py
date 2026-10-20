@@ -63,6 +63,3 @@ class LocalidadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Localidad
         fields = ["id", "nombre", "provincia_id"]
-
-
-

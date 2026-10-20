@@ -107,7 +107,7 @@ async function loadItems() {
   state.error = null;
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const timer = setTimeout(() => ctrl.abort(), 15000);
 
     const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
     const res = await fetch(`${baseUrl}/api/convocatorias/`, { signal: ctrl.signal });
