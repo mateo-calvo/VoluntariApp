@@ -252,7 +252,9 @@ class ConvocatoriasEndpointTests(TestCase):
             direccion="Av. Rivadavia 6900",
             latitud=-34.629,
             longitud=-58.459,
-            cupos_disponibles=15,
+            cupos_totales=15,
+            inscriptos_actuales=3,
+            lugares_libres=12,
             horas_estimadas=4,
             requiere_aprobacion=False,
             estado_convocatoria="abierta",
@@ -281,7 +283,9 @@ class ConvocatoriasEndpointTests(TestCase):
         primera = data[0]
         self.assertEqual(primera["titulo"], "Campaña de Donación de Sangre")
         self.assertEqual(primera["nombre_organizacion"], "Cruz Roja Argentina")
-        self.assertEqual(primera["cupos_disponibles"], 15)
+        self.assertEqual(primera["cupos_totales"], 15)
+        self.assertEqual(primera["lugares_libres"], 12)
+        self.assertEqual(primera["inscriptos_actuales"], 3)
         self.assertEqual(primera["causa_nombre"], "Salud")
         self.assertEqual(primera["localidad_nombre"], "Flores")
 
