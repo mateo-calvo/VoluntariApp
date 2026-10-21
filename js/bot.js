@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Inyección automática del HTML del Chat
+  // Inyección automática del HTML del Chat con preguntas rápidas actualizadas para ONGs y Voluntarios
   const botHTML = `
     <!-- Botón flotante -->
     <button id="voliToggleBtn" class="bot-trigger-btn">
@@ -35,15 +35,15 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="voli-msg-avatar">🤖</div>
           <div>
             <div class="voli-msg-bubble">
-              ¡Hola! 👋 Soy <strong>TeAyudoIA</strong>, el asistente de VoluntariApp. Estoy aquí para guiarte. ¿En qué puedo ayudarte?
+              ¡Hola! 👋 Soy <strong>TeAyudoIA</strong>, tu asistente en VoluntariApp. ¿Cómo puedo ayudarte hoy?
             </div>
             <div class="voli-msg-time">12:22</div>
             
             <div class="voli-chips-container" id="voliChips">
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Qué es VoluntariApp?')">¿Qué es VoluntariApp?</button>
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo me registro?')">¿Cómo me registro?</button>
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo funciona el mapa?')">¿Cómo funciona el mapa?</button>
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo dono?')">¿Cómo dono?</button>
+              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo publicar una convocatoria?')">¿Cómo publicar convocatoria?</button>
+              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo me postulo a un voluntariado?')">¿Cómo postularme?</button>
+              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Qué requisitos piden las ONGs?')">Requisitos para ONGs</button>
+              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo contacto a una organización?')">Contactar ONG</button>
             </div>
           </div>
         </div>
@@ -68,6 +68,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("voliSendBtn");
   const input = document.getElementById("voliInput");
   const chatBody = document.getElementById("voliChatBody");
+  const resetBtn = document.getElementById("voliResetBtn");
+
+  // Manejo de almacenamiento independiente por sección (ONG vs Voluntario)
+  const esVistaOng = window.location.pathname.includes('ong');
+  const claveSesion = esVistaOng ? 'chat_historial_ong' : 'chat_historial_voluntario';
+
+  // Cargar historial previo de la sesión actual si existe
+  const historialGuardado = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
+  if (historialGuardado.length > 0) {
+    chatBody.innerHTML = ""; // Limpiamos el saludo inicial por defecto si hay historial guardado
+    historialGuardado.forEach(msg => {
+      agregarMensajeUI(msg.remitente, msg.texto, msg.hora, false);
+    });
+  }
 
   // Alternar apertura/cierre
   function toggleChat() {
@@ -81,6 +95,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toggleBtn.addEventListener("click", toggleChat);
   closeBtn.addEventListener("click", toggleChat);
+
+  // Botón para reiniciar / limpiar chat y memoria de la sesión
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      sessionStorage.removeItem(claveSesion);
+      chatBody.innerHTML = `
+        <div class="voli-msg-row bot">
+          <div class="voli-msg-avatar">🤖</div>
+          <div>
+            <div class="voli-msg-bubble">
+              ¡Chat reiniciado! ¿En qué puedo ayudarte ahora?
+            </div>
+            <div class="voli-msg-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        </div>
+      `;
+    });
+  }
 
   // Activar botón de enviar cuando hay texto
   input.addEventListener("input", () => {
@@ -109,21 +141,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Petición al Backend
     try {
-      const res = await fetch("http://localhost:3000/api/chat", {
+      const res = await fetch("http://127.0.0.1:8000/api/chat/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mensaje: texto }),
+        body: JSON.stringify({ 
+          mensaje: texto,
+          vista: esVistaOng ? "ong" : "voluntario" // enviamos la vista actual al backend
+        }),
       });
 
       const data = await res.json();
-      agregarMensajeUI("bot", data.respuesta || "No pude procesar tu solicitud.");
+      
+      // Limpiamos cualquier asterisco o formato markdown residual de la respuesta
+      const textoLimpio = limpiarMarkdown(data.respuesta || data.error || "No pude procesar tu solicitud.");
+      agregarMensajeUI("bot", textoLimpio);
+      
     } catch (err) {
       agregarMensajeUI("bot", "Ocurrió un error al conectar con TeAyudoIA. Inténtalo más tarde.");
     }
   }
 
-  function agregarMensajeUI(remitente, texto) {
-    const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Función para remover asteriscos y limpiar formato Markdown no deseado
+  function limpiarMarkdown(texto) {
+    if (!texto) return "";
+    return texto.replace(/\*\*/g, "").replace(/\*/g, "").trim();
+  }
+
+  function agregarMensajeUI(remitente, texto, horaPersonalizada = null, guardar = true) {
+    const hora = horaPersonalizada || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const row = document.createElement("div");
     row.className = `voli-msg-row ${remitente}`;
 
@@ -146,6 +191,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     chatBody.appendChild(row);
     chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Guardar en sessionStorage correspondiente a la sección si procede
+    if (guardar) {
+      const historialChat = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
+      historialChat.push({ remitente, texto, hora });
+      sessionStorage.setItem(claveSesion, JSON.stringify(historialChat));
+    }
   }
 
   // Función global para los chips
