@@ -350,3 +350,69 @@ class LoginEndpointTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn("Credenciales incorrectas", res.json()["message"])
 
+    @patch("urllib.request.urlopen")
+    def test_login_exitoso_ong_usa_nombre_organizacion(self, mock_urlopen):
+        import io, json
+        user_uuid = str(uuid.uuid4())
+        mock_payload = {
+            "access_token": "mock-token-ong",
+            "user": {
+                "id": user_uuid,
+                "email": "contacto@ong.org.ar",
+                "user_metadata": {
+                    "rol": "ong",
+                    "nombre_organizacion": "Cruz Roja Argentina",
+                },
+            },
+        }
+        mock_resp = io.BytesIO(json.dumps(mock_payload).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        res = self.client.post(self.URL, {"email": "contacto@ong.org.ar", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["user"]["rol"], "ong")
+        self.assertEqual(data["user"]["nombre"], "Cruz Roja Argentina")
+
+    @patch("api.views.Administrador.objects.filter")
+    @patch("urllib.request.urlopen")
+    def test_login_exitoso_admin_detecta_rol_en_administradores(self, mock_urlopen, mock_admin_filter):
+        import io, json
+        user_uuid = str(uuid.uuid4())
+        mock_admin_filter.return_value.exists.return_value = True
+
+        mock_payload = {
+            "access_token": "mock-token-admin",
+            "user": {
+                "id": user_uuid,
+                "email": "admin@voluntariapp.org",
+                "user_metadata": {
+                    "nombre": "Admin",
+                    "apellido": "General",
+                },
+            },
+        }
+        mock_resp = io.BytesIO(json.dumps(mock_payload).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        res = self.client.post(self.URL, {"email": "admin@voluntariapp.org", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["user"]["rol"], "admin")
+
+    @patch("urllib.request.urlopen")
+    def test_login_email_no_confirmado_retorna_401_con_aviso(self, mock_urlopen):
+        import urllib.error, io
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            url="http://supabase",
+            code=400,
+            msg="Bad Request",
+            hdrs={},
+            fp=io.BytesIO(b'{"error_description":"Email not confirmed"}')
+        )
+        res = self.client.post(self.URL, {"email": "sinconfirmar@test.com", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("no ha sido confirmado", res.json()["message"])
+
