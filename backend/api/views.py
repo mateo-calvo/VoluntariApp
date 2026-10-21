@@ -165,7 +165,7 @@ def login_view(request):
                 es_admin = False
 
             rol = "admin" if es_admin else user_meta.get("rol", "voluntario")
-            nombre = f"{user_meta.get('nombre', '')} {user_meta.get('apellido', '')}".strip() or email.split("@")[0]
+            nombre = user_meta.get("nombre_organizacion") or f"{user_meta.get('nombre', '')} {user_meta.get('apellido', '')}".strip() or email.split("@")[0]
 
             user_response = {
                 "id": user_id,
