@@ -107,7 +107,7 @@ async function loadItems() {
   state.error = null;
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const timer = setTimeout(() => ctrl.abort(), 15000);
 
     const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
     const res = await fetch(`${baseUrl}/api/convocatorias/`, { signal: ctrl.signal });
@@ -136,9 +136,15 @@ function mapApiItem(c) {
   const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
   const lat = parseFloat(c.latitud ?? c.lat) || CABA_CENTER[0];
   const lng = parseFloat(c.longitud ?? c.lng) || CABA_CENTER[1];
+  const id = c.convocatoria_id || c.id;
+  const cuposTotales = parseInt(c.cupos_totales ?? c.cupos_disponibles ?? c.cupos ?? 0, 10) || 0;
+  const inscriptosActuales = parseInt(c.inscriptos_actuales ?? 0, 10) || 0;
+  const libresBase = c.lugares_libres != null ? parseInt(c.lugares_libres, 10) : Math.max(0, cuposTotales - inscriptosActuales);
+  const yaIn = yaParticipa(id);
+  const cuposRestantes = Math.max(0, libresBase - (yaIn ? 1 : 0));
 
   return {
-    id: c.convocatoria_id || c.id,
+    id: id,
     nombre: c.nombre_organizacion ? `${c.nombre_organizacion} — ${c.titulo}` : (c.titulo || 'Convocatoria'),
     barrio: [c.localidad_nombre, c.provincia_nombre].filter(Boolean).join(', ') || c.lugar || c.direccion || '',
     categoria: cat,
@@ -146,10 +152,12 @@ function mapApiItem(c) {
     iconBg: estilo.iconBg,
     lat: lat,
     lng: lng,
-    voluntarios: c.voluntarios ?? 0,
+    totalCupos: cuposTotales,
+    inscriptos: inscriptosActuales + (yaIn ? 1 : 0),
+    voluntarios: inscriptosActuales + (yaIn ? 1 : 0),
     rating: parseFloat(c.ong_rating || 5.0),
     distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], lat, lng),
-    cupos: c.cupos_disponibles ?? c.cupos ?? 0,
+    cupos: cuposRestantes,
     verificada: c.ong_verificada ?? true,
     web: c.web || '',
     linkPago: c.ong_link_donacion || '',
@@ -206,8 +214,8 @@ function renderMarkers(list) {
     marker.bindPopup(`
       <strong>${item.emoji} ${item.nombre}</strong><br>
       📍 ${item.barrio}<br>
-      ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.voluntarios} vol.<br>
-      <span class="popup-cupos">🤝 ${item.cupos} cupos</span>
+      ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.totalCupos} cupos totales<br>
+      <span class="popup-cupos">🤝 ${item.cupos} disponibles</span>
     `);
 
     marker.on("click", () => selectItem(item.id, false));
@@ -275,9 +283,9 @@ function renderList(list) {
       <div class="ong-info">
         <h3 class="ong-name">${o.nombre} ${reviewBadge(o)}</h3>
         <p class="ong-barrio">📍 ${o.barrio}</p>
-        <div class="ong-meta"><span>👥 ${o.voluntarios}</span><span class="rating">★ ${o.rating}</span></div>
+        <div class="ong-meta"><span>👥 ${o.totalCupos} cupos totales</span><span class="rating">★ ${o.rating}</span></div>
         <p class="ong-dist">➤ ${o.distancia.toFixed(1)} km</p>
-        <span class="ong-cupos">🤝 ${o.cupos} cupos</span>
+        <span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>
       </div>
       <span class="ong-arrow">›</span>
     </article>`
@@ -341,8 +349,8 @@ function renderDetail() {
     <p class="detail-desc">${esc(item.descripcion)}</p>
     ${item.necesidades ? `<p class="detail-row">🙌 Buscan: <strong>${esc(item.necesidades)}</strong></p>` : ''}
     <p class="detail-row">📍 <strong>${esc(item.barrio)}</strong></p>
-    <p class="detail-row">⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.voluntarios} voluntarios &nbsp;·&nbsp; ➤ ${item.distancia.toFixed(1)} km</p>
-    <p class="detail-row">🤝 <strong>${item.cupos} cupos disponibles</strong></p>
+    <p class="detail-row">⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.inscriptos} inscriptos de ${item.totalCupos} cupos &nbsp;·&nbsp; ➤ ${item.distancia.toFixed(1)} km</p>
+    <p class="detail-row">🤝 <strong>${item.cupos} lugares libres</strong></p>
     ${links ? `<div class="detail-links">${links}</div>` : ''}
     <div class="detail-actions">
       ${btnHtml}
@@ -411,6 +419,8 @@ async function joinConvocatoria(item) {
   }
   guardarParticipacion(item);
   item.cupos = Math.max(0, item.cupos - 1);
+  item.inscriptos = (item.inscriptos || 0) + 1;
+  item.voluntarios = item.inscriptos;
   toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
   refresh(false);
 }
