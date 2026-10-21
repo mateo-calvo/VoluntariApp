@@ -27,18 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
         voluntario: 'mapa.html',
     };
 
-    // Cuentas demo del seed (solo para mostrar)
+    // Cuentas de prueba con credenciales reales en Supabase
     const DEMO_ACCOUNTS = {
-        'btn-demo-voluntario': { nombre: 'Demo Voluntario', email: 'demo@voluntariapp.org', password: 'demo1234', rol: 'voluntario' },
-        'btn-demo-ong': { nombre: 'ONG de Prueba', email: 'ong@test.com', password: 'demo1234', rol: 'ong' },
-        'btn-demo-admin': { nombre: 'Admin Demo', email: 'admin@test.com', password: 'demo1234', rol: 'admin' },
+        'btn-demo-voluntario': { nombre: 'Ana Lubari', email: 'analubari@gmail.com', password: 'Voluntario123!', rol: 'voluntario' },
+        'btn-demo-ong': { nombre: 'Cruz Roja Argentina', email: 'contacto@cruzroja.org.ar', password: 'Ong1234!', rol: 'ong' },
+        'btn-demo-admin': { nombre: 'Administrador General', email: 'admin@voluntariapp.org', password: 'Admin1234!', rol: 'admin' },
     };
     const DEMO_CREDS = {
-        'btn-demo-voluntario': { email: 'demo@voluntariapp.org', password: 'demo1234' },
-        'btn-demo-ong': { email: 'ong@test.com', password: 'demo1234' },
-        'btn-demo-admin': { email: 'admin@test.com', password: 'demo1234' },
+        'btn-demo-voluntario': { email: 'analubari@gmail.com', password: 'Voluntario123!' },
+        'btn-demo-ong': { email: 'contacto@cruzroja.org.ar', password: 'Ong1234!' },
+        'btn-demo-admin': { email: 'admin@voluntariapp.org', password: 'Admin1234!' },
     };
-    const DEMO_ROLES = { 'demo@voluntariapp.org': 'voluntario', 'ong@test.com': 'ong', 'admin@test.com': 'admin' };
+    const DEMO_ROLES = { 'analubari@gmail.com': 'voluntario', 'contacto@cruzroja.org.ar': 'ong', 'admin@voluntariapp.org': 'admin' };
 
     function showError(msg) {
         if (!errorBox) return;

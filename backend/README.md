@@ -1,48 +1,92 @@
 # Backend de VoluntariApp
 
-Django + Django REST Framework + SQLite (desarrollo).
+Django + Django REST Framework + Supabase (PostgreSQL & Auth).
 
-## Puesta en marcha (Windows / PowerShell)
+## Requisitos previos
 
+- Python 3.12+
+- Archivo `.env` en `backend/` con las credenciales de Supabase:
+  ```env
+  DJANGO_SECRET_KEY=clave-secreta-de-desarrollo
+  DJANGO_DEBUG=True
+  DB_NAME=postgres
+  DB_USER=postgres.fzfiwitvjqlrqimxxcmt
+  DB_PASSWORD=tu_password_supabase
+  DB_HOST=aws-1-sa-east-1.pooler.supabase.com
+  DB_PORT=5432
+  SUPABASE_URL=https://fzfiwitvjqlrqimxxcmt.supabase.co
+  SUPABASE_ANON_KEY=tu_anon_key
+  ```
+
+## Puesta en marcha
+
+### En Windows (PowerShell):
 Desde la carpeta `backend/`:
-
 ```powershell
-# 1. Crear el entorno virtual (una sola vez)
+# 1. Crear el entorno virtual (solo la primera vez)
 py -3.12 -m venv .venv
 
-# 2. Activarlo (cada vez que abrís una terminal nueva)
+# 2. Activarlo
 .\.venv\Scripts\Activate.ps1
 
 # 3. Instalar dependencias
 pip install -r requirements.txt
 
-# 4. Crear las tablas en db.sqlite3
-python manage.py migrate
-
-# 5. Levantar el servidor en http://127.0.0.1:8000
+# 4. Levantar el servidor en http://127.0.0.1:8000
 python manage.py runserver
 ```
 
-Si PowerShell no deja activar el venv, corré una vez:
-`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+### En Linux / macOS (Bash):
+Desde la raíz del proyecto:
+```bash
+# 1. Crear y activar entorno virtual
+python3 -m venv .venv
+source .venv/bin/activate
 
-## Probar que levanta
+# 2. Instalar dependencias
+pip install -r backend/requirements.txt
 
-```powershell
-curl.exe http://127.0.0.1:8000/api/health/
-# {"status":"ok"}
+# 3. Levantar el servidor
+python backend/manage.py runserver
 ```
 
-## Clave secreta
+---
 
-`SECRET_KEY` se lee de la variable de entorno `DJANGO_SECRET_KEY`. Sin ella se usa
-una clave de desarrollo. Nunca escribas una clave real en el código ni la subas a git.
+## 👥 Usuarios de Prueba para Testing
 
-```powershell
-$env:DJANGO_SECRET_KEY = "una-clave-larga-y-aleatoria"
-```
+El sistema cuenta con usuarios reales en Supabase para probar cada rol:
 
-## Estructura
+| Rol | Email | Contraseña | Destino tras login |
+|---|---|---|---|
+| **Voluntario** | `analubari@gmail.com` | `Voluntario123!` | Redirige al mapa de convocatorias (`mapa.html`) |
+| **ONG** | `contacto@cruzroja.org.ar` | `Ong1234!` | Redirige al panel de la ONG (`mi-ong.html`) |
+| **Admin** | `admin@voluntariapp.org` | `Admin1234!` | Redirige al panel de administración (`admin.html`) |
 
-- `config/`: settings y URLs del proyecto.
-- `usuarios/`: modelo `Usuario` (login con email, campo `rol`: voluntario, ong o admin).
+> En la pantalla de login (`pages/login.html`) también se encuentran los botones de acceso rápido que cargan estas credenciales automáticamente.
+
+---
+
+## 🛡️ Cómo crear un nuevo Usuario Administrador
+
+En VoluntariApp, el rol `admin` se determina si el usuario existe en la tabla `public.administradores`:
+
+1. Registra un nuevo usuario voluntario desde `pages/register.html` o crea el usuario en Supabase Auth.
+2. Abre la consola de Django:
+   ```bash
+   python backend/manage.py shell
+   ```
+3. Ejecuta el siguiente comando reemplazando con el email del usuario:
+   ```python
+   from django.db import connection
+
+   email = "nuevo_admin@correo.com"
+   with connection.cursor() as cursor:
+       cursor.execute("SELECT id FROM auth.users WHERE email = %s", [email])
+       user_id = cursor.fetchone()[0]
+       cursor.execute(
+           "INSERT INTO public.administradores (id, nombre, apellido) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING;",
+           [user_id, "Nombre", "Apellido"]
+       )
+   print("¡Usuario ascendido a administrador con éxito!")
+   ```
+4. Al volver a iniciar sesión, el backend le responderá con `rol: "admin"` y podrá acceder a `pages/admin.html`.

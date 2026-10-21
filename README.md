@@ -49,19 +49,25 @@ HTML · CSS (tokens centralizados en `css/tokens.css`) · JavaScript vanilla · 
 ## Cómo ejecutarlo
 
 ```bash
-# Opción 1: abrir index.html en el navegador
-# Opción 2: servir la carpeta (ej. VS Code Live Server o cualquier hosting estático)
+# 1. Levantar el backend (Django):
+cd backend
+python manage.py runserver 127.0.0.1:8000
+
+# 2. Levantar el frontend (en otra terminal):
+# Opción A: VS Code Live Server (puerto 8080 o 5500)
+# Opción B: python -m http.server 8080 (desde la raíz del repo)
 ```
 
-### Cuentas demo
+### 👥 Cuentas de prueba (Supabase Auth)
 
-| Rol | Email | Contraseña |
-|---|---|---|
-| Voluntario | `demo@voluntariapp.org` | `demo1234` |
-| ONG | `ong@test.com` | `demo1234` |
-| Admin | `admin@test.com` | `demo1234` |
+| Rol | Email | Contraseña | Destino tras login |
+|---|---|---|---|
+| **Voluntario** | `analubari@gmail.com` | `Voluntario123!` | Mapa de convocatorias (`pages/mapa.html`) |
+| **ONG** | `contacto@cruzroja.org.ar` | `Ong1234!` | Panel de ONG (`pages/mi-ong.html`) |
+| **Admin** | `admin@voluntariapp.org` | `Admin1234!` | Panel de Administración (`pages/admin.html`) |
 
-> El mapa y el buscador de direcciones requieren internet (tiles, CDN y geocodificación).
+> En `pages/login.html` se encuentran disponibles los botones rápidos que completan estas credenciales automáticamente.
+> Ver `backend/README.md` para detalles de variables de entorno y creación de administradores adicionales.
 
 ---
 
