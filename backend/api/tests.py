@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.conf import settings
 from django.contrib.auth import authenticate
@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from config.exceptions import mensaje_throttled
 
-from .models import Usuario, VistaConvocatoriasCards
+from .models import Localidad, Provincia, Usuario, VistaConvocatoriasCards
 
 
 class HealthCheckTests(TestCase):
@@ -415,4 +415,91 @@ class LoginEndpointTests(TestCase):
         res = self.client.post(self.URL, {"email": "sinconfirmar@test.com", "password": "Password123!"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn("no ha sido confirmado", res.json()["message"])
+
+    def test_login_metodo_get_no_permitido(self):
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @patch("urllib.request.urlopen")
+    def test_login_error_inesperado_devuelve_500(self, mock_urlopen):
+        mock_urlopen.side_effect = Exception("Fallo de red inesperado con Supabase")
+        res = self.client.post(self.URL, {"email": "error@test.com", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(res.json(), {"message": "Error al procesar el inicio de sesión."})
+
+
+class ProvinciasEndpointTests(TestCase):
+    """Tests del endpoint público /api/provincias/."""
+
+    URL = "/api/provincias/"
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch("api.views.Provincia.objects.all")
+    def test_listar_provincias_retorna_200_con_datos(self, mock_all):
+        p1 = Provincia(id=1, nombre="Buenos Aires")
+        p2 = Provincia(id=2, nombre="Córdoba")
+        mock_all.return_value = [p1, p2]
+
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0], {"id": 1, "nombre": "Buenos Aires"})
+        self.assertEqual(data[1], {"id": 2, "nombre": "Córdoba"})
+
+    @patch("api.views.Provincia.objects.all")
+    def test_listar_provincias_vacia(self, mock_all):
+        mock_all.return_value = []
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), [])
+
+
+class LocalidadesEndpointTests(TestCase):
+    """Tests del endpoint público /api/localidades/."""
+
+    URL = "/api/localidades/"
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch("api.views.Localidad.objects.all")
+    def test_listar_localidades_sin_filtro(self, mock_all):
+        l1 = Localidad(id=1, nombre="La Plata", provincia_id=1)
+        l2 = Localidad(id=2, nombre="Quilmes", provincia_id=1)
+        mock_all.return_value = [l1, l2]
+
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0]["nombre"], "La Plata")
+        self.assertEqual(data[0]["provincia_id"], 1)
+
+    @patch("api.views.Localidad.objects.all")
+    def test_listar_localidades_filtradas_por_provincia(self, mock_all):
+        l1 = Localidad(id=10, nombre="Rosario", provincia_id=2)
+        mock_qs = MagicMock()
+        mock_qs.filter.return_value = [l1]
+        mock_all.return_value = mock_qs
+
+        res = self.client.get(f"{self.URL}?provincia_id=2")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        mock_qs.filter.assert_called_once_with(provincia_id="2")
+        data = res.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["nombre"], "Rosario")
+        self.assertEqual(data[0]["provincia_id"], 2)
+
+    @patch("api.views.Localidad.objects.all")
+    def test_listar_localidades_vacia(self, mock_all):
+        mock_all.return_value = []
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), [])
+
 
