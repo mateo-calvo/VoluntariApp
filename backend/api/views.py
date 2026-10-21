@@ -180,6 +180,16 @@ def login_view(request):
             }, status=status.HTTP_200_OK)
 
     except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8")
+        print(f"[LOGIN ERROR] Intento para '{email}': {err_body}")
+        try:
+            err_json = json.loads(err_body)
+            desc = err_json.get("error_description") or err_json.get("msg") or ""
+            if "email not confirmed" in desc.lower():
+                return Response({"message": "El correo no ha sido confirmado en Supabase."}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception:
+            pass
         return Response({"message": "Credenciales incorrectas. Revisa tu email y contraseña."}, status=status.HTTP_401_UNAUTHORIZED)
-    except Exception:
+    except Exception as err:
+        print(f"[LOGIN ERROR INESPERADO] {err}")
         return Response({"message": "Error al procesar el inicio de sesión."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

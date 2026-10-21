@@ -55,17 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Intento de login demo local. Devuelve la sesión, null si la clave no
-    // coincide con una cuenta demo conocida, o 'nueva' si hay que crearla.
+    // Intento de login demo local. Solo coincide si la cuenta existe con clave correcta.
     function demoLogin(email, password) {
+        const cuentaFija = Object.values(DEMO_ACCOUNTS).find(
+            (u) => u.email === email && u.password === password
+        );
+        if (cuentaFija) return cuentaFija;
+
         const demoUsers = JSON.parse(localStorage.getItem('va_users_demo') || '[]');
-        const found = demoUsers.find((u) => u.email === email);
-        if (found && found.password !== password) return null;
-        return {
-            nombre: found?.nombre || (email === 'ong@test.com' ? 'ONG de Prueba' : email.split('@')[0]),
-            email,
-            rol: found?.rol || DEMO_ROLES[email] || 'voluntario',
-        };
+        const found = demoUsers.find((u) => u.email === email && u.password === password);
+        if (found) {
+            return {
+                nombre: found.nombre || email.split('@')[0],
+                email: found.email,
+                rol: found.rol || 'voluntario',
+            };
+        }
+        return null;
     }
 
     function entrarConSesion(session) {
@@ -115,13 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerHTML = '<span>Ingresando...</span>';
 
             try {
-                // Intento contra la API real (con timeout: en hosting estático
-                // o pendrive falla rápido y se usa el modo demo local)
+                // Intento contra la API real
                 const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
-                    signal: AbortSignal.timeout(5000),
+                    signal: AbortSignal.timeout(8000),
                 });
 
                 const data = await res.json().catch(() => ({}));
@@ -132,30 +137,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     redirectAfterLogin(data.user);
                     return;
                 }
+
                 if (res.status === 401) {
-                    // La API no conoce esta cuenta: puede existir solo en modo
-                    // demo local (navegador). Se prueba ahí antes de fallar.
-                    const demo = demoLogin(email, password);
-                    if (demo) {
-                        entrarConSesion(demo);
-                        return;
-                    }
-                    showError('Credenciales incorrectas. Revisa tu email y contraseña.');
+                    showError(data.message || 'Credenciales incorrectas. Revisa tu email y contraseña.');
                     return;
                 }
-                throw new Error(data.message || 'Respuesta inválida del servidor');
+
+                showError(data.message || 'No se pudo iniciar sesión. Intenta nuevamente.');
             } catch (err) {
-                // Modo demo (sin backend): cualquier cuenta válida entra
-                try {
-                    const demo = demoLogin(email, password);
-                    if (!demo) {
-                        showError('Credenciales incorrectas. Revisa tu email y contraseña.');
-                        return;
-                    }
+                // Si el servidor backend no responde (offline), solo permite las cuentas demo conocidas
+                const demo = demoLogin(email, password);
+                if (demo) {
                     entrarConSesion(demo);
-                } catch {
-                    showError('No se pudo iniciar sesión. Intenta de nuevo.');
+                    return;
                 }
+                showError('No se pudo conectar con el servidor. Revisa tu conexión.');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalContent;
