@@ -310,6 +310,12 @@ class LoginEndpointTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch("urllib.request.urlopen")
+    def test_login_email_invalido_devuelve_400_sin_consultar_supabase(self, mock_urlopen):
+        res = self.client.post(self.URL, {"email": "no-es-un-email", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        mock_urlopen.assert_not_called()
+
+    @patch("urllib.request.urlopen")
     def test_login_exitoso_voluntario(self, mock_urlopen):
         import io, json
         user_uuid = str(uuid.uuid4())
@@ -374,6 +380,41 @@ class LoginEndpointTests(TestCase):
         data = res.json()
         self.assertEqual(data["user"]["rol"], "ong")
         self.assertEqual(data["user"]["nombre"], "Cruz Roja Argentina")
+
+    @patch("api.views.Ong.objects.filter")
+    @patch("urllib.request.urlopen")
+    def test_login_exitoso_ong_resuelve_desde_tabla_ongs(self, mock_urlopen, mock_ong_filter):
+        import io, json
+        user_uuid = uuid.uuid4()
+        mock_ong = MagicMock()
+        mock_ong.id = user_uuid
+        mock_ong.nombre_organizacion = "Cruz Roja Argentina"
+        mock_ong.esta_verificada = True
+        mock_ong.cuit = "30-12345678-9"
+        mock_ong_filter.return_value.first.return_value = mock_ong
+
+        mock_payload = {
+            "access_token": "mock-token-ong-db",
+            "user": {
+                "id": str(user_uuid),
+                "email": "contacto@cruzroja.org.ar",
+                "user_metadata": {
+                    "rol": "ong",
+                },
+            },
+        }
+        mock_resp = io.BytesIO(json.dumps(mock_payload).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        res = self.client.post(self.URL, {"email": "contacto@cruzroja.org.ar", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["user"]["rol"], "ong")
+        self.assertEqual(data["user"]["nombre"], "Cruz Roja Argentina")
+        self.assertEqual(data["user"]["ong_id"], str(user_uuid))
+        self.assertTrue(data["user"]["esta_verificada"])
+        self.assertEqual(data["user"]["cuit"], "30-12345678-9")
 
     @patch("api.views.Administrador.objects.filter")
     @patch("urllib.request.urlopen")

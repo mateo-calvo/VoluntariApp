@@ -106,12 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('email').value.trim().toLowerCase();
             const password = passwordInput.value;
 
+            const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
             if (!email || !password) {
                 showError('Por favor, completa todos los campos requeridos.');
                 return;
             }
-            if (password.length < 6) {
-                showError('La contraseña debe tener al menos 6 caracteres.');
+            if (!EMAIL_RE.test(email)) {
+                showError('Por favor, ingresa un correo electrónico válido.');
                 return;
             }
 
@@ -159,11 +161,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Botones de acceso demo: restablecen la cuenta demo local (por si el
-    // email se registró antes con otra clave) y envían el formulario
+    // Actualiza el texto del encabezado según el rol del acceso demo
+    const authSubtitle = document.getElementById('auth-subtitle');
+
+    function actualizarEncabezadoPorRol(btnId) {
+        if (btnId === 'btn-demo-ong') {
+            if (authSubtitle) authSubtitle.textContent = 'Inicia sesión para crear convocatorias y gestionar tu ONG.';
+        } else if (btnId === 'btn-demo-admin') {
+            if (authSubtitle) authSubtitle.textContent = 'Inicia sesión para acceder al panel de administración.';
+        } else {
+            if (authSubtitle) authSubtitle.textContent = 'Inicia sesión para participar en convocatorias de voluntariado.';
+        }
+    }
+
+    // Botones de acceso demo: completan las credenciales y actualizan el encabezado sin auto-enviar
     for (const [btnId, creds] of Object.entries(DEMO_CREDS)) {
         document.getElementById(btnId)?.addEventListener('click', () => {
             errorBox?.classList.add('hidden');
+            actualizarEncabezadoPorRol(btnId);
             try {
                 const users = JSON.parse(localStorage.getItem('va_users_demo') || '[]');
                 const acc = DEMO_ACCOUNTS[btnId];
@@ -171,10 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (i >= 0) users[i] = acc;
                 else users.push(acc);
                 localStorage.setItem('va_users_demo', JSON.stringify(users));
-            } catch { /* sigue igual con el envío */ }
+            } catch { /* ignora error de almacenamiento local */ }
             document.getElementById('email').value = creds.email;
             passwordInput.value = creds.password;
-            loginForm.requestSubmit();
         });
     }
 });

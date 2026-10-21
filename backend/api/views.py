@@ -4,9 +4,10 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Localidad, Provincia, Usuario, VistaConvocatoriasCards, Administrador
+from .models import Administrador, Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
 from .serializers import (
     LocalidadSerializer,
+    LoginSerializer,
     ProvinciaSerializer,
     RegistroVoluntarioSerializer,
     VistaConvocatoriasCardsSerializer,
@@ -130,11 +131,13 @@ def listar_localidades(request):
 @permission_classes([AllowAny])
 def login_view(request):
     """Autentica al usuario contra Supabase Auth y detecta su rol (voluntario / admin)."""
-    email = (request.data.get("email") or "").strip().lower()
-    password = request.data.get("password") or ""
+    serializer = LoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({"message": primer_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not email or not password:
-        return Response({"message": "Email y contraseña requeridos."}, status=status.HTTP_400_BAD_REQUEST)
+    vdata = serializer.validated_data
+    email = vdata["email"]
+    password = vdata["password"]
 
     supabase_url = os.getenv("SUPABASE_URL", "https://fzfiwitvjqlrqimxxcmt.supabase.co")
     anon_key = os.getenv("SUPABASE_ANON_KEY", "")
@@ -158,14 +161,29 @@ def login_view(request):
             user_id = user_info.get("id")
             user_meta = user_info.get("user_metadata", {})
 
-            # Determinamos el rol: si figura en administradores es admin, si no voluntario
+            # Determinamos el rol: si figura en administradores es admin, si no ong o voluntario
+            es_admin = False
             try:
                 es_admin = Administrador.objects.filter(id=user_id).exists()
             except Exception:
-                es_admin = False
+                pass
 
-            rol = "admin" if es_admin else user_meta.get("rol", "voluntario")
-            nombre = user_meta.get("nombre_organizacion") or f"{user_meta.get('nombre', '')} {user_meta.get('apellido', '')}".strip() or email.split("@")[0]
+            ong_obj = None
+            if not es_admin:
+                try:
+                    ong_obj = Ong.objects.filter(id=user_id).first()
+                except Exception:
+                    pass
+
+            if es_admin:
+                rol = "admin"
+                nombre = f"{user_meta.get('nombre', '')} {user_meta.get('apellido', '')}".strip() or "Administrador"
+            elif ong_obj or user_meta.get("rol") == "ong":
+                rol = "ong"
+                nombre = (ong_obj.nombre_organizacion if ong_obj else None) or user_meta.get("nombre_organizacion") or email.split("@")[0]
+            else:
+                rol = user_meta.get("rol", "voluntario")
+                nombre = f"{user_meta.get('nombre', '')} {user_meta.get('apellido', '')}".strip() or email.split("@")[0]
 
             user_response = {
                 "id": user_id,
@@ -173,6 +191,10 @@ def login_view(request):
                 "nombre": nombre,
                 "rol": rol,
             }
+            if rol == "ong" and ong_obj:
+                user_response["ong_id"] = str(ong_obj.id)
+                user_response["esta_verificada"] = ong_obj.esta_verificada
+                user_response["cuit"] = ong_obj.cuit or ""
 
             return Response({
                 "token": token,
