@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'usuarios',
     'chatbot',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -93,18 +95,36 @@ DATABASES = {
     )
 }
 
-# Usuario propio (usuarios.Usuario): login con email y campo rol.
-AUTH_USER_MODEL = 'usuarios.Usuario'
+# Base en memoria para tests: ultra rápida (milisegundos) y sin tocar Supabase
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+
+# Usuario propio (api.Usuario): login con email y campo rol.
+AUTH_USER_MODEL = 'api.Usuario'
 
 
 # DRF: errores siempre como { "message": "..." } (ver config/exceptions.py).
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'config.exceptions.json_message_exception_handler',
+    # Límite de intentos por IP. 20/hora y no menos: en una demo todo el curso
+    # comparte el wifi, o sea la misma IP.
+    'DEFAULT_THROTTLE_RATES': {
+        'registro': '20/hour',
+    },
+    # 0 = usar la IP real de la conexión e ignorar X-Forwarded-For, que lo
+    # escribe el cliente y permitiría saltear el límite. Al desplegar detrás
+    # de un proxy, poner acá cuántos proxies hay delante de Django.
+    'NUM_PROXIES': 0,
 }
 
 
 # CORS: solo el frontend servido por Live Server puede llamar a la API.
 CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
     'http://127.0.0.1:5501',
     'http://localhost:5501',
 ]
