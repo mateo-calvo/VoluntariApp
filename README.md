@@ -62,7 +62,7 @@ python manage.py runserver 127.0.0.1:8000
 
 | Rol | Email | Contraseña | Destino tras login |
 |---|---|---|---|
-| **Voluntario** | `analubari@gmail.com` | `Voluntario123!` | Mapa de convocatorias (`pages/mapa.html`) |
+| **Voluntario** | `demo@voluntariapp.org` | `demo1234` | Mapa de convocatorias (`pages/mapa.html`) |
 | **ONG** | `contacto@cruzroja.org.ar` | `Ong1234!` | Panel de ONG (`pages/mi-ong.html`) |
 | **Admin** | `admin@voluntariapp.org` | `Admin1234!` | Panel de Administración (`pages/admin.html`) |
 
