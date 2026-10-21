@@ -106,12 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('email').value.trim().toLowerCase();
             const password = passwordInput.value;
 
+            const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
             if (!email || !password) {
                 showError('Por favor, completa todos los campos requeridos.');
                 return;
             }
-            if (password.length < 6) {
-                showError('La contraseña debe tener al menos 6 caracteres.');
+            if (!EMAIL_RE.test(email)) {
+                showError('Por favor, ingresa un correo electrónico válido.');
                 return;
             }
 
@@ -159,22 +161,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Botones de acceso demo: restablecen la cuenta demo local (por si el
-    // email se registró antes con otra clave) y envían el formulario
-    for (const [btnId, creds] of Object.entries(DEMO_CREDS)) {
+    // Actualiza el texto del encabezado y placeholder según el rol seleccionado
+    const authSubtitle = document.getElementById('auth-subtitle');
+    const emailInput = document.getElementById('email');
+
+    function actualizarEncabezadoPorRol(btnId) {
+        if (btnId === 'btn-demo-ong') {
+            if (authSubtitle) authSubtitle.textContent = 'Inicia sesión para crear convocatorias y gestionar tu ONG.';
+            if (emailInput) emailInput.placeholder = 'contacto@tuong.org';
+        } else if (btnId === 'btn-demo-admin') {
+            if (authSubtitle) authSubtitle.textContent = 'Inicia sesión para acceder al panel de administración.';
+            if (emailInput) emailInput.placeholder = 'admin@voluntariapp.org';
+        } else {
+            if (authSubtitle) authSubtitle.textContent = 'Inicia sesión para participar en convocatorias de voluntariado.';
+            if (emailInput) emailInput.placeholder = 'tu@correo.com';
+        }
+    }
+
+    // Botones de selección de rol: actualizan el encabezado sin autocompletar credenciales
+    for (const btnId of ['btn-demo-voluntario', 'btn-demo-ong', 'btn-demo-admin']) {
         document.getElementById(btnId)?.addEventListener('click', () => {
             errorBox?.classList.add('hidden');
-            try {
-                const users = JSON.parse(localStorage.getItem('va_users_demo') || '[]');
-                const acc = DEMO_ACCOUNTS[btnId];
-                const i = users.findIndex((u) => u.email === acc.email);
-                if (i >= 0) users[i] = acc;
-                else users.push(acc);
-                localStorage.setItem('va_users_demo', JSON.stringify(users));
-            } catch { /* sigue igual con el envío */ }
-            document.getElementById('email').value = creds.email;
-            passwordInput.value = creds.password;
-            loginForm.requestSubmit();
+            actualizarEncabezadoPorRol(btnId);
+            emailInput?.focus();
         });
     }
 });

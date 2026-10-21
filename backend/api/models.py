@@ -149,3 +149,42 @@ class Administrador(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido} (Admin)"
+
+
+class Ong(models.Model):
+    id = models.UUIDField(primary_key=True)
+    nombre_organizacion = models.CharField(max_length=255)
+    cuit = models.CharField(max_length=20, blank=True, null=True)
+    descripcion_institucional = models.TextField(blank=True, null=True)
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.DO_NOTHING,
+        db_column="provincia_id",
+        blank=True,
+        null=True,
+    )
+    localidad = models.ForeignKey(
+        Localidad,
+        on_delete=models.DO_NOTHING,
+        db_column="localidad_id",
+        blank=True,
+        null=True,
+    )
+    direccion = models.CharField(max_length=255, blank=True, null=True)
+    telefono_contacto = models.CharField(max_length=50, blank=True, null=True)
+    email_contacto = models.EmailField(blank=True, null=True)
+    contacto = models.CharField(max_length=255, blank=True, null=True)
+    sitio_web = models.CharField(max_length=255, blank=True, null=True)
+    link_donacion = models.CharField(max_length=500, blank=True, null=True)
+    logo_url = models.CharField(max_length=500, blank=True, null=True)
+    rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
+    esta_verificada = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = "ongs"
+
+    def __str__(self):
+        return self.nombre_organizacion
+

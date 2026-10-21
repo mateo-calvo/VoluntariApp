@@ -63,3 +63,24 @@ class LocalidadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Localidad
         fields = ["id", "nombre", "provincia_id"]
+
+
+class LoginSerializer(serializers.Serializer):
+    """Valida las credenciales de inicio de sesión."""
+
+    email = serializers.EmailField(error_messages={
+        "required": "El email es obligatorio.",
+        "invalid": "El formato de email no es válido.",
+        "blank": "El email no puede estar vacío.",
+    })
+    password = serializers.CharField(
+        write_only=True,
+        trim_whitespace=False,
+        error_messages={
+            "required": "La contraseña es obligatoria.",
+            "blank": "La contraseña no puede estar vacía.",
+        },
+    )
+
+    def validate_email(self, value):
+        return Usuario.objects.normalize_email(value)
