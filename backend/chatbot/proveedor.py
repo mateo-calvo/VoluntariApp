@@ -39,9 +39,13 @@ def obtener_respuesta_gemini(historial_mensajes, prompt_sistema):
         return texto_limpio
     except APIError as e:
         print(f"ERROR DE API DETALLADO: {e}")
-        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+        error_str = str(e)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
             return "Has alcanzado el límite diario de consultas permitidas por la inteligencia artificial. Por favor, inténtalo mañana."
-        return f"Error técnico: {str(e)}"
+        elif "503" in error_str or "UNAVAILABLE" in error_str or "high demand" in error_str:
+            return "TeAyudoIA está recibiendo muchas consultas en este momento. Por favor, intentá nuevamente en unos minutos."
+        return "Disculpá, el asistente no está disponible temporalmente. Por favor, intentá más tarde."
+        
     except Exception as e:
         print(f"ERROR GENERAL DETALLADO: {e}")
-        return f"Error general: {str(e)}"
+        return "Ocurrió un error inesperado al procesar tu mensaje. Por favor, intentá de nuevo."

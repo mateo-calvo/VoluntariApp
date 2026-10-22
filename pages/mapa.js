@@ -149,7 +149,7 @@ function mapApiItem(c) {
     voluntarios: c.voluntarios ?? 0,
     rating: parseFloat(c.ong_rating || 5.0),
     distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], lat, lng),
-    cupos: c.cupos_disponibles ?? c.cupos ?? 0,
+    cupos: c.cupos_totales ?? c.cupos_disponibles ?? c.cupos ?? 0,
     verificada: c.ong_verificada ?? true,
     web: c.web || '',
     linkPago: c.ong_link_donacion || '',

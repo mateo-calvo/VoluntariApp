@@ -72,7 +72,7 @@ class VistaConvocatoriasCards(models.Model):
     direccion = models.CharField(max_length=255, blank=True, null=True)
     latitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    cupos_disponibles = models.IntegerField(blank=True, null=True)
+    cupos_totales = models.IntegerField(blank=True, null=True)
     horas_estimadas = models.IntegerField(blank=True, null=True)
     requiere_aprobacion = models.BooleanField(default=False)
     estado_convocatoria = models.CharField(max_length=50, blank=True, null=True)
