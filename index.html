@@ -11,13 +11,20 @@
 <body>
     <header class="navbar-background">
         <nav class="navbar global-container">
-            <a href="#" class="logo">
-                <img src="images/logo.png" alt="">
+            <a href="index.html" class="logo">
+                <img src="images/logo.png" alt="VoluntariApp">
             </a>
-            <ul class="nav-links">
-                <li><a href="#">Cómo funciona</a></li>
-                <li><a href="#">ONGs</a></li>
-                <li><a href="#">Causas</a></li>
+            <button type="button" class="navbar-toggle" id="navbar-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#como-funciona">Cómo funciona</a></li>
+                <li><a href="#organizaciones">ONGs</a></li>
+                <li><a href="./pages/mapa.html">Mapa</a></li>
                 <li><button type="button" class="btn btn-donar" id="donar-open" aria-haspopup="dialog">Donar</button></li>
             </ul>
             <div class="header-auth-container">
@@ -38,7 +45,7 @@
                         <p class="hero-description">VoluntariApp conecta a personas como tú con ONGs que necesitan
                             exactamente lo que sabes hacer. Sin burocracia. Sin barreras. Solo impacto real.</p>
                         <div class="hero-connect-container">
-                            <a href="./pages/register.html" class="btn btn-voluntario">Quiero ser voluntario</a>
+                            <a href="./pages/register.html?tipo=voluntario" class="btn btn-voluntario">Quiero ser voluntario</a>
                             <a href="./pages/register.html?tipo=ong" class="btn btn-ong">Soy una ONG</a>
                         </div>
                         <p class="hero-social-proof"><span>+12,400</span> voluntarios ya marcaron la diferencia</p>
@@ -57,17 +64,16 @@
             </div>
         </section>
     </main>
-    <section class="how-work-background">
+    <section class="how-work-background" id="como-funciona">
         <div class="global-container">
             <div class="how-work-container">
                 <div class="how-work-container-part-one">
                     <div class="how-work-label">Cómo funciona</div>
-                    <h1 class="how-work-title">Tres pasos para empezar a impactar.</h1>
+                    <h2 class="how-work-title">Tres pasos para empezar a impactar.</h2>
                     <p class="hero-description">Diseñado para que en menos de 10 minutos ya estés conectado con una
-                        causa
-                        que realmente te importe.</p>
+                        causa que realmente te importe.</p>
                     <div class="how-work-explore-container">
-                        <a href="" class="how-work-explore-link">Explorar oportunidades <span>→</span></a>
+                        <a href="./pages/mapa.html" class="how-work-explore-link">Explorar oportunidades <span>→</span></a>
                     </div>
                 </div>
                 <div>
@@ -76,14 +82,14 @@
                             <article class="how-work-card">
                                 <span class="how-work-card-number">01</span>
                                 <div class="how-work-card-content">
-                                    <h2>Crea tu perfil</h2>
+                                    <h3>Crea tu perfil</h3>
                                     <p>Cuéntanos tus habilidades, disponibilidad y las causas que más te importan.</p>
                                 </div>
                             </article>
                             <article class="how-work-card">
                                 <span class="how-work-card-number">02</span>
                                 <div class="how-work-card-content">
-                                    <h2>Descubre oportunidades</h2>
+                                    <h3>Descubre oportunidades</h3>
                                     <p>Explora proyectos cercanos a ti o en remoto. Filtra por causa, duración y
                                         habilidades.</p>
                                 </div>
@@ -91,7 +97,7 @@
                             <article class="how-work-card">
                                 <span class="how-work-card-number">03</span>
                                 <div class="how-work-card-content">
-                                    <h2>Conecta y actúa</h2>
+                                    <h3>Conecta y actúa</h3>
                                     <p>Contacta directamente con la ONG, coordina tu participación y genera impacto
                                         real.</p>
                                 </div>
@@ -103,7 +109,7 @@
         </div>
     </section>
 
-    <section class="ongs-background">
+    <section class="ongs-background" id="organizaciones">
         <div class="global-container">
             <div class="ongs-container">
                 <div class="ongs-media">
@@ -139,7 +145,7 @@
                     sociedad más justa y solidaria.</p>
                 <div class="cta-buttons">
                     <a href="./pages/register.html?tipo=voluntario" class="btn btn-voluntario">Quiero ser voluntario</a>
-                    <a href="#" class="btn btn-ong btn-ong-light">Explorar oportunidades</a>
+                    <a href="./pages/mapa.html" class="btn btn-ong btn-ong-light">Explorar oportunidades</a>
                 </div>
                 <p class="cta-note">Gratis siempre para voluntarios · Sin tarjeta · En 10 minutos</p>
             </div>
@@ -150,7 +156,7 @@
         <div class="global-container">
             <div class="footer-container">
                 <div class="footer-brand">
-                    <a href="/" class="logo">
+                    <a href="index.html" class="logo">
                         <img src="images/logo.png" alt="VoluntariApp">
                     </a>
                     <p>Conectamos voluntarios con ONGs para construir un mundo más justo y solidario.</p>
@@ -159,28 +165,28 @@
                     <div class="footer-col">
                         <h4>Plataforma</h4>
                         <ul>
-                            <li><a href="#">Cómo funciona</a></li>
-                            <li><a href="#">Buscar ONGs</a></li>
-                            <li><a href="#">Causas</a></li>
-                            <li><a href="#">Mapa de oportunidades</a></li>
+                            <li><a href="#como-funciona">Cómo funciona</a></li>
+                            <li><a href="./pages/mapa.html">Buscar ONGs</a></li>
+                            <li><a href="./pages/mapa.html">Causas</a></li>
+                            <li><a href="./pages/mapa.html">Mapa de oportunidades</a></li>
                         </ul>
                     </div>
                     <div class="footer-col">
                         <h4>Organizaciones</h4>
                         <ul>
-                            <li><a href="#">Registrar ONG</a></li>
-                            <li><a href="#">Gestión de voluntarios</a></li>
-                            <li><a href="#">Recursos</a></li>
-                            <li><a href="#">Precios</a></li>
+                            <li><a href="./pages/register.html?tipo=ong">Registrar ONG</a></li>
+                            <li><a href="./pages/login.html">Gestión de voluntarios</a></li>
+                            <li><a href="./pages/mapa.html">Recursos</a></li>
+                            <li><a href="#como-funciona">Precios</a></li>
                         </ul>
                     </div>
                     <div class="footer-col">
                         <h4>Compañía</h4>
                         <ul>
-                            <li><a href="#">Sobre nosotros</a></li>
-                            <li><a href="#">Blog</a></li>
-                            <li><a href="#">Prensa</a></li>
-                            <li><a href="#">Contacto</a></li>
+                            <li><a href="#como-funciona">Sobre nosotros</a></li>
+                            <li><a href="./pages/mapa.html">Blog</a></li>
+                            <li><a href="./pages/mapa.html">Prensa</a></li>
+                            <li><a href="./pages/mapa.html">Contacto</a></li>
                         </ul>
                     </div>
                 </div>
@@ -246,6 +252,22 @@
     </dialog>
 
     <script src="js/donar.js" defer></script>
+    <script>
+        document.getElementById('navbar-toggle')?.addEventListener('click', function () {
+            const links = document.getElementById('nav-links');
+            const abierto = links.classList.toggle('is-open');
+            this.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        });
+        document.querySelectorAll('#nav-links a').forEach(a => {
+            a.addEventListener('click', () => {
+                const links = document.getElementById('nav-links');
+                if (links && links.classList.contains('is-open')) {
+                    links.classList.remove('is-open');
+                    document.getElementById('navbar-toggle')?.setAttribute('aria-expanded', 'false');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

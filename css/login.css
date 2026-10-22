@@ -420,25 +420,31 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (MÓVILES Y TABLETS)
    ========================================================================== */
+html,
+body {
+    overflow-x: clip;
+    max-width: 100%;
+}
+
 @media (max-width: 900px) {
     .auth-layout {
         flex-direction: column;
     }
 
     .auth-banner {
-        padding: 32px 24px;
-        min-height: 280px;
+        padding: 24px 20px;
+        min-height: auto;
         justify-content: center;
     }
 
     .banner-quote-wrapper {
-        margin: 24px 0 16px 0;
+        margin: 10px 0 8px 0;
     }
 
     .banner-quote {
-        font-size: 24px;
+        font-size: 21px;
     }
 
     .banner-social-proof {
@@ -446,30 +452,54 @@ input[type="password"]::-webkit-textfield-decoration-container {
     }
 
     .auth-content {
-        padding: 40px 20px;
+        padding: 32px 20px 48px;
+    }
+}
+
+@media (max-width: 580px) {
+    .demo-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-demo {
+        min-width: 100%;
+        flex: 1 1 100%;
+        font-size: 13.5px;
+        height: 46px;
     }
 }
 
 @media (max-width: 480px) {
     .auth-banner {
-        padding: 24px 16px;
-        min-height: 220px;
+        padding: 16px 14px;
+        min-height: auto;
     }
 
     .banner-quote {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .auth-content {
-        padding: 32px 16px;
+        padding: 24px 14px 40px;
     }
 
     .auth-title {
-        font-size: 24px;
+        font-size: 23px;
+    }
+
+    .auth-subtitle {
+        font-size: 14px;
     }
 
     .form-group input,
     .btn-submit {
         height: 48px;
+        font-size: 14.5px;
+    }
+
+    .password-toggle {
+        width: 44px;
+        height: 44px;
     }
 }

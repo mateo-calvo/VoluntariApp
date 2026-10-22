@@ -160,8 +160,11 @@
                         <!-- Dirección -->
                         <div class="form-group">
                             <label for="direccion">Dirección *</label>
-                            <input type="text" id="direccion" name="direccion" placeholder="Av. Corrientes 1234"
-                                autocomplete="street-address" required>
+                            <div class="ubicacion-box">
+                                <input type="text" id="direccion" name="direccion" placeholder="Av. Corrientes 1234, CABA"
+                                    autocomplete="off" role="combobox" aria-expanded="false" aria-controls="direccion-sugerencias" aria-autocomplete="list" required>
+                                <ul class="ubicacion-sugerencias hidden" id="direccion-sugerencias" role="listbox" aria-label="Direcciones sugeridas"></ul>
+                            </div>
                         </div>
 
                         <!-- Email -->

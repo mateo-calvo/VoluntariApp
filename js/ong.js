@@ -136,6 +136,7 @@ function cargarSidebar() {
 
   const sidebarHTML = `
     <aside class="sidebar">
+      <button type="button" class="sidebar-cerrar-mobile" onclick="toggleSidebarONG()" aria-label="Cerrar menú">${iconos.cerrar}</button>
       <div class="sidebar-logo">
         <img src="../../images/logo.png" alt="VoluntariApp" class="logo-img">
       </div>
@@ -181,9 +182,14 @@ function cargarHeader() {
 
   const headerHTML = `
     <header class="topbar">
-      <div class="topbar-titulo">
-        <h1>${tituloTexto}</h1>
-        <small>Panel de administración · ${datosSidebar.organizacion}</small>
+      <div class="topbar-izq">
+        <button type="button" class="btn-menu-sidebar" onclick="toggleSidebarONG()" aria-label="Abrir menú">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="topbar-titulo">
+          <h1>${tituloTexto}</h1>
+          <small>Panel · ${datosSidebar.organizacion}</small>
+        </div>
       </div>
 
       <div class="topbar-acciones">
@@ -219,6 +225,24 @@ function cargarHeader() {
 
   document.getElementById('header-container').innerHTML = headerHTML;
 }
+
+// ===== SIDEBAR MOBILE =====
+function toggleSidebarONG() {
+  const sidebar = document.querySelector('.sidebar');
+  let backdrop = document.getElementById('sidebar-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'sidebar-backdrop';
+    backdrop.className = 'sidebar-backdrop';
+    backdrop.onclick = toggleSidebarONG;
+    document.body.appendChild(backdrop);
+  }
+  if (sidebar) {
+    const abierto = sidebar.classList.toggle('abierto');
+    backdrop.classList.toggle('visible', abierto);
+  }
+}
+window.toggleSidebarONG = toggleSidebarONG;
 
 // ===== DROPDOWNS =====
 function toggleDropdown(id) {

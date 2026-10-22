@@ -718,25 +718,31 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (MÓVILES Y TABLETS)
    ========================================================================== */
+html,
+body {
+    overflow-x: clip;
+    max-width: 100%;
+}
+
 @media (max-width: 960px) {
     .auth-layout {
         flex-direction: column;
     }
 
     .auth-banner {
-        padding: 32px 24px;
-        min-height: 280px;
+        padding: 24px 20px;
+        min-height: auto;
         justify-content: center;
     }
 
     .banner-quote-wrapper {
-        margin: 20px 0 16px 0;
+        margin: 10px 0 8px 0;
     }
 
     .banner-quote {
-        font-size: 24px;
+        font-size: 21px;
     }
 
     .banner-desc,
@@ -746,34 +752,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
     }
 
     .auth-content {
-        padding: 40px 20px;
+        padding: 32px 20px 48px;
     }
 }
 
-@media (max-width: 480px) {
-    .auth-banner {
-        padding: 24px 16px;
-        min-height: 200px;
-    }
-
-    .banner-quote {
-        font-size: 20px;
-    }
-
-    .auth-content {
-        padding: 32px 16px;
-    }
-
-    .auth-title {
-        font-size: 24px;
-    }
-
-    .form-group input,
-    .form-group select,
-    .btn-submit {
-        height: 48px;
-    }
-
+@media (max-width: 720px) {
     .form-row-double {
         flex-direction: column;
         gap: 16px;
@@ -781,5 +764,60 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
     .form-row-double .form-group-postal {
         width: 100%;
+    }
+
+    .role-toggle {
+        gap: 4px;
+    }
+
+    .role-tab {
+        font-size: 13.5px;
+        padding: 10px 8px;
+        gap: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-banner {
+        padding: 16px 14px;
+    }
+
+    .banner-quote {
+        font-size: 18px;
+    }
+
+    .auth-content {
+        padding: 24px 14px 40px;
+    }
+
+    .auth-title {
+        font-size: 23px;
+    }
+
+    .auth-subtitle {
+        font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .btn-submit {
+        height: 48px;
+        font-size: 14.5px;
+    }
+
+    .step-nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .step-nav .btn-next,
+    .step-nav .btn-back {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .role-tab {
+        font-size: 12.5px;
+        padding: 9px 4px;
     }
 }
