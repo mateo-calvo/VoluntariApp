@@ -237,8 +237,66 @@ a { text-decoration: none; color: inherit; }
 }
 .empty .btn { margin-top: 14px; }
 
-@media (max-width: 600px) {
-  .panel-navbar .nav-links { display: none; }
-  .panel-main { padding: 24px 16px 48px; }
-  .form-row { flex-direction: column; }
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+@media (max-width: 680px) {
+  .panel-navbar {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 8px 16px;
+    gap: 8px;
+  }
+  .panel-navbar .nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+    gap: 1.25rem;
+    display: flex;
+  }
+  .panel-user {
+    margin-left: auto;
+  }
+  .panel-user .username {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .panel-main {
+    padding: 20px 16px 48px;
+  }
+  .form-row {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .panel-card .row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .panel-card .row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-title {
+    font-size: 24px;
+  }
+  .panel-subtitle {
+    font-size: 14px;
+  }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
 }

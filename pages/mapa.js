@@ -101,13 +101,99 @@ function toast(msg, type = '') {
   toast._t = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
+// ---- Manejo de ubicación para Cuenta Demo ----
+function getDemoOverrides() {
+  let single = null;
+  let list = [];
+  try { single = JSON.parse(localStorage.getItem('va_demo_ong_override') || 'null'); } catch {}
+  try { list = JSON.parse(localStorage.getItem('va_ongs_demo') || '[]'); } catch {}
+  return { single, list };
+}
+
+function aplicarOverridesDemo() {
+  const { single, list } = getDemoOverrides();
+  const session = getSession();
+
+  let override = single;
+  if (!override && list.length > 0) {
+    const found = list.find(o => session && (o.ownerEmail === session.email || o.email === session.email)) || list[0];
+    if (found && found.barrio) {
+      override = {
+        nombre: found.nombrePublico || found.nombre,
+        barrio: found.barrio,
+        lat: found.lat,
+        lng: found.lng,
+        linkPago: found.linkPago,
+        categoria: found.categoria
+      };
+    }
+  }
+
+  if (override && override.lat && override.lng) {
+    const oLat = Number(override.lat);
+    const oLng = Number(override.lng);
+    state.items.forEach(item => {
+      const isMatch = (
+        (item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase().includes('cruz roja')) ||
+        (item.nombre && item.nombre.toLowerCase().includes('cruz roja')) ||
+        (override.nombre && item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase() === override.nombre.toLowerCase()) ||
+        item.esDemo
+      );
+      if (isMatch) {
+        item.lat = oLat;
+        item.lng = oLng;
+        item.barrio = override.barrio || item.barrio;
+        item.distancia = haversineKm(CABA_CENTER[0], CABA_CENTER[1], oLat, oLng);
+        if (override.linkPago) item.linkPago = override.linkPago;
+        item.esDemoModificado = true;
+      }
+    });
+  }
+
+  // Incorporar ONGs registradas localmente en modo demo
+  list.forEach(ong => {
+    const yaExiste = state.items.some(i =>
+      (i.nombreOrganizacion && i.nombreOrganizacion.toLowerCase() === (ong.nombrePublico || '').toLowerCase())
+    );
+    if (!yaExiste && ong.nombrePublico && ong.lat && ong.lng) {
+      const cat = normalizarCategoria(ong.categoria);
+      const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
+      state.items.unshift({
+        id: `demo-${ong.cuit || Math.random().toString(36).substring(2, 9)}`,
+        nombreOrganizacion: ong.nombrePublico,
+        nombre: `${ong.nombrePublico} — Convocatoria`,
+        barrio: ong.barrio || 'Buenos Aires',
+        categoria: cat,
+        emoji: estilo.emoji,
+        iconBg: estilo.iconBg,
+        lat: Number(ong.lat),
+        lng: Number(ong.lng),
+        totalCupos: Number(ong.cupos) || 5,
+        inscriptos: 0,
+        voluntarios: 0,
+        rating: 5.0,
+        distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], Number(ong.lat), Number(ong.lng)),
+        cupos: Number(ong.cupos) || 5,
+        verificada: true,
+        web: ong.web || '',
+        linkPago: ong.linkPago || '',
+        contacto: ong.contacto || '',
+        descripcion: ong.descripcion || '',
+        necesidades: ong.necesidades || '',
+        esDemo: true,
+        esDemoModificado: true,
+      });
+    }
+  });
+}
+
 // ---- Carga de datos: API de Django (Supabase) con manejo de errores ----
 async function loadItems() {
   state.isLoading = true;
   state.error = null;
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const timer = setTimeout(() => ctrl.abort(), 15000);
 
     const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
     const res = await fetch(`${baseUrl}/api/convocatorias/`, { signal: ctrl.signal });
@@ -117,6 +203,7 @@ async function loadItems() {
     const data = await res.json();
     if (Array.isArray(data)) {
       state.items = data.map(mapApiItem);
+      aplicarOverridesDemo();
       state.isLoading = false;
       return;
     }
@@ -124,6 +211,7 @@ async function loadItems() {
   } catch (err) {
     console.error('Error al cargar convocatorias:', err);
     state.items = [];
+    aplicarOverridesDemo();
     state.isLoading = false;
     state.error = 'No pudimos cargar las convocatorias desde el servidor.';
     toast('No pudimos conectar con el servidor. Reintentá nuevamente.', 'error');
@@ -136,9 +224,16 @@ function mapApiItem(c) {
   const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
   const lat = parseFloat(c.latitud ?? c.lat) || CABA_CENTER[0];
   const lng = parseFloat(c.longitud ?? c.lng) || CABA_CENTER[1];
+  const id = c.convocatoria_id || c.id;
+  const cuposTotales = parseInt(c.cupos_totales ?? c.cupos_disponibles ?? c.cupos ?? 0, 10) || 0;
+  const inscriptosActuales = parseInt(c.inscriptos_actuales ?? 0, 10) || 0;
+  const libresBase = c.lugares_libres != null ? parseInt(c.lugares_libres, 10) : Math.max(0, cuposTotales - inscriptosActuales);
+  const yaIn = yaParticipa(id);
+  const cuposRestantes = Math.max(0, libresBase - (yaIn ? 1 : 0));
 
   return {
-    id: c.convocatoria_id || c.id,
+    id: id,
+    nombreOrganizacion: c.nombre_organizacion || '',
     nombre: c.nombre_organizacion ? `${c.nombre_organizacion} — ${c.titulo}` : (c.titulo || 'Convocatoria'),
     barrio: [c.localidad_nombre, c.provincia_nombre].filter(Boolean).join(', ') || c.lugar || c.direccion || '',
     categoria: cat,
@@ -146,10 +241,13 @@ function mapApiItem(c) {
     iconBg: estilo.iconBg,
     lat: lat,
     lng: lng,
-    voluntarios: c.voluntarios ?? 0,
+    totalCupos: cuposTotales,
+    inscriptos: inscriptosActuales + (yaIn ? 1 : 0),
+    voluntarios: inscriptosActuales + (yaIn ? 1 : 0),
     rating: parseFloat(c.ong_rating || 5.0),
     distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], lat, lng),
     cupos: c.cupos_totales ?? c.cupos_disponibles ?? c.cupos ?? 0,
+    cupos: cuposRestantes,
     verificada: c.ong_verificada ?? true,
     web: c.web || '',
     linkPago: c.ong_link_donacion || '',
@@ -204,13 +302,25 @@ function renderMarkers(list) {
     }).addTo(map);
 
     marker.bindPopup(`
-      <strong>${item.emoji} ${item.nombre}</strong><br>
-      📍 ${item.barrio}<br>
-      ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.voluntarios} vol.<br>
-      <span class="popup-cupos">🤝 ${item.cupos} cupos</span>
+      <strong>${item.emoji} ${esc(item.nombre)}</strong><br>
+      📍 ${esc(item.barrio)}<br>
+      ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.totalCupos} cupos totales<br>
+      <span class="popup-cupos">🤝 ${item.cupos} disponibles</span>
+      <div style="margin-top: 8px;">
+        <button class="popup-detail-btn" data-id="${item.id}" type="button">Ver detalle completo →</button>
+      </div>
     `);
 
-    marker.on("click", () => selectItem(item.id, false));
+    marker.on("popupopen", () => {
+      const btn = document.querySelector(`.popup-detail-btn[data-id="${item.id}"]`);
+      btn?.addEventListener("click", () => {
+        selectItem(item.id, false);
+      });
+    });
+
+    marker.on("click", () => {
+      selectItem(item.id, false);
+    });
     markersById[item.id] = marker;
   });
 }
@@ -275,9 +385,9 @@ function renderList(list) {
       <div class="ong-info">
         <h3 class="ong-name">${o.nombre} ${reviewBadge(o)}</h3>
         <p class="ong-barrio">📍 ${o.barrio}</p>
-        <div class="ong-meta"><span>👥 ${o.voluntarios}</span><span class="rating">★ ${o.rating}</span></div>
+        <div class="ong-meta"><span>👥 ${o.totalCupos} cupos totales</span><span class="rating">★ ${o.rating}</span></div>
         <p class="ong-dist">➤ ${o.distancia.toFixed(1)} km</p>
-        <span class="ong-cupos">🤝 ${o.cupos} cupos</span>
+        <span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>
       </div>
       <span class="ong-arrow">›</span>
     </article>`
@@ -294,13 +404,30 @@ function esc(s) {
 }
 
 function safeLink(url) {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
-    const u = new URL(url);
-    if (u.protocol !== 'https:') return null;
+    const u = new URL(withProto);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
     return u.href;
   } catch {
     return null;
   }
+}
+
+function obtenerLinkMercadoPago(url) {
+  if (window.DonarONG && window.DonarONG.validarLink) {
+    return window.DonarONG.validarLink(url);
+  }
+  const link = safeLink(url);
+  if (!link) return null;
+  const lower = link.toLowerCase();
+  if (lower.includes('mercadopago') || lower.includes('mpago.la') || lower.includes('mpago.li')) {
+    return link;
+  }
+  return null;
 }
 
 function renderDetail() {
@@ -308,9 +435,14 @@ function renderDetail() {
   const item = state.items.find((o) => String(o.id) === String(state.selectedId));
   if (!item) {
     detail.classList.add("hidden");
+    sidebar?.classList.remove("detail-open");
+    document.body.classList.remove("detail-open");
     detail.innerHTML = "";
     return;
   }
+
+  sidebar?.classList.add("detail-open");
+  document.body.classList.add("detail-open");
 
   const session = getSession();
   const alreadyIn = yaParticipa(item.id);
@@ -326,38 +458,133 @@ function renderDetail() {
   }
 
   const web = safeLink(item.web);
-  const pago = safeLink(item.linkPago);
+  const mpLink = obtenerLinkMercadoPago(item.linkPago);
+
+
+
+  let donarBtnHtml = '';
+  if (mpLink) {
+    donarBtnHtml = `
+      <button type="button" class="btn-donar-ong" id="detail-donar-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <span>Donar a esta ONG</span>
+      </button>`;
+  }
+
+  const totalPlazas = Math.max(1, Number(item.cupos || 0) + Number(item.voluntarios || 0));
+  const ocupacionReal = Math.round((Number(item.voluntarios || 0) / totalPlazas) * 100);
+  const ocupacionVisual = Math.max(14, ocupacionReal);
+  const actividadReal = Math.min(100, Math.round((Number(item.voluntarios || 0) * 9) + 18));
+  const actividadVisual = Math.max(20, actividadReal);
   const links = [
     web ? `<a class="detail-link" href="${esc(web)}" target="_blank" rel="noopener">🌐 Visitar sitio de la ONG</a>` : '',
-    pago ? `<a class="detail-link" href="${esc(pago)}" target="_blank" rel="noopener">💳 Donar a esta causa</a>` : '',
     item.contacto ? `<span class="detail-row">✉️ Contacto: <strong>${esc(item.contacto)}</strong></span>` : '',
   ].filter(Boolean).join('');
 
   detail.classList.remove("hidden");
   detail.innerHTML = `
-    <button class="detail-back" id="detail-back">← Volver</button>
-    <span class="detail-category">${esc(CATEGORIA_LABELS[item.categoria] || item.categoria)}</span>
-    <h2>${item.emoji} ${esc(item.nombre)} ${reviewBadge(item)}</h2>
-    <p class="detail-desc">${esc(item.descripcion)}</p>
-    ${item.necesidades ? `<p class="detail-row">🙌 Buscan: <strong>${esc(item.necesidades)}</strong></p>` : ''}
-    <p class="detail-row">📍 <strong>${esc(item.barrio)}</strong></p>
-    <p class="detail-row">⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.voluntarios} voluntarios &nbsp;·&nbsp; ➤ ${item.distancia.toFixed(1)} km</p>
-    <p class="detail-row">🤝 <strong>${item.cupos} cupos disponibles</strong></p>
-    ${links ? `<div class="detail-links">${links}</div>` : ''}
-    <div class="detail-actions">
-      ${btnHtml}
-      <button class="btn-secondary" id="detail-center">Ver en mapa</button>
+    <div class="detail-top-nav">
+      <button class="detail-back-map" id="detail-back" type="button" title="Volver al mapa">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        <span>Volver al mapa</span>
+      </button>
+      <div class="detail-top-right">
+        <button class="detail-to-list-btn" id="detail-to-list" type="button">Ver lista</button>
+        <button class="detail-close-x" id="detail-close-x" type="button" aria-label="Cerrar y volver al mapa">✕</button>
+      </div>
+    </div>
+
+    <div class="detail-content-scroll">
+      <div class="detail-mini-banner">
+        <div class="detail-mini-banner-text">
+          <span class="detail-mini-kicker">Convocatoria activa</span>
+          <strong>${item.emoji} ${esc(item.nombre)}</strong>
+          <small>${esc(item.barrio)}</small>
+        </div>
+        <span class="detail-mini-pill">${esc(CATEGORIA_LABELS[item.categoria] || item.categoria)}</span>
+      </div>
+
+      <span class="detail-category">${esc(CATEGORIA_LABELS[item.categoria] || item.categoria)}</span>
+      <h2>${item.emoji} ${esc(item.nombre)} ${reviewBadge(item)}</h2>
+      <p class="detail-desc">${esc(item.descripcion)}</p>
+      ${item.necesidades ? `<p class="detail-row">🙌 Buscan: <strong>${esc(item.necesidades)}</strong></p>` : ''}
+      <p class="detail-row">📍 <strong>${esc(item.barrio)}</strong></p>
+      <p class="detail-row">⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.inscriptos != null ? item.inscriptos : item.voluntarios} inscriptos de ${item.totalCupos || totalPlazas} cupos &nbsp;·&nbsp; ➤ ${item.distancia.toFixed(1)} km</p>
+      <p class="detail-row">🤝 <strong>${item.cupos} lugares libres</strong></p>
+      <div class="detail-metrics">
+        <div class="detail-metric">
+          <div class="detail-metric-head">
+            <span>Cupos ocupados</span>
+            <strong>${ocupacionReal}%</strong>
+          </div>
+          <div class="detail-metric-bar" role="presentation"><span style="width:${ocupacionVisual}%"></span></div>
+        </div>
+        <div class="detail-metric">
+          <div class="detail-metric-head">
+            <span>Actividad reciente</span>
+            <strong>${actividadReal}%</strong>
+          </div>
+          <div class="detail-metric-bar detail-metric-bar--soft" role="presentation"><span style="width:${actividadVisual}%"></span></div>
+        </div>
+      </div>
+      ${links ? `<div class="detail-links">${links}</div>` : ''}
+      <div class="detail-actions">
+        ${btnHtml}
+        ${donarBtnHtml}
+        <button class="btn-secondary" id="detail-center">Ver en mapa</button>
+      </div>
     </div>`;
 
-  document.getElementById("detail-back").addEventListener("click", () => {
+  const returnToMap = () => {
     state.selectedId = null;
+    sidebar?.classList.remove("detail-open");
+    sidebar?.classList.remove("open");
+    document.body.classList.remove("detail-open");
+    refresh(false);
+    setTimeout(() => map.invalidateSize(), 150);
+  };
+
+  document.getElementById("detail-back")?.addEventListener("click", returnToMap);
+  document.getElementById("detail-close-x")?.addEventListener("click", returnToMap);
+
+  document.getElementById("detail-to-list")?.addEventListener("click", () => {
+    state.selectedId = null;
+    sidebar?.classList.remove("detail-open");
+    document.body.classList.remove("detail-open");
+    sidebar?.classList.add("open");
     refresh(false);
   });
-  document.getElementById("detail-center").addEventListener("click", () => {
-    map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
-    markersById[item.id]?.openPopup();
+
+  document.getElementById("detail-center")?.addEventListener("click", () => {
+    sidebar?.classList.remove("detail-open");
+    sidebar?.classList.remove("open");
+    document.body.classList.remove("detail-open");
+    detail.classList.add("hidden");
+    setTimeout(() => {
+      map.invalidateSize();
+      map.flyTo([item.lat, item.lng], 15, { duration: 0.8 });
+      markersById[item.id]?.openPopup();
+    }, 120);
   });
+
   document.getElementById("detail-join")?.addEventListener("click", () => joinConvocatoria(item));
+
+
+
+  if (mpLink) {
+    document.getElementById("detail-donar-btn")?.addEventListener("click", () => {
+      if (window.DonarONG) {
+        window.DonarONG.abrir({
+          nombre: item.nombreOrganizacion || item.nombre,
+          mpLink: mpLink,
+        });
+      }
+    });
+  }
 }
 
 async function joinConvocatoria(item) {
@@ -411,6 +638,8 @@ async function joinConvocatoria(item) {
   }
   guardarParticipacion(item);
   item.cupos = Math.max(0, item.cupos - 1);
+  item.inscriptos = (item.inscriptos || 0) + 1;
+  item.voluntarios = item.inscriptos;
   toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
   refresh(false);
 }
@@ -418,10 +647,15 @@ async function joinConvocatoria(item) {
 function selectItem(id, openPopup) {
   state.selectedId = id;
   const item = state.items.find((o) => String(o.id) === String(id));
+  if (item && window.innerWidth <= 900) {
+    sidebar?.classList.add("open");
+    sidebar?.classList.add("detail-open");
+    document.body.classList.add("detail-open");
+  }
   refresh(false);
   if (item) {
     map.flyTo([item.lat, item.lng], 14, { duration: 0.8 });
-    if (openPopup !== false) markersById[id]?.openPopup();
+    if (openPopup !== false && window.innerWidth > 900) markersById[id]?.openPopup();
   }
 }
 
@@ -459,6 +693,7 @@ function renderHeader() {
       panel.textContent = dest.texto;
       panel.classList.remove('hidden');
     }
+
     const nameEl = document.getElementById('user-name');
     const avatarEl = document.getElementById('user-avatar');
     if (nameEl) nameEl.textContent = session.nombre || session.email;
@@ -481,36 +716,98 @@ document.getElementById('logout-link')?.addEventListener('click', (e) => {
 });
 
 // ---- Eventos de filtros ----
-document.getElementById("search-input").addEventListener("input", (e) => {
+document.getElementById("search-input")?.addEventListener("input", (e) => {
   state.search = e.target.value.trim();
   refresh(false);
 });
 
-const categoryBtn = document.getElementById("filter-category-btn");
-const categorySelect = document.getElementById("category-select");
-categoryBtn.addEventListener("click", () => {
-  categorySelect.showPicker ? categorySelect.showPicker() : categorySelect.focus();
-});
-categorySelect.addEventListener("change", (e) => {
-  state.categoria = e.target.value;
-  document.getElementById("filter-category-label").textContent =
-    e.target.options[e.target.selectedIndex].text;
-  refresh(true);
+// ---- Dropdowns personalizados de filtros (Categoría y Distancia) ----
+const catWrapper = document.getElementById("dropdown-category-wrapper");
+const catBtn = document.getElementById("filter-category-btn");
+const catMenu = document.getElementById("category-dropdown-menu");
+const catLabel = document.getElementById("filter-category-label");
+
+const distWrapper = document.getElementById("dropdown-distance-wrapper");
+const distBtn = document.getElementById("distance-btn");
+const distMenu = document.getElementById("distance-dropdown-menu");
+const distLabel = document.getElementById("distance-label");
+
+function closeFilterDropdowns() {
+  catMenu?.classList.add("hidden");
+  catWrapper?.classList.remove("open");
+  catBtn?.setAttribute("aria-expanded", "false");
+
+  distMenu?.classList.add("hidden");
+  distWrapper?.classList.remove("open");
+  distBtn?.setAttribute("aria-expanded", "false");
+}
+
+catBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = !catMenu?.classList.contains("hidden");
+  closeFilterDropdowns();
+  if (!isOpen && catMenu) {
+    catMenu.classList.remove("hidden");
+    catWrapper?.classList.add("open");
+    catBtn.setAttribute("aria-expanded", "true");
+  }
 });
 
-const distanceBtn = document.getElementById("distance-btn");
-const distanceSelect = document.getElementById("distance-select");
-distanceBtn.addEventListener("click", () => {
-  distanceSelect.showPicker ? distanceSelect.showPicker() : distanceSelect.focus();
-});
-distanceSelect.addEventListener("change", (e) => {
-  state.maxDistancia = Number(e.target.value);
-  document.getElementById("distance-label").textContent =
-    e.target.options[e.target.selectedIndex].text;
-  refresh(true);
+distBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = !distMenu?.classList.contains("hidden");
+  closeFilterDropdowns();
+  if (!isOpen && distMenu) {
+    distMenu.classList.remove("hidden");
+    distWrapper?.classList.add("open");
+    distBtn.setAttribute("aria-expanded", "true");
+  }
 });
 
-document.getElementById("locate-btn").addEventListener("click", () => {
+// Selección de categoría en menú personalizado
+catMenu?.querySelectorAll(".dropdown-item").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const val = btn.dataset.value;
+    state.categoria = val;
+    catMenu.querySelectorAll(".dropdown-item").forEach((el) => el.classList.remove("active"));
+    btn.classList.add("active");
+
+    const text = val === "todas" ? "Todas" : (CATEGORIA_LABELS[val] || val);
+    if (catLabel) catLabel.textContent = text;
+    closeFilterDropdowns();
+    refresh(true);
+  });
+});
+
+// Selección de distancia en menú personalizado
+distMenu?.querySelectorAll(".dropdown-item").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const km = Number(btn.dataset.value);
+    state.maxDistancia = km;
+    distMenu.querySelectorAll(".dropdown-item").forEach((el) => el.classList.remove("active"));
+    btn.classList.add("active");
+
+    const text = km === 0 ? "Distancia" : `Hasta ${km} km`;
+    if (distLabel) distLabel.textContent = text;
+    closeFilterDropdowns();
+    refresh(true);
+  });
+});
+
+// Cerrar dropdowns al hacer clic fuera o presionar Escape
+document.addEventListener("click", (e) => {
+  if (!catWrapper?.contains(e.target) && !distWrapper?.contains(e.target)) {
+    closeFilterDropdowns();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeFilterDropdowns();
+});
+
+document.getElementById("locate-btn")?.addEventListener("click", () => {
   if (!navigator.geolocation) {
     toast('Tu navegador no soporta geolocalización.', 'error');
     return;
@@ -531,9 +828,30 @@ document.getElementById("locate-btn").addEventListener("click", () => {
 
 // Sidebar mobile
 const sidebar = document.getElementById("ong-sidebar");
-document.getElementById("sidebar-close").addEventListener("click", () => sidebar.classList.remove("open"));
-document.getElementById("fab-list").addEventListener("click", () => sidebar.classList.toggle("open"));
-if (window.innerWidth > 900) sidebar.classList.add("open");
+document.getElementById("sidebar-close")?.addEventListener("click", () => {
+  sidebar?.classList.remove("open");
+  sidebar?.classList.remove("detail-open");
+  document.body.classList.remove("detail-open");
+  state.selectedId = null;
+  refresh(false);
+  setTimeout(() => map.invalidateSize(), 200);
+});
+document.getElementById("fab-list")?.addEventListener("click", () => {
+  sidebar?.classList.toggle("open");
+  setTimeout(() => map.invalidateSize(), 200);
+});
+if (window.innerWidth > 900) sidebar?.classList.add("open");
+
+// Leaflet map resizing listener for mobile and orientation changes
+window.addEventListener("resize", () => {
+  map.invalidateSize();
+  if (window.innerWidth > 900) {
+    sidebar?.classList.add("open");
+  }
+});
+window.addEventListener("orientationchange", () => {
+  setTimeout(() => map.invalidateSize(), 250);
+});
 
 // Inicio: header + datos reales (API) + retorno ?conv=
 (async function init() {
@@ -541,9 +859,26 @@ if (window.innerWidth > 900) sidebar.classList.add("open");
   refresh(false); // Muestra estado de carga de inmediato
   await loadItems();
   refresh(false);
+  setTimeout(() => map.invalidateSize(), 250);
   const convId = new URLSearchParams(window.location.search).get('conv');
   if (convId && state.items.some((o) => String(o.id) === String(convId))) {
     selectItem(convId, true);
-    if (window.innerWidth <= 900) sidebar.classList.add("open");
+    if (window.innerWidth <= 900) {
+      sidebar?.classList.add("open");
+      sidebar?.classList.add("detail-open");
+    }
+  } else {
+    // Si la ONG demo tiene una ubicación modificada o sesión de ONG activa, centrar en ella
+    const session = getSession();
+    const override = JSON.parse(localStorage.getItem('va_demo_ong_override') || 'null');
+    if (override || (session && session.rol === 'ong')) {
+      const demoItem = state.items.find(i => i.esDemoModificado || (i.nombreOrganizacion && i.nombreOrganizacion.toLowerCase().includes('cruz roja')));
+      if (demoItem) {
+        setTimeout(() => {
+          map.flyTo([demoItem.lat, demoItem.lng], 14, { duration: 0.8 });
+          markersById[demoItem.id]?.openPopup();
+        }, 350);
+      }
+    }
   }
 })();

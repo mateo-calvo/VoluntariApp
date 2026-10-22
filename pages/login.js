@@ -27,18 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
         voluntario: 'mapa.html',
     };
 
-    // Cuentas demo del seed (solo para mostrar)
+    // Cuentas de prueba con credenciales reales en Supabase
     const DEMO_ACCOUNTS = {
-        'btn-demo-voluntario': { nombre: 'Demo Voluntario', email: 'demo@voluntariapp.org', password: 'demo1234', rol: 'voluntario' },
-        'btn-demo-ong': { nombre: 'ONG de Prueba', email: 'ong@test.com', password: 'demo1234', rol: 'ong' },
-        'btn-demo-admin': { nombre: 'Admin Demo', email: 'admin@test.com', password: 'demo1234', rol: 'admin' },
+        'btn-demo-voluntario': { nombre: 'Ana Lubari', email: 'analubari@gmail.com', password: 'Voluntario123!', rol: 'voluntario' },
+        'btn-demo-ong': { nombre: 'Cruz Roja Argentina', email: 'contacto@cruzroja.org.ar', password: 'Ong1234!', rol: 'ong' },
+        'btn-demo-admin': { nombre: 'Administrador General', email: 'admin@voluntariapp.org', password: 'Admin1234!', rol: 'admin' },
     };
     const DEMO_CREDS = {
-        'btn-demo-voluntario': { email: 'demo@voluntariapp.org', password: 'demo1234' },
-        'btn-demo-ong': { email: 'ong@test.com', password: 'demo1234' },
-        'btn-demo-admin': { email: 'admin@test.com', password: 'demo1234' },
+        'btn-demo-voluntario': { email: 'analubari@gmail.com', password: 'Voluntario123!' },
+        'btn-demo-ong': { email: 'contacto@cruzroja.org.ar', password: 'Ong1234!' },
+        'btn-demo-admin': { email: 'admin@voluntariapp.org', password: 'Admin1234!' },
     };
-    const DEMO_ROLES = { 'demo@voluntariapp.org': 'voluntario', 'ong@test.com': 'ong', 'admin@test.com': 'admin' };
+    const DEMO_ROLES = { 'analubari@gmail.com': 'voluntario', 'contacto@cruzroja.org.ar': 'ong', 'admin@voluntariapp.org': 'admin' };
 
     function showError(msg) {
         if (!errorBox) return;
@@ -55,17 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Intento de login demo local. Devuelve la sesión, null si la clave no
-    // coincide con una cuenta demo conocida, o 'nueva' si hay que crearla.
+    // Intento de login demo local. Solo coincide si la cuenta existe con clave correcta.
     function demoLogin(email, password) {
+        const cuentaFija = Object.values(DEMO_ACCOUNTS).find(
+            (u) => u.email === email && u.password === password
+        );
+        if (cuentaFija) return cuentaFija;
+
         const demoUsers = JSON.parse(localStorage.getItem('va_users_demo') || '[]');
-        const found = demoUsers.find((u) => u.email === email);
-        if (found && found.password !== password) return null;
-        return {
-            nombre: found?.nombre || (email === 'ong@test.com' ? 'ONG de Prueba' : email.split('@')[0]),
-            email,
-            rol: found?.rol || DEMO_ROLES[email] || 'voluntario',
-        };
+        const found = demoUsers.find((u) => u.email === email && u.password === password);
+        if (found) {
+            return {
+                nombre: found.nombre || email.split('@')[0],
+                email: found.email,
+                rol: found.rol || 'voluntario',
+            };
+        }
+        return null;
     }
 
     function entrarConSesion(session) {
@@ -115,14 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerHTML = '<span>Ingresando...</span>';
 
             try {
-                // Intento contra la API real (con timeout: en hosting estático
-                // o pendrive falla rápido y se usa el modo demo local)
-                const res = await fetch('/api/auth/login', {
+                // Intento contra la API real
+                const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password }),
-                    signal: AbortSignal.timeout(5000),
+                    signal: AbortSignal.timeout(8000),
                 });
+
                 const data = await res.json().catch(() => ({}));
 
                 if (res.ok && data.token) {
@@ -131,30 +137,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     redirectAfterLogin(data.user);
                     return;
                 }
+
                 if (res.status === 401) {
-                    // La API no conoce esta cuenta: puede existir solo en modo
-                    // demo local (navegador). Se prueba ahí antes de fallar.
-                    const demo = demoLogin(email, password);
-                    if (demo) {
-                        entrarConSesion(demo);
-                        return;
-                    }
-                    showError('Credenciales incorrectas. Revisa tu email y contraseña.');
+                    showError(data.message || 'Credenciales incorrectas. Revisa tu email y contraseña.');
                     return;
                 }
-                throw new Error(data.message || 'Respuesta inválida del servidor');
-                } catch (err) {
-                // Modo demo (sin backend): cualquier cuenta válida entra
-                try {
-                    const demo = demoLogin(email, password);
-                    if (!demo) {
-                        showError('Credenciales incorrectas. Revisa tu email y contraseña.');
-                        return;
-                    }
+
+                showError(data.message || 'No se pudo iniciar sesión. Intenta nuevamente.');
+            } catch (err) {
+                // Si el servidor backend no responde (offline), solo permite las cuentas demo conocidas
+                const demo = demoLogin(email, password);
+                if (demo) {
                     entrarConSesion(demo);
-                } catch {
-                    showError('No se pudo iniciar sesión. Intenta de nuevo.');
+                    return;
                 }
+                showError('No se pudo conectar con el servidor. Revisa tu conexión.');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalContent;

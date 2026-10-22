@@ -19,7 +19,11 @@
 
 html,
 body {
-    min-height: 100%;
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
 body {
@@ -33,8 +37,11 @@ body {
 /* Layout Split Screen */
 .auth-layout {
     display: flex;
-    min-height: 100vh;
-    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* ==========================================================================
@@ -43,15 +50,17 @@ body {
 .auth-banner {
     flex: 1;
     min-width: 0;
+    height: 100%;
     position: relative;
     background: 
         linear-gradient(135deg, rgba(15, 33, 50, 0.85) 0%, rgba(15, 33, 50, 0.72) 100%),
         url('../images/voluntarios.jpg') center/cover no-repeat;
     color: var(--color-white);
-    padding: 48px;
+    padding: clamp(24px, 3.5vw, 44px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    overflow: hidden;
 }
 
 /* Enlace Volver al inicio */
@@ -185,51 +194,55 @@ body {
    PANEL DERECHO (FORMULARIO DE REGISTRO)
    ========================================================================== */
 .auth-content {
-    flex: 1;
+    flex: 1.15;
     min-width: 0;
+    height: 100%;
     background-color: var(--color-bg-card);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 32px;
+    padding: clamp(14px, 2.5vh, 26px) clamp(18px, 3.2vw, 40px);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .auth-form-card {
     width: 100%;
-    max-width: 460px;
+    max-width: 480px;
+    margin: auto 0;
 }
 
 /* Header del Formulario */
 .auth-header {
-    margin-bottom: 24px;
+    margin-bottom: clamp(10px, 1.4vh, 16px);
 }
 
 .logo-link {
     display: inline-block;
-    margin-bottom: 20px;
+    margin-bottom: clamp(8px, 1.2vh, 14px);
     text-decoration: none;
 }
 
 .auth-logo {
-    height: 38px;
+    height: clamp(28px, 3.2vh, 34px);
     width: auto;
     display: block;
 }
 
 .auth-title {
-    font-size: clamp(26px, 2.5vw, 32px);
+    font-size: clamp(20px, 2.2vw, 26px);
     font-weight: 800;
     color: var(--color-navy);
     letter-spacing: -0.02em;
     line-height: 1.2;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .auth-subtitle {
-    font-size: 15px;
+    font-size: 13px;
     color: var(--color-muted);
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
 /* Selector Toggle Voluntario / ONG */
@@ -238,8 +251,8 @@ body {
     background-color: var(--color-input-bg);
     border: 1px solid var(--color-input-border);
     border-radius: var(--radius-md);
-    padding: 4px;
-    margin-bottom: 22px;
+    padding: 3px;
+    margin-bottom: clamp(10px, 1.6vh, 16px);
     gap: 4px;
 }
 
@@ -248,13 +261,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 12px;
-    border-radius: 9px;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 8px;
     border: none;
     background: transparent;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--color-muted);
     cursor: pointer;
@@ -269,24 +282,24 @@ body {
     background-color: var(--color-white);
     color: var(--color-navy);
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(15, 33, 50, 0.08);
+    box-shadow: 0 2px 6px rgba(15, 33, 50, 0.08);
 }
 
 .role-tab .role-icon {
-    font-size: 15px;
+    font-size: 14px;
 }
 
 /* Formulario */
 .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: clamp(8px, 1.4vh, 12px);
 }
 
 .form-fields-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: clamp(8px, 1.4vh, 12px);
 }
 
 .form-group {
@@ -295,22 +308,22 @@ body {
 }
 
 .form-group > label {
-    font-size: 14px;
+    font-size: 12.5px;
     font-weight: 700;
     color: var(--color-navy);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 /* Inputs */
 .form-group input {
     width: 100%;
-    height: 50px;
-    padding: 0 16px;
+    height: clamp(38px, 4.4vh, 42px);
+    padding: 0 12px;
     background-color: var(--color-input-bg);
     border: 1.5px solid transparent;
     border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 15px;
+    font-size: 13.5px;
     color: var(--color-navy);
     outline: none;
     transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
@@ -329,13 +342,13 @@ body {
 /* Selects (categoría, barrio) — mismo estilo que los inputs */
 .form-group select {
     width: 100%;
-    height: 50px;
-    padding: 0 16px;
+    height: clamp(38px, 4.4vh, 42px);
+    padding: 0 12px;
     background-color: var(--color-input-bg);
     border: 1.5px solid transparent;
     border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 15px;
+    font-size: 13.5px;
     color: var(--color-navy);
     outline: none;
     transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
@@ -429,6 +442,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .form-row-double {
     display: flex;
     gap: 14px;
+}
+
+.form-row-double > .form-group {
+    flex: 1;
+    min-width: 0;
 }
 
 .form-row-double .form-group-grow {
@@ -651,14 +669,14 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 /* Botón Crear cuenta (Navy oscuro como en la home page y login) */
 .btn-submit {
-    height: 52px;
+    height: clamp(40px, 4.6vh, 44px);
     width: 100%;
     background-color: var(--color-navy);
     color: var(--color-white);
     border: none;
     border-radius: var(--radius-md);
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
@@ -667,7 +685,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
     gap: 8px;
     box-shadow: var(--shadow-btn);
     transition: background-color var(--transition), transform var(--transition), box-shadow var(--transition);
-    margin-top: 6px;
+    margin-top: 2px;
 }
 
 .btn-submit:hover {
@@ -690,12 +708,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 /* Footer con enlace a login */
 .auth-footer {
-    margin-top: 24px;
+    margin-top: clamp(10px, 1.6vh, 16px);
     text-align: center;
 }
 
 .auth-footer p {
-    font-size: 14px;
+    font-size: 12.5px;
     color: var(--color-muted);
 }
 
@@ -713,68 +731,89 @@ input[type="password"]::-webkit-textfield-decoration-container {
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (MÓVILES Y TABLETS) — PÁGINA FIJA
    ========================================================================== */
-@media (max-width: 960px) {
+@media (max-width: 900px) {
+    html,
+    body {
+        height: 100% !important;
+        height: 100dvh !important;
+        overflow: hidden !important;
+    }
+
     .auth-layout {
         flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
     }
 
     .auth-banner {
-        padding: 32px 24px;
-        min-height: 280px;
-        justify-content: center;
-    }
-
-    .banner-quote-wrapper {
-        margin: 20px 0 16px 0;
-    }
-
-    .banner-quote {
-        font-size: 24px;
-    }
-
-    .banner-desc,
-    .banner-checklist,
-    .banner-social-proof {
-        display: none;
+        display: none; /* Oculta banner en móvil para que el formulario quede fijo y sin saltos */
     }
 
     .auth-content {
-        padding: 40px 20px;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        padding: 18px 16px 28px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+    }
+
+    .auth-form-card {
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .form-row-double {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .form-group input,
+    .form-group select {
+        height: 40px;
+        font-size: 13px;
+        padding: 0 10px;
+    }
+
+    .role-tab {
+        font-size: 12.5px;
+        padding: 8px 6px;
     }
 }
 
 @media (max-width: 480px) {
-    .auth-banner {
-        padding: 24px 16px;
-        min-height: 200px;
-    }
-
-    .banner-quote {
-        font-size: 20px;
-    }
-
     .auth-content {
-        padding: 32px 16px;
+        padding: 14px 12px 24px;
     }
 
     .auth-title {
-        font-size: 24px;
+        font-size: 21px;
+    }
+
+    .auth-subtitle {
+        font-size: 12.5px;
     }
 
     .form-group input,
     .form-group select,
     .btn-submit {
-        height: 48px;
+        height: 40px;
+        font-size: 13px;
     }
 
-    .form-row-double {
-        flex-direction: column;
-        gap: 16px;
+    .step-nav {
+        flex-direction: row;
+        gap: 8px;
     }
 
-    .form-row-double .form-group-postal {
-        width: 100%;
+    .step-nav .btn-next,
+    .step-nav .btn-back {
+        height: 40px;
+        font-size: 13px;
     }
 }

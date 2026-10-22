@@ -1606,18 +1606,191 @@ body.modal-abierto {
   color: var(--ong-texto-suave);
 }
 
-/* --- Responsive básico --- */
+/* Botones y utilidades responsivas para panel ONG */
+.btn-menu-sidebar {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--ong-borde);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--ong-texto);
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-izq {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-cerrar-mobile {
+  display: none;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (MÓVILES Y TABLETS - PANEL ONG)
+   ========================================================================== */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .resumen-columnas { grid-template-columns: 1fr; }
   .stats-grid.stats-grid--3 { grid-template-columns: repeat(3, 1fr); }
 }
 
-@media (max-width: 700px) {
-  .solicitud-card { flex-wrap: wrap; }
-  .voluntarios-stats { grid-template-columns: 1fr; }
-  .stats-grid.stats-grid--3 { grid-template-columns: 1fr; }
-  .config-peligro-contenido { flex-direction: column; align-items: flex-start; }
-  .form-grid { grid-template-columns: 1fr; }
-  .pagina-header { flex-direction: column; }
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: min(280px, 86vw);
+    transform: translateX(-105%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1200;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .sidebar.abierto {
+    transform: translateX(0);
+  }
+
+  .sidebar-cerrar-mobile {
+    display: inline-flex;
+    position: absolute;
+    top: 18px;
+    right: 14px;
+    background: transparent;
+    border: none;
+    color: var(--ong-sidebar-texto);
+    cursor: pointer;
+    padding: 6px;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1199;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .sidebar-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .main-content,
+  .topbar {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .topbar {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .topbar-titulo h1 {
+    font-size: 16px;
+  }
+
+  .topbar-titulo small {
+    font-size: 11.5px;
+  }
+
+  .btn-menu-sidebar {
+    display: inline-flex !important;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .perfil-banner {
+    max-height: 180px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stats-grid.stats-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .pagina-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .pagina-header .btn-primario {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal {
+    width: min(500px, 94vw);
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .solicitud-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .solicitud-acciones {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .solicitud-acciones button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .voluntarios-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .config-peligro-contenido {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .config-peligro-contenido button {
+    width: 100%;
+  }
+
+  .cuenta-item {
+    font-size: 13px;
+    word-break: break-all;
+  }
+
+  .vacante-item__meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }

@@ -8,12 +8,36 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    overflow-x: clip;
+    max-width: 100%;
+}
+
 body {
     font-family: 'Nunito Sans', sans-serif;
     color: #0F2132;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+.navbar-toggle {
+    display: none;
+    background: transparent;
+    border: 1.5px solid #cdd8d3;
+    border-radius: 8px;
+    padding: 6px 8px;
+    color: #0F2132;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.navbar-toggle:hover {
+    background-color: #e2eae8;
+    border-color: #1A7A5E;
 }
 
 main {
@@ -831,14 +855,58 @@ a {
     }
 }
 
-/* RESPONSIVE */
+/* ==========================================================================
+   RESPONSIVE DESIGN (MÓVILES Y TABLETS)
+   ========================================================================== */
 @media (max-width: 960px) {
+    .global-container {
+        padding: 0 16px;
+    }
+
+    .hero-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2.5rem;
+        padding: 3.5rem 0 2.5rem;
+    }
+
+    .hero-container-part-one {
+        align-items: center;
+        max-width: 100%;
+    }
+
+    .hero-title {
+        font-size: clamp(32px, 7vw, 44px);
+    }
+
+    .hero-description {
+        margin: 0 auto;
+        font-size: 16.5px;
+    }
+
+    .hero-connect-container {
+        justify-content: center;
+    }
+
+    .hero-container-part-two {
+        flex: 0 1 auto;
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+    }
+
+    .hero-stat-card {
+        right: 0.25rem;
+        top: 0.25rem;
+    }
+
     .how-work-container,
     .ongs-container {
         flex-direction: column;
         align-items: stretch;
         gap: 2.5rem;
-        padding: 4rem 0;
+        padding: 3.5rem 0;
     }
 
     .footer-container {
@@ -849,41 +917,226 @@ a {
     .cta-title,
     .how-work-title,
     .ongs-title {
-        font-size: 32px;
+        font-size: clamp(28px, 6vw, 36px);
     }
 }
 
-@media (max-width: 600px) {
-    .hero-container {
+@media (max-width: 840px) {
+    .navbar {
+        flex-wrap: wrap;
+        padding: 0.65rem 0;
+        position: relative;
+    }
+
+    .navbar-toggle {
+        display: inline-flex;
+        order: 2;
+        margin-left: auto;
+    }
+
+    .header-auth-container {
+        order: 3;
+        margin-left: 8px;
+    }
+
+    .nav-links {
+        display: none;
+        order: 4;
+        width: 100%;
         flex-direction: column;
-        padding: 3rem 0;
+        align-items: stretch;
+        gap: 8px;
+        padding: 14px 0 6px;
+        margin-top: 10px;
+        border-top: 1px solid #e4e1e1;
+    }
+
+    .nav-links.is-open {
+        display: flex;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 15px;
+        color: #0F2132;
+    }
+
+    .nav-links a:hover {
+        background-color: #e2eae8;
+    }
+
+    .nav-links .btn-donar {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 580px) {
+    .navbar .logo img {
+        height: 32px;
+    }
+
+    .btn-login {
+        padding: 0.4rem 0.6rem;
+        font-size: 13px;
+    }
+
+    .btn-register {
+        padding: 0.4rem 0.8rem;
+        font-size: 13px;
+    }
+
+    .hero-container {
+        padding: 2.25rem 0 1.75rem;
+        gap: 2rem;
     }
 
     .hero-title {
-        font-size: 38px;
+        font-size: clamp(26px, 8vw, 34px);
     }
 
-    .footer-columns {
-        grid-template-columns: 1fr 1fr;
+    .hero-description {
+        font-size: 15px;
     }
 
-    .footer-bottom {
+    .hero-connect-container {
         flex-direction: column;
-        align-items: flex-start;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        gap: 10px;
+    }
+
+    .btn-voluntario,
+    .btn-ong {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        padding: 0.85rem 1rem;
+    }
+
+    .hero-container-part-two {
+        max-width: 290px;
+    }
+
+    .hero-stat-card {
+        padding: 0.6rem 0.85rem;
+    }
+
+    .hero-stat-number {
+        font-size: 18px;
+    }
+
+    .hero-stat-label {
+        font-size: 11px;
+    }
+
+    .how-work-card {
+        padding: 1.25rem 1rem;
+        gap: 1rem;
+        border-radius: 1.2rem;
+    }
+
+    .how-work-card-number {
+        font-size: 26px;
+        min-width: 2rem;
+    }
+
+    .how-work-card-content h3 {
+        font-size: 16px;
+    }
+
+    .how-work-card-content p {
+        font-size: 14px;
+    }
+
+    .ongs-media {
+        min-height: 240px;
+    }
+
+    .ongs-media img {
+        min-height: 240px;
+        max-height: 280px;
+    }
+
+    .ongs-quote {
+        padding: 1.25rem 1rem 0.85rem;
+    }
+
+    .ongs-quote-text {
+        font-size: 15px;
+    }
+
+    .ongs-quote-author {
+        font-size: 12.5px;
+    }
+
+    .btn-ongs {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .cta-container {
+        padding: 3rem 1rem;
     }
 
     .cta-title {
-        font-size: 30px;
+        font-size: clamp(24px, 7vw, 30px);
+    }
+
+    .cta-subtitle {
+        font-size: 15px;
     }
 
     .cta-buttons {
         flex-direction: column;
         width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        gap: 10px;
     }
 
     .cta-buttons .btn {
         width: 100%;
         text-align: center;
         justify-content: center;
+    }
+
+    .footer-columns {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .donar-modal {
+        width: 94%;
+        max-width: 420px;
+        padding: 1.5rem 1.15rem;
+        border-radius: 1.25rem;
+    }
+
+    .donar-title {
+        font-size: 22px;
+    }
+
+    .donar-amounts {
+        gap: 0.45rem;
+    }
+
+    .donar-amount {
+        padding: 0.75rem 0.5rem;
+        font-size: 15px;
     }
 }

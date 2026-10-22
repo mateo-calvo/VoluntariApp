@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.conf import settings
 from django.contrib.auth import authenticate
@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from config.exceptions import mensaje_throttled
 
-from .models import Usuario, VistaConvocatoriasCards
+from .models import Localidad, Provincia, Usuario, VistaConvocatoriasCards
 
 
 class HealthCheckTests(TestCase):
@@ -82,81 +82,68 @@ class RegistroVoluntarioEndpointTests(TestCase):
     URL = "/api/auth/register-voluntario"
 
     def setUp(self):
-        # El contador del throttling vive en la caché y sobrevive entre tests: lo reiniciamos.
         cache.clear()
         self.client = APIClient()
-        self.datos = {"nombre": "Ana Pérez", "email": "Ana@Mail.com", "password": "girasol-azul-2026"}
-
-    def test_registro_exitoso(self):
-        data = {
-            "nombre": "Carlos Gómez",
-            "email": "carlos@voluntariado.org",
+        self.datos = {
+            "nombre": "Ana",
+            "apellido": "Pérez",
+            "dni": "35123456",
+            "telefono": "1144556677",
+            "genero": "Femenino",
+            "fecha_nacimiento": "1995-05-15",
+            "provincia_id": 1,
+            "localidad_id": 1,
+            "direccion": "Av. Corrientes 1234",
+            "email": "ana@mail.com",
             "password": "PasswordSeguro123!",
         }
-        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+
+    @patch("urllib.request.urlopen")
+    def test_registro_exitoso(self, mock_urlopen):
+        import io, json
+        mock_resp = io.BytesIO(json.dumps({"id": "some-uuid", "identities": [{"id": "ident"}]}).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        response = self.client.post(self.URL, self.datos, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.json(), {"message": "Cuenta creada con éxito."})
 
-        # Verifica que el usuario se haya persistido en la BD
-        usuario = Usuario.objects.get(email="carlos@voluntariado.org")
-        self.assertEqual(usuario.rol, Usuario.Rol.VOLUNTARIO)
-        self.assertTrue(usuario.check_password("PasswordSeguro123!"))
+    @patch("urllib.request.urlopen")
+    def test_registro_email_duplicado_devuelve_409(self, mock_urlopen):
+        import io, json
+        # Supabase devuelve identidades vacías si el email ya existe
+        mock_resp = io.BytesIO(json.dumps({"id": "some-uuid", "identities": []}).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
 
-    def test_registro_email_duplicado_devuelve_409(self):
-        Usuario.objects.create_user(email="existente@mail.com", password="Password123!", nombre="Usuario Uno")
-
-        data = {
-            "nombre": "Usuario Dos",
-            "email": "EXISTENTE@mail.com",  # con mayúsculas
-            "password": "Password123!",
-        }
-        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        response = self.client.post(self.URL, self.datos, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertIn("ya está registrado", response.json().get("message", ""))
 
     def test_registro_password_corta_devuelve_400(self):
-        data = {
-            "nombre": "Ana",
-            "email": "ana@mail.com",
-            "password": "123",  # muy corta
-        }
-        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        data = {**self.datos, "password": "123"}
+        response = self.client.post(self.URL, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_registro_nombre_vacio_devuelve_400(self):
-        data = {
-            "nombre": "",
-            "email": "ana@mail.com",
-            "password": "PasswordSeguro123!",
-        }
-        response = self.client.post("/api/auth/register-voluntario", data, format="json")
+        data = {**self.datos, "nombre": ""}
+        response = self.client.post(self.URL, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_password_hasheada_y_no_devuelta(self):
-        res = self.client.post(self.URL, self.datos, format="json")
-        u = Usuario.objects.get(email="ana@mail.com")
-        self.assertNotEqual(u.password, self.datos["password"])
-        self.assertTrue(u.check_password(self.datos["password"]))
-        self.assertNotIn("password", res.content.decode())
-        self.assertNotIn(self.datos["password"], res.content.decode())
-
-    def test_cliente_no_puede_elegir_rol(self):
-        datos = {**self.datos, "rol": "admin", "is_staff": True, "is_superuser": True}
-        res = self.client.post(self.URL, datos, format="json")
-        self.assertEqual(res.status_code, 201)
-        u = Usuario.objects.get(email="ana@mail.com")
-        self.assertEqual(u.rol, Usuario.Rol.VOLUNTARIO)
-        self.assertFalse(u.is_staff)
-        self.assertFalse(u.is_superuser)
+    def test_registro_genero_invalido_devuelve_400(self):
+        data = {**self.datos, "genero": "Invalido"}
+        response = self.client.post(self.URL, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_errores_400_con_message(self):
-        # La contraseña corta y el nombre vacío ya los cubren los tests de arriba.
         casos = [
             {**self.datos, "nombre": " A "},
             {**self.datos, "email": "no-es-un-email"},
-            {**self.datos, "password": "12345678"},
-            {**self.datos, "password": "password"},
-            {"email": "ana@mail.com", "password": "girasol-azul-2026"},  # falta nombre
+            {**self.datos, "dni": "12"},  # DNI muy corto
+            {**self.datos, "telefono": "12"},  # Teléfono muy corto
+            {**self.datos, "direccion": "ab"},  # Dirección muy corta
+            {"email": "ana@mail.com", "password": "PasswordSeguro123!"},  # faltan campos
             {},
         ]
         for datos in casos:
@@ -164,7 +151,6 @@ class RegistroVoluntarioEndpointTests(TestCase):
                 res = self.client.post(self.URL, datos, format="json")
                 self.assertEqual(res.status_code, 400)
                 self.assertIsInstance(res.json()["message"], str)
-        self.assertEqual(Usuario.objects.count(), 0)
 
     def test_json_malformado_responde_json(self):
         res = self.client.post(self.URL, "{esto no es json", content_type="application/json")
@@ -266,7 +252,9 @@ class ConvocatoriasEndpointTests(TestCase):
             direccion="Av. Rivadavia 6900",
             latitud=-34.629,
             longitud=-58.459,
-            cupos_disponibles=15,
+            cupos_totales=15,
+            inscriptos_actuales=3,
+            lugares_libres=12,
             horas_estimadas=4,
             requiere_aprobacion=False,
             estado_convocatoria="abierta",
@@ -295,7 +283,9 @@ class ConvocatoriasEndpointTests(TestCase):
         primera = data[0]
         self.assertEqual(primera["titulo"], "Campaña de Donación de Sangre")
         self.assertEqual(primera["nombre_organizacion"], "Cruz Roja Argentina")
-        self.assertEqual(primera["cupos_disponibles"], 15)
+        self.assertEqual(primera["cupos_totales"], 15)
+        self.assertEqual(primera["lugares_libres"], 12)
+        self.assertEqual(primera["inscriptos_actuales"], 3)
         self.assertEqual(primera["causa_nombre"], "Salud")
         self.assertEqual(primera["localidad_nombre"], "Flores")
 
@@ -305,3 +295,211 @@ class ConvocatoriasEndpointTests(TestCase):
         response = self.client.get("/api/convocatorias/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), [])
+
+
+class LoginEndpointTests(TestCase):
+    """Tests del endpoint /api/auth/login."""
+
+    URL = "/api/auth/login"
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_login_campos_faltantes_devuelve_400(self):
+        res = self.client.post(self.URL, {}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("urllib.request.urlopen")
+    def test_login_exitoso_voluntario(self, mock_urlopen):
+        import io, json
+        user_uuid = str(uuid.uuid4())
+        mock_payload = {
+            "access_token": "mock-token-xyz",
+            "user": {
+                "id": user_uuid,
+                "email": "voluntario@test.com",
+                "user_metadata": {
+                    "rol": "voluntario",
+                    "nombre": "Juan",
+                    "apellido": "Pérez",
+                },
+            },
+        }
+        mock_resp = io.BytesIO(json.dumps(mock_payload).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        res = self.client.post(self.URL, {"email": "voluntario@test.com", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["token"], "mock-token-xyz")
+        self.assertEqual(data["user"]["rol"], "voluntario")
+        self.assertEqual(data["user"]["nombre"], "Juan Pérez")
+
+    @patch("urllib.request.urlopen")
+    def test_login_credenciales_invalidas_devuelve_401(self, mock_urlopen):
+        import urllib.error, io
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            url="http://supabase",
+            code=400,
+            msg="Bad Request",
+            hdrs={},
+            fp=io.BytesIO(b'{"error_code":"invalid_credentials"}')
+        )
+        res = self.client.post(self.URL, {"email": "err@test.com", "password": "wrong"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("Credenciales incorrectas", res.json()["message"])
+
+    @patch("urllib.request.urlopen")
+    def test_login_exitoso_ong_usa_nombre_organizacion(self, mock_urlopen):
+        import io, json
+        user_uuid = str(uuid.uuid4())
+        mock_payload = {
+            "access_token": "mock-token-ong",
+            "user": {
+                "id": user_uuid,
+                "email": "contacto@ong.org.ar",
+                "user_metadata": {
+                    "rol": "ong",
+                    "nombre_organizacion": "Cruz Roja Argentina",
+                },
+            },
+        }
+        mock_resp = io.BytesIO(json.dumps(mock_payload).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        res = self.client.post(self.URL, {"email": "contacto@ong.org.ar", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["user"]["rol"], "ong")
+        self.assertEqual(data["user"]["nombre"], "Cruz Roja Argentina")
+
+    @patch("api.views.Administrador.objects.filter")
+    @patch("urllib.request.urlopen")
+    def test_login_exitoso_admin_detecta_rol_en_administradores(self, mock_urlopen, mock_admin_filter):
+        import io, json
+        user_uuid = str(uuid.uuid4())
+        mock_admin_filter.return_value.exists.return_value = True
+
+        mock_payload = {
+            "access_token": "mock-token-admin",
+            "user": {
+                "id": user_uuid,
+                "email": "admin@voluntariapp.org",
+                "user_metadata": {
+                    "nombre": "Admin",
+                    "apellido": "General",
+                },
+            },
+        }
+        mock_resp = io.BytesIO(json.dumps(mock_payload).encode("utf-8"))
+        mock_resp.status = 200
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        res = self.client.post(self.URL, {"email": "admin@voluntariapp.org", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["user"]["rol"], "admin")
+
+    @patch("urllib.request.urlopen")
+    def test_login_email_no_confirmado_retorna_401_con_aviso(self, mock_urlopen):
+        import urllib.error, io
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            url="http://supabase",
+            code=400,
+            msg="Bad Request",
+            hdrs={},
+            fp=io.BytesIO(b'{"error_description":"Email not confirmed"}')
+        )
+        res = self.client.post(self.URL, {"email": "sinconfirmar@test.com", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("no ha sido confirmado", res.json()["message"])
+
+    def test_login_metodo_get_no_permitido(self):
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @patch("urllib.request.urlopen")
+    def test_login_error_inesperado_devuelve_500(self, mock_urlopen):
+        mock_urlopen.side_effect = Exception("Fallo de red inesperado con Supabase")
+        res = self.client.post(self.URL, {"email": "error@test.com", "password": "Password123!"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(res.json(), {"message": "Error al procesar el inicio de sesión."})
+
+
+class ProvinciasEndpointTests(TestCase):
+    """Tests del endpoint público /api/provincias/."""
+
+    URL = "/api/provincias/"
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch("api.views.Provincia.objects.all")
+    def test_listar_provincias_retorna_200_con_datos(self, mock_all):
+        p1 = Provincia(id=1, nombre="Buenos Aires")
+        p2 = Provincia(id=2, nombre="Córdoba")
+        mock_all.return_value = [p1, p2]
+
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0], {"id": 1, "nombre": "Buenos Aires"})
+        self.assertEqual(data[1], {"id": 2, "nombre": "Córdoba"})
+
+    @patch("api.views.Provincia.objects.all")
+    def test_listar_provincias_vacia(self, mock_all):
+        mock_all.return_value = []
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), [])
+
+
+class LocalidadesEndpointTests(TestCase):
+    """Tests del endpoint público /api/localidades/."""
+
+    URL = "/api/localidades/"
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @patch("api.views.Localidad.objects.all")
+    def test_listar_localidades_sin_filtro(self, mock_all):
+        l1 = Localidad(id=1, nombre="La Plata", provincia_id=1)
+        l2 = Localidad(id=2, nombre="Quilmes", provincia_id=1)
+        mock_all.return_value = [l1, l2]
+
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0]["nombre"], "La Plata")
+        self.assertEqual(data[0]["provincia_id"], 1)
+
+    @patch("api.views.Localidad.objects.all")
+    def test_listar_localidades_filtradas_por_provincia(self, mock_all):
+        l1 = Localidad(id=10, nombre="Rosario", provincia_id=2)
+        mock_qs = MagicMock()
+        mock_qs.filter.return_value = [l1]
+        mock_all.return_value = mock_qs
+
+        res = self.client.get(f"{self.URL}?provincia_id=2")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        mock_qs.filter.assert_called_once_with(provincia_id="2")
+        data = res.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["nombre"], "Rosario")
+        self.assertEqual(data[0]["provincia_id"], 2)
+
+    @patch("api.views.Localidad.objects.all")
+    def test_listar_localidades_vacia(self, mock_all):
+        mock_all.return_value = []
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), [])
+
+

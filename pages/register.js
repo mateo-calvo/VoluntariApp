@@ -17,8 +17,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Campos de voluntario
     const inputNombre = document.getElementById('nombre');
+    const inputApellido = document.getElementById('apellido');
+    const inputDni = document.getElementById('dni');
+    const inputTelefono = document.getElementById('telefono');
+    const selectGenero = document.getElementById('genero');
+    const inputFechaNac = document.getElementById('fecha_nacimiento');
+    const selectProvincia = document.getElementById('provincia_id');
+    const selectLocalidad = document.getElementById('localidad_id');
+    const inputDireccion = document.getElementById('direccion');
     const inputEmailVol = document.getElementById('email');
     const inputPassVol = document.getElementById('password');
+
+    // ---------- Carga dinámica de Provincias y Localidades (Django API) ----------
+    async function cargarProvincias() {
+        if (!selectProvincia) return;
+        try {
+            const res = await fetch(`${API_URL}/api/provincias/`);
+            if (!res.ok) throw new Error('Error al obtener provincias');
+            const data = await res.json();
+
+            selectProvincia.innerHTML = '<option value="" disabled selected>Selecciona tu provincia</option>';
+            data.forEach((p) => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nombre;
+                selectProvincia.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Error cargando provincias:', err);
+            selectProvincia.innerHTML = '<option value="" disabled selected>Error al cargar provincias</option>';
+        }
+    }
+
+    if (selectProvincia) {
+        selectProvincia.addEventListener('change', async () => {
+            const provId = selectProvincia.value;
+            if (!selectLocalidad) return;
+
+            selectLocalidad.disabled = true;
+            selectLocalidad.innerHTML = '<option value="" disabled selected>Cargando localidades...</option>';
+
+            if (!provId) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/localidades/?provincia_id=${encodeURIComponent(provId)}`);
+                if (!res.ok) throw new Error('Error al obtener localidades');
+                const data = await res.json();
+
+                selectLocalidad.innerHTML = '<option value="" disabled selected>Selecciona tu localidad</option>';
+                data.forEach((loc) => {
+                    const opt = document.createElement('option');
+                    opt.value = loc.id;
+                    opt.textContent = loc.nombre;
+                    selectLocalidad.appendChild(opt);
+                });
+                selectLocalidad.disabled = false;
+            } catch (err) {
+                console.error('Error cargando localidades:', err);
+                selectLocalidad.innerHTML = '<option value="" disabled selected>Error al cargar localidades</option>';
+            }
+        });
+    }
+
+    // Ejecutar la carga de provincias al inicio
+    cargarProvincias();
 
     // Campos de ONG
     const inputRazonSocial = document.getElementById('razon-social');
@@ -68,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ubicacionSeq = 0;
     let listaAbierta = null;
     const domList = document.getElementById('domicilio-sugerencias');
+    const dirList = document.getElementById('direccion-sugerencias');
 
     function etiquetaUbicacion(r) {
         const a = r.address || {};
@@ -87,13 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cerrarSugerencias() {
-        [sugList, domList].forEach((l) => {
+        [sugList, domList, dirList].forEach((l) => {
             if (!l) return;
             l.innerHTML = '';
             l.classList.add('hidden');
         });
         inputBarrio?.setAttribute('aria-expanded', 'false');
         inputDomicilio?.setAttribute('aria-expanded', 'false');
+        inputDireccion?.setAttribute('aria-expanded', 'false');
         listaAbierta = null;
         sugItems = [];
         sugActive = -1;
@@ -145,6 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function elegirUbicacion(item, origen) {
         const t = etiquetaUbicacion(item);
+        if (origen === 'dir') {
+            if (inputDireccion) inputDireccion.value = t.etiqueta;
+            cerrarSugerencias();
+            return;
+        }
         if (origen === 'dom') {
             // Elegida desde Domicilio: la etiqueta ya trae calle + zona
             if (inputDomicilio) {
@@ -302,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     conectarBuscador(inputBarrio, sugList, 'ubi');
     conectarBuscador(inputDomicilio, domList, 'dom');
+    conectarBuscador(inputDireccion, dirList, 'dir');
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.ubicacion-box')) cerrarSugerencias();
@@ -357,7 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnVolver) btnVolver.classList.toggle('hidden', !isStep2);
         errorBox?.classList.add('hidden');
         syncRequired();
-        formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const authContent = document.querySelector('.auth-content');
+        if (authContent) authContent.scrollTop = 0;
     }
 
     // Los required solo valen en campos visibles: si un required queda en un
@@ -537,29 +608,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 if (!isOng) {
-                    const nombre = inputNombre.value.trim();
-                    const email = inputEmailVol.value.trim().toLowerCase();
-                    const password = inputPassVol.value;
-                    if (nombre.length < 2) throw new Error('Ingresa tu nombre completo.');
+                    const nombre = inputNombre ? inputNombre.value.trim() : '';
+                    const apellido = inputApellido ? inputApellido.value.trim() : '';
+                    const dni = inputDni ? inputDni.value.trim() : '';
+                    const telefono = inputTelefono ? inputTelefono.value.trim() : '';
+                    const genero = selectGenero ? selectGenero.value : '';
+                    const fecha_nacimiento = inputFechaNac ? inputFechaNac.value : '';
+                    const provincia_id = selectProvincia ? parseInt(selectProvincia.value, 10) : 0;
+                    const localidad_id = selectLocalidad ? parseInt(selectLocalidad.value, 10) : 0;
+                    const direccion = inputDireccion ? inputDireccion.value.trim() : '';
+                    const email = inputEmailVol ? inputEmailVol.value.trim().toLowerCase() : '';
+                    const password = inputPassVol ? inputPassVol.value : '';
+
+                    if (!nombre || !apellido) throw new Error('Ingresa tu nombre y apellido completos.');
+                    if (!dni) throw new Error('Ingresa tu DNI o documento.');
+                    if (!telefono) throw new Error('Ingresa tu número de teléfono.');
+                    if (!genero) throw new Error('Selecciona tu género.');
+                    if (!fecha_nacimiento) throw new Error('Ingresa tu fecha de nacimiento.');
+                    if (!provincia_id) throw new Error('Selecciona tu provincia.');
+                    if (!localidad_id) throw new Error('Selecciona tu localidad.');
+                    if (!direccion) throw new Error('Ingresa tu dirección.');
                     if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.');
 
-                    try {
-                        await apiPost(API_URL + '/api/auth/register-voluntario', { nombre, email, password });
-                    } catch (err) {
-                        if (err instanceof TypeError) {
-                            // Modo demo: guarda local
-                            const users = JSON.parse(localStorage.getItem('va_users_demo') || '[]');
-                            if (users.some((u) => u.email === email)) {
-                                throw new Error('Ese email ya está registrado. Inicia sesión.');
-                            }
-                            users.push({ nombre, email, password, rol: 'voluntario' });
-                            localStorage.setItem('va_users_demo', JSON.stringify(users));
-                        } else {
-                            throw err;
-                        }
+                    const res = await fetch(`${API_URL}/api/auth/register-voluntario`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nombre,
+                            apellido,
+                            dni,
+                            telefono,
+                            genero,
+                            fecha_nacimiento,
+                            provincia_id,
+                            localidad_id,
+                            direccion,
+                            email,
+                            password,
+                        }),
+                    });
+
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(json.message || 'Error al crear la cuenta.');
                     }
+
                     showOk('¡Cuenta creada con éxito! Te llevamos al inicio de sesión…');
-                    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+                    setTimeout(() => { window.location.href = 'login.html'; }, 1500);
                 } else {
                     const razon = inputRazonSocial.value.trim();
                     const cuit = inputCuit.value.trim();
