@@ -53,23 +53,40 @@ function miFicha(session) {
   const ongs = leerOngs();
   let ficha = ongs.find((o) => o.ownerEmail === session.email || o.email === session.email);
   if (!ficha) {
-    // Cuenta demo sin ficha: se crea una base editable al guardar
+    const isCruzRoja = session.email === 'contacto@cruzroja.org.ar' || (session.nombre && session.nombre.toLowerCase().includes('cruz roja'));
     ficha = {
       ownerEmail: session.email,
-      nombrePublico: session.nombre || 'Mi ONG',
+      nombrePublico: session.nombre || (isCruzRoja ? 'Cruz Roja Argentina' : 'Mi ONG'),
       email: session.email,
-      categoria: 'desarrollo-social',
-      barrio: '',
-      descripcion: '',
-      necesidades: '',
-      web: '',
-      linkPago: '',
+      categoria: isCruzRoja ? 'salud' : 'desarrollo-social',
+      barrio: isCruzRoja ? 'Av. Las Heras 2214, Palermo, CABA' : 'Av. Corrientes 1234, CABA',
+      lat: isCruzRoja ? -34.5731 : -34.6037,
+      lng: isCruzRoja ? -58.4220 : -58.3816,
+      descripcion: isCruzRoja
+        ? 'Atención en emergencias, primeros auxilios y puestos sanitarios.'
+        : 'Organización comunitaria dedicada al voluntariado.',
+      necesidades: 'Voluntarios para campañas y colectas comunitarias.',
+      web: isCruzRoja ? 'https://cruzroja.org.ar' : '',
+      linkPago: isCruzRoja ? 'https://mpago.la/cruzrojaargentina' : '',
       contacto: session.email,
-      cupos: 5,
+      cupos: 12,
       verificada: true,
       esDemo: true,
     };
   }
+
+  // Si existe una modificación previa de ubicación en localStorage, sincronizarla
+  try {
+    const override = JSON.parse(localStorage.getItem('va_demo_ong_override') || 'null');
+    if (override) {
+      if (override.barrio) ficha.barrio = override.barrio;
+      if (override.lat != null) ficha.lat = Number(override.lat);
+      if (override.lng != null) ficha.lng = Number(override.lng);
+      if (override.nombre) ficha.nombrePublico = override.nombre;
+      if (override.linkPago) ficha.linkPago = override.linkPago;
+    }
+  } catch {}
+
   return ficha;
 }
 
@@ -95,7 +112,7 @@ function showOk(msg) {
   const box = document.getElementById('panel-ok');
   const err = document.getElementById('panel-error');
   if (!box) return;
-  box.textContent = msg;
+  box.innerHTML = msg;
   box.classList.remove('hidden');
   err?.classList.add('hidden');
 }
@@ -157,7 +174,7 @@ function cargarFicha(session) {
 }
 
 function activarGuardado(session) {
-  document.getElementById('ong-form')?.addEventListener('submit', (e) => {
+  document.getElementById('ong-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nombre = document.getElementById('f-nombre').value.trim();
     const categoria = document.getElementById('f-categoria').value;
@@ -176,6 +193,41 @@ function activarGuardado(session) {
     if (!validUrl(linkPago)) return showError('El link de donación debe empezar con https://');
     if (!contacto) return showError('Indicá un contacto.');
 
+    const btnGuardar = document.getElementById('ong-guardar');
+    if (btnGuardar) {
+      btnGuardar.disabled = true;
+      btnGuardar.textContent = 'Guardando y geolocalizando...';
+    }
+
+    let latVal = parseFloat(document.getElementById('f-lat')?.value);
+    let lngVal = parseFloat(document.getElementById('f-lng')?.value);
+
+    // Si las coordenadas no se completaron desde el dropdown de autocompletado, geocodificar con Nominatim
+    if (isNaN(latVal) || isNaN(lngVal)) {
+      try {
+        const query = encodeURIComponent(`${barrio}, Argentina`);
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`, {
+          headers: { 'Accept-Language': 'es' }
+        });
+        const geoData = await geoRes.json();
+        if (Array.isArray(geoData) && geoData.length > 0) {
+          latVal = parseFloat(geoData[0].lat);
+          lngVal = parseFloat(geoData[0].lon);
+          const inputLat = document.getElementById('f-lat');
+          const inputLng = document.getElementById('f-lng');
+          if (inputLat) inputLat.value = latVal;
+          if (inputLng) inputLng.value = lngVal;
+        }
+      } catch (err) {
+        console.warn('Geocodificación fallback:', err);
+      }
+    }
+
+    if (isNaN(latVal) || isNaN(lngVal)) {
+      latVal = -34.6037;
+      lngVal = -58.3816;
+    }
+
     const ongs = leerOngs();
     const i = ongs.findIndex((o) => o.ownerEmail === session.email || o.email === session.email);
     const base = i >= 0 ? ongs[i] : { ownerEmail: session.email, email: session.email, verificada: true };
@@ -185,6 +237,8 @@ function activarGuardado(session) {
       nombrePublico: nombre,
       categoria,
       barrio,
+      lat: latVal,
+      lng: lngVal,
       descripcion,
       necesidades,
       web,
@@ -193,20 +247,24 @@ function activarGuardado(session) {
       cupos,
     };
 
-    const latVal = parseFloat(document.getElementById('f-lat')?.value);
-    const lngVal = parseFloat(document.getElementById('f-lng')?.value);
-    if (!isNaN(latVal) && !isNaN(lngVal)) {
-      actualizada.lat = latVal;
-      actualizada.lng = lngVal;
-    } else if (actualizada.lat === undefined || actualizada.lng === undefined) {
-      // Sin coordenadas propias se ubica en CABA para que figure en el mapa
-      actualizada.lat = -34.6037;
-      actualizada.lng = -58.3816;
-    }
-
     if (i >= 0) ongs[i] = actualizada;
     else ongs.push(actualizada);
     guardarOngs(ongs);
+
+    // Guardar en override del mapa
+    const demoOverride = {
+      email: session.email,
+      nombre: nombre,
+      barrio: barrio,
+      lat: latVal,
+      lng: lngVal,
+      categoria: categoria,
+      web: web,
+      linkPago: linkPago,
+      descripcion: descripcion,
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem('va_demo_ong_override', JSON.stringify(demoOverride));
 
     // Refresca el nombre visible en la sesión
     try {
@@ -216,6 +274,11 @@ function activarGuardado(session) {
       pintarUsuario(s);
     } catch { /* noop */ }
 
-    showOk('Ficha guardada. Ya se refleja en el mapa.');
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = 'Guardar cambios';
+    }
+
+    showOk('¡Ficha guardada! La nueva ubicación (<strong>' + esc(barrio) + '</strong>) ya se actualizó en el mapa. <a href="mapa.html" style="margin-left:8px;font-weight:700;text-decoration:underline;">Ver en el mapa →</a>');
   });
 }

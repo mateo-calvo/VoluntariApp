@@ -377,6 +377,17 @@ function cargarResumen() {
 let editandoPerfil = false;
 
 function cargarPerfil() {
+  // Sincronizar con el override demo si fue modificado
+  try {
+    const override = JSON.parse(localStorage.getItem('va_demo_ong_override') || 'null');
+    if (override) {
+      if (override.barrio) datosPerfil.ciudad = override.barrio;
+      if (override.lat) datosPerfil.lat = Number(override.lat);
+      if (override.lng) datosPerfil.lng = Number(override.lng);
+      if (override.nombre) datosPerfil.nombre = override.nombre;
+    }
+  } catch {}
+
   // Banner
   document.getElementById('perfil-banner-img').src = datosPerfil.banner;
 
@@ -409,6 +420,7 @@ function cargarPerfil() {
 
   renderBotonEditar();
   renderCuenta();
+  renderBotonDonarPerfil();
 }
 
 function renderBotonEditar() {
@@ -440,7 +452,7 @@ function toggleEdicionPerfil() {
   if (editandoPerfil) document.getElementById('perfil-nombre').focus();
 }
 
-function guardarPerfil() {
+async function guardarPerfil() {
   datosPerfil.nombre = document.getElementById('perfil-nombre').value.trim();
   datosPerfil.categoria = document.getElementById('perfil-categoria').value;
   datosPerfil.ciudad = document.getElementById('perfil-ciudad').value.trim();
@@ -448,11 +460,90 @@ function guardarPerfil() {
   datosPerfil.sitioWeb = document.getElementById('perfil-web').value.trim();
   datosPerfil.mision = document.getElementById('perfil-mision').value.trim();
 
+  // Geocodificar si se editó la ubicación manualmente
+  if (!datosPerfil.lat || !datosPerfil.lng || datosPerfil._ultimaCiudadGeocodificada !== datosPerfil.ciudad) {
+    try {
+      const query = encodeURIComponent(`${datosPerfil.ciudad}, Argentina`);
+      const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`, {
+        headers: { 'Accept-Language': 'es' }
+      });
+      const geoData = await geoRes.json();
+      if (Array.isArray(geoData) && geoData.length > 0) {
+        datosPerfil.lat = parseFloat(geoData[0].lat);
+        datosPerfil.lng = parseFloat(geoData[0].lon);
+        datosPerfil._ultimaCiudadGeocodificada = datosPerfil.ciudad;
+      }
+    } catch (err) {
+      console.warn('Geocodificación perfil:', err);
+    }
+  }
+
   // Mantener sincronizado el nombre en sidebar y header
   datosSidebar.organizacion = datosPerfil.nombre;
   cargarSidebar();
   cargarHeader();
   renderCuenta();
+  renderBotonDonarPerfil();
+
+  // Guardar en override del mapa para que se actualice la ubicación de esta ONG en el mapa
+  try {
+    const override = {
+      email: datosPerfil.email || 'contacto@cruzroja.org.ar',
+      nombre: datosPerfil.nombre,
+      barrio: datosPerfil.ciudad,
+      lat: datosPerfil.lat || -34.5731,
+      lng: datosPerfil.lng || -58.4220,
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem('va_demo_ong_override', JSON.stringify(override));
+
+    const ongs = JSON.parse(localStorage.getItem('va_ongs_demo') || '[]');
+    const idx = ongs.findIndex(o => o.ownerEmail === override.email || (o.nombrePublico && o.nombrePublico.toLowerCase().includes('cruz roja')));
+    if (idx >= 0) {
+      ongs[idx].barrio = override.barrio;
+      ongs[idx].lat = override.lat;
+      ongs[idx].lng = override.lng;
+      ongs[idx].nombrePublico = override.nombre;
+    } else {
+      ongs.push({
+        ownerEmail: override.email,
+        nombrePublico: override.nombre,
+        barrio: override.barrio,
+        lat: override.lat,
+        lng: override.lng,
+        verificada: true,
+        esDemo: true
+      });
+    }
+    localStorage.setItem('va_ongs_demo', JSON.stringify(ongs));
+  } catch {}
+}
+
+function renderBotonDonarPerfil() {
+  const btn = document.getElementById('btn-donar-ong-perfil');
+  if (!btn) return;
+
+  const metodoLink = (datosDonaciones.metodos || []).find(m => m.id === 'link');
+  const rawUrl = metodoLink ? metodoLink.valor : '';
+  const mpValido = (window.DonarONG && window.DonarONG.validarLink)
+    ? window.DonarONG.validarLink(rawUrl)
+    : null;
+
+  // Solo se muestra si la ONG tiene habilitadas las donaciones públicas Y un link de Mercado Pago válido
+  if (datosDonaciones.publicas && mpValido) {
+    btn.style.display = 'inline-flex';
+    btn.onclick = () => {
+      if (window.DonarONG) {
+        window.DonarONG.abrir({
+          nombre: datosPerfil.nombre,
+          mpLink: mpValido,
+        });
+      }
+    };
+  } else {
+    btn.style.display = 'none';
+    btn.onclick = null;
+  }
 
   console.log("Perfil guardado:", datosPerfil);
   // después: enviar datosPerfil al backend (PUT /api/perfil)
@@ -787,16 +878,34 @@ function cargarDonaciones() {
 
 function renderDonacionesPublicas() {
   const activas = datosDonaciones.publicas;
+  const metodoLink = (datosDonaciones.metodos || []).find(m => m.id === 'link');
+  const mpValido = (window.DonarONG && window.DonarONG.validarLink)
+    ? window.DonarONG.validarLink(metodoLink ? metodoLink.valor : '')
+    : null;
+  const tieneMP = activas && mpValido;
+
   document.getElementById('donaciones-publicas').innerHTML = `
     <div class="donaciones-icono">${iconos.donaciones}</div>
     <div class="donaciones-publicas-texto">
       <strong>Donaciones públicas</strong>
       <small>${activas
-        ? 'Los usuarios verán el botón "Donar" en tu perfil del mapa'
+        ? (mpValido ? 'Los usuarios verán el botón "❤️ Donar" en tu perfil del mapa vinculado a tu Mercado Pago' : 'Activas, pero falta vincular un link de Mercado Pago para mostrar el botón')
         : 'Los usuarios no verán el botón "Donar" en tu perfil del mapa'}</small>
     </div>
-    <button type="button" class="switch" role="switch" aria-checked="${activas}" aria-label="Activar donaciones públicas" onclick="toggleDonacionesPublicas()"></button>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      ${tieneMP ? `<button type="button" class="btn-donar-ong" id="btn-probar-donacion" style="width:auto;padding:0.4rem 0.85rem;font-size:13px;">❤️ Probar botón</button>` : ''}
+      <button type="button" class="switch" role="switch" aria-checked="${activas}" aria-label="Activar donaciones públicas" onclick="toggleDonacionesPublicas()"></button>
+    </div>
   `;
+
+  if (tieneMP) {
+    document.getElementById('btn-probar-donacion')?.addEventListener('click', () => {
+      window.DonarONG?.abrir({
+        nombre: datosPerfil.nombre,
+        mpLink: mpValido,
+      });
+    });
+  }
 }
 
 function renderDonacionesResumen() {
@@ -866,6 +975,7 @@ function guardarDonaciones() {
   campoObjetivo.value = datosDonaciones.objetivo;
 
   renderDonacionesResumen();
+  renderDonacionesPublicas();
   console.log("Donaciones guardadas:", datosDonaciones);
   // después: enviar datosDonaciones al backend (PUT /api/donaciones)
 }

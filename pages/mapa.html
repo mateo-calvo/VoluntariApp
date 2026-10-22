@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="../css/mapa.css">
+  <link rel="stylesheet" href="../css/donar-modal.css">
+  <link rel="stylesheet" href="../css/autocomplete.css">
 </head>
 
 <body>
@@ -40,54 +42,94 @@
           <input type="text" id="search-input" placeholder="Buscar ONG o ciudad..." autocomplete="off">
         </div>
 
-        <button class="pill-btn" id="filter-category-btn" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-          </svg>
-          <span id="filter-category-label">Todas</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <!-- Dropdown real de categorías -->
-        <select id="category-select" class="category-select-hidden" aria-label="Filtrar por categoría">
-          <option value="todas">Todas</option>
-          <option value="desarrollo-social">Desarrollo social</option>
-          <option value="salud">Salud</option>
-          <option value="educacion">Educación</option>
-          <option value="medioambiente">Medioambiente</option>
-          <option value="infancias">Infancias y juventudes</option>
-          <option value="derechos">Derechos humanos</option>
-        </select>
+        <div class="map-filters-row">
+          <!-- Dropdown personalizado de Categoría -->
+          <div class="filter-dropdown-wrapper" id="dropdown-category-wrapper">
+            <button class="pill-btn" id="filter-category-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span id="filter-category-label">Todas</span>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="custom-dropdown-menu hidden" id="category-dropdown-menu" role="listbox" aria-label="Filtrar por categoría">
+              <button type="button" class="dropdown-item active" data-value="todas">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🌐</span> Todas las categorías</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="desarrollo-social">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🤲</span> Desarrollo social</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="salud">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🚑</span> Salud</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="educacion">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">📚</span> Educación</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="medioambiente">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🌿</span> Medioambiente</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="infancias">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">👶</span> Infancias y juventudes</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="derechos">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🕊️</span> Derechos humanos</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+            </div>
+          </div>
 
-        <button class="pill-btn" id="locate-btn" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
-            <circle cx="12" cy="12" r="8"></circle>
-          </svg>
-          <span>Ubicación</span>
-        </button>
+          <!-- Dropdown personalizado de Distancia -->
+          <div class="filter-dropdown-wrapper" id="dropdown-distance-wrapper">
+            <button class="pill-btn" id="distance-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+              </svg>
+              <span id="distance-label">Distancia</span>
+              <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="custom-dropdown-menu hidden" id="distance-dropdown-menu" role="listbox" aria-label="Filtrar por distancia">
+              <button type="button" class="dropdown-item active" data-value="0">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🗺️</span> Cualquier distancia</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="3">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🚶</span> Hasta 3 km</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="5">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🚲</span> Hasta 5 km</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+              <button type="button" class="dropdown-item" data-value="10">
+                <span class="dropdown-item-left"><span class="dropdown-item-icon">🚗</span> Hasta 10 km</span>
+                <span class="dropdown-item-check">✓</span>
+              </button>
+            </div>
+          </div>
 
-        <button class="pill-btn" id="distance-btn" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-          </svg>
-          <span id="distance-label">Distancia</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <select id="distance-select" class="category-select-hidden" aria-label="Filtrar por distancia">
-          <option value="0">Distancia</option>
-          <option value="3">Hasta 3 km</option>
-          <option value="5">Hasta 5 km</option>
-          <option value="10">Hasta 10 km</option>
-        </select>
+          <button class="pill-btn" id="locate-btn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+              <circle cx="12" cy="12" r="8"></circle>
+            </svg>
+            <span>Ubicación</span>
+          </button>
+        </div>
       </div>
 
       <div class="map-header-user">
@@ -152,6 +194,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="../js/config.js"></script>
+  <script src="../js/ubicacion-autocomplete.js"></script>
+  <script src="../js/donar-ong.js"></script>
   <script src="mapa.js?v=2"></script>
 </body>
 

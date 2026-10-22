@@ -427,7 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnVolver) btnVolver.classList.toggle('hidden', !isStep2);
         errorBox?.classList.add('hidden');
         syncRequired();
-        formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const authContent = document.querySelector('.auth-content');
+        if (authContent) authContent.scrollTop = 0;
     }
 
     // Los required solo valen en campos visibles: si un required queda en un
