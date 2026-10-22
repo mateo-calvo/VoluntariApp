@@ -368,6 +368,21 @@ function cargarPerfil() {
   document.getElementById('perfil-web').value = datosPerfil.sitioWeb;
   document.getElementById('perfil-mision').value = datosPerfil.mision;
 
+  const inputCiudad = document.getElementById('perfil-ciudad');
+  if (inputCiudad && window.conectarAutocompletadoUbicacion && !inputCiudad.dataset.autocompleteInit) {
+    inputCiudad.dataset.autocompleteInit = 'true';
+    window.conectarAutocompletadoUbicacion(inputCiudad, {
+      lista: '#perfil-ciudad-sugerencias',
+      onSelect: (item, info) => {
+        datosPerfil.ciudad = info.etiqueta;
+        if (info.lat && info.lon) {
+          datosPerfil.lat = parseFloat(info.lat);
+          datosPerfil.lng = parseFloat(info.lon);
+        }
+      }
+    });
+  }
+
   renderBotonEditar();
   renderCuenta();
 }

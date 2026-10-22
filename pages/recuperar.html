@@ -6,62 +6,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperar contraseña | VoluntariApp</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/login.css">
     <link rel="stylesheet" href="../css/recuperar.css">
 </head>
 
 <body>
-
-    <div class="auth-left"></div>
-
-    <div class="auth-right">
-        <div class="form-container">
-            <div class="logo-container">
-                <img src="../images/logo.png" alt="VoluntariApp Logo">
+    <div class="auth-layout">
+        <aside class="auth-banner">
+            <div class="banner-top">
+                <a href="../index.html" class="back-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Volver al inicio</span>
+                </a>
             </div>
 
-            <h1>Recuperar contraseña</h1>
-            <p>Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecerla.</p>
-
-            <form id="recovery-form">
-                <label for="email">Correo electrónico</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    placeholder="tu@correo.com"
-                    required
-                >
-
-                <button type="submit" id="boton-enviar">
-                    Enviar instrucciones <span aria-hidden="true">→</span>
-                </button>
-
-                <p id="recovery-ok" hidden style="margin-top:12px;font-size:14px;font-weight:700;color:#145E48;background:#E1EEE8;border-radius:8px;padding:10px 14px;"></p>
-            </form>
-
-            <script>
-                document.getElementById('recovery-form').addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    var email = document.getElementById('email').value.trim();
-                    if (!email) return;
-                    var btn = document.getElementById('boton-enviar');
-                    btn.disabled = true;
-                    btn.textContent = 'Enviando...';
-                    setTimeout(function () {
-                        var ok = document.getElementById('recovery-ok');
-                        ok.textContent = 'Te enviamos las instrucciones a ' + email + '. Revisa tu bandeja.';
-                        ok.hidden = false;
-                        btn.textContent = 'Enviado ✓';
-                        setTimeout(function () { window.location.href = 'login.html'; }, 2000);
-                    }, 800);
-                });
-            </script>
-
-            <div class="back-to-login">
-                <a href="login.html">← Volver al inicio de sesión</a>
+            <div class="banner-quote-wrapper">
+                <blockquote class="banner-quote">
+                    "Tu próximo paso para seguir ayudando está a un clic."
+                </blockquote>
+                <cite class="banner-author">— Comunidad VoluntariApp</cite>
             </div>
-        </div>
+
+            <div class="banner-social-proof">
+                <img src="../images/img2.avif" alt="Voluntarios de la comunidad" class="social-proof-avatar">
+                <div class="social-proof-text">
+                    <strong>+12,400 voluntarios</strong>
+                    <span>ya marcaron la diferencia este año</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="auth-content">
+            <div class="auth-form-card recovery-card">
+                <header class="auth-header">
+                    <a href="../index.html" class="logo-link" title="Volver al inicio">
+                        <img src="../images/logo.png" alt="VoluntariApp" class="auth-logo">
+                    </a>
+                    <h1 class="auth-title">Recuperar contraseña</h1>
+                    <p class="auth-subtitle">Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecerla.</p>
+                </header>
+
+                <form id="recovery-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="email">Correo electrónico</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="tu@correo.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <p class="form-success hidden" id="recovery-ok" role="status"></p>
+
+                    <button type="submit" class="btn-submit" id="boton-enviar">
+                        <span>Enviar instrucciones</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </form>
+
+                <footer class="auth-footer">
+                    <p><a href="login.html" class="back-to-login">← Volver al inicio de sesión</a></p>
+                </footer>
+            </div>
+        </main>
     </div>
+
+    <script>
+        document.getElementById('recovery-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var email = document.getElementById('email').value.trim();
+            if (!email) return;
+
+            var btn = document.getElementById('boton-enviar');
+            var btnText = btn.querySelector('span');
+            var ok = document.getElementById('recovery-ok');
+            btn.disabled = true;
+            btnText.textContent = 'Enviando...';
+
+            setTimeout(function () {
+                ok.textContent = 'Te enviamos las instrucciones a ' + email + '. Revisa tu bandeja.';
+                ok.classList.remove('hidden');
+                btnText.textContent = 'Enviado';
+                setTimeout(function () { window.location.href = 'login.html'; }, 2000);
+            }, 800);
+        });
+    </script>
 
 </body>
 
