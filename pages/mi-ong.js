@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   pintarUsuario(session);
   activarSalir();
   cargarFicha(session);
+  activarAutocompletado();
   activarGuardado(session);
 });
 
@@ -78,7 +79,7 @@ function esc(s) {
 
 function setVal(id, v) {
   const el = document.getElementById(id);
-  if (el) el.value = v || '';
+  if (el) el.value = v ?? '';
 }
 
 function showError(msg) {
@@ -108,11 +109,34 @@ function validUrl(v) {
   }
 }
 
+function activarAutocompletado() {
+  const inputBarrio = document.getElementById('f-barrio');
+  const inputLat = document.getElementById('f-lat');
+  const inputLng = document.getElementById('f-lng');
+
+  if (window.conectarAutocompletadoUbicacion && inputBarrio) {
+    window.conectarAutocompletadoUbicacion(inputBarrio, {
+      lista: '#f-barrio-sugerencias',
+      onSelect: (item, info) => {
+        if (inputLat) inputLat.value = info.lat;
+        if (inputLng) inputLng.value = info.lon;
+      },
+      onInput: () => {
+        // Al escribir manualmente, se limpian las coordenadas previas para evitar desincronización
+        if (inputLat) inputLat.value = '';
+        if (inputLng) inputLng.value = '';
+      }
+    });
+  }
+}
+
 function cargarFicha(session) {
   const ficha = miFicha(session);
   setVal('f-nombre', ficha.nombrePublico);
   setVal('f-categoria', ficha.categoria);
   setVal('f-barrio', ficha.barrio);
+  if (ficha.lat !== undefined && ficha.lat !== null) setVal('f-lat', ficha.lat);
+  if (ficha.lng !== undefined && ficha.lng !== null) setVal('f-lng', ficha.lng);
   setVal('f-descripcion', ficha.descripcion);
   setVal('f-necesidades', ficha.necesidades);
   setVal('f-web', ficha.web);
@@ -168,9 +192,18 @@ function activarGuardado(session) {
       contacto,
       cupos,
     };
-    // Sin coordenadas propias se ubica en CABA para que figure en el mapa
-    if (actualizada.lat === undefined) actualizada.lat = -34.6037;
-    if (actualizada.lng === undefined) actualizada.lng = -58.3816;
+
+    const latVal = parseFloat(document.getElementById('f-lat')?.value);
+    const lngVal = parseFloat(document.getElementById('f-lng')?.value);
+    if (!isNaN(latVal) && !isNaN(lngVal)) {
+      actualizada.lat = latVal;
+      actualizada.lng = lngVal;
+    } else if (actualizada.lat === undefined || actualizada.lng === undefined) {
+      // Sin coordenadas propias se ubica en CABA para que figure en el mapa
+      actualizada.lat = -34.6037;
+      actualizada.lng = -58.3816;
+    }
+
     if (i >= 0) ongs[i] = actualizada;
     else ongs.push(actualizada);
     guardarOngs(ongs);

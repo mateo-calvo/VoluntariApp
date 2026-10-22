@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi perfil</title>
     <link rel="stylesheet" href="../../css/ong.css">
+    <link rel="stylesheet" href="../../css/autocomplete.css">
 </head>
 <body data-page="perfil">
 
@@ -42,7 +43,10 @@
                         </div>
                         <div class="campo">
                             <label for="perfil-ciudad">Ciudad</label>
-                            <input type="text" id="perfil-ciudad">
+                            <div class="ubicacion-box">
+                                <input type="text" id="perfil-ciudad" placeholder="Escribí calle, barrio o ciudad…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="perfil-ciudad-sugerencias" aria-autocomplete="list">
+                                <ul class="ubicacion-sugerencias hidden" id="perfil-ciudad-sugerencias" role="listbox" aria-label="Ubicaciones sugeridas"></ul>
+                            </div>
                         </div>
                         <div class="campo">
                             <label for="perfil-telefono">Teléfono</label>
@@ -69,6 +73,7 @@
         </div>
     </main>
 
+    <script src="../../js/ubicacion-autocomplete.js"></script>
     <script src="../../js/ong.js"></script>
 </body>
 </html>

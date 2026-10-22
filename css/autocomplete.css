@@ -1,0 +1,102 @@
+/* ==========================================================================
+   autocomplete.css - Estilos compartidos para autocompletado de direcciones
+   Basado en el diseño y comportamiento del formulario de registro de ONG.
+   Funciona con OpenStreetMap / Nominatim y Photon.
+   ========================================================================== */
+
+.ubicacion-box {
+    position: relative;
+    width: 100%;
+}
+
+.ubicacion-sugerencias {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    list-style: none;
+    background-color: var(--color-white, var(--ong-blanco, #ffffff));
+    border: 1.5px solid var(--color-input-border, var(--ong-borde, #D5E1DD));
+    border-radius: var(--radius-md, 12px);
+    box-shadow: var(--shadow-md, 0 4px 14px rgba(15, 33, 50, 0.08));
+    overflow: hidden;
+    z-index: 1000;
+    max-height: 240px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.ubicacion-sugerencias.hidden {
+    display: none !important;
+}
+
+.ubicacion-sugerencias li {
+    padding: 11px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border, var(--ong-borde, #E2ECE8));
+    transition: background-color var(--transition, 0.2s ease);
+    text-align: left;
+    list-style: none;
+    margin: 0;
+}
+
+.ubicacion-sugerencias li:last-child {
+    border-bottom: none;
+}
+
+.ubicacion-sugerencias li:hover,
+.ubicacion-sugerencias li.active {
+    background-color: var(--color-green-light, var(--ong-primario-suave, #E1EEE8));
+}
+
+.ubicacion-sugerencias .sug-titulo {
+    display: block;
+    font-weight: 700;
+    color: var(--color-navy, var(--ong-texto, #0F2132));
+    line-height: 1.35;
+}
+
+.ubicacion-sugerencias .sug-detalle {
+    display: block;
+    font-size: 12.5px;
+    color: var(--color-muted, var(--ong-texto-suave, #5A7A72));
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+.ubicacion-sugerencias .sug-estado {
+    padding: 11px 14px;
+    font-size: 13.5px;
+    color: var(--color-muted, var(--ong-texto-suave, #5A7A72));
+    cursor: default;
+    background: transparent;
+}
+
+.ubicacion-elegida {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-green-hover, var(--ong-primario, #145E48));
+    background-color: var(--color-green-light, var(--ong-primario-suave, #E1EEE8));
+    border-radius: var(--radius-sm, 8px);
+    padding: 8px 12px;
+    margin-top: 8px;
+}
+
+.ubicacion-elegida.hidden {
+    display: none !important;
+}
+
+.ubicacion-error {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-error, var(--ong-alerta, #b3261e));
+    margin-top: 8px;
+}
+
+.ubicacion-error.hidden {
+    display: none !important;
+}
