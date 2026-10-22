@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let ubicacionSeq = 0;
     let listaAbierta = null;
     const domList = document.getElementById('domicilio-sugerencias');
+    const dirList = document.getElementById('direccion-sugerencias');
 
     function etiquetaUbicacion(r) {
         const a = r.address || {};
@@ -149,13 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cerrarSugerencias() {
-        [sugList, domList].forEach((l) => {
+        [sugList, domList, dirList].forEach((l) => {
             if (!l) return;
             l.innerHTML = '';
             l.classList.add('hidden');
         });
         inputBarrio?.setAttribute('aria-expanded', 'false');
         inputDomicilio?.setAttribute('aria-expanded', 'false');
+        inputDireccion?.setAttribute('aria-expanded', 'false');
         listaAbierta = null;
         sugItems = [];
         sugActive = -1;
@@ -207,6 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function elegirUbicacion(item, origen) {
         const t = etiquetaUbicacion(item);
+        if (origen === 'dir') {
+            if (inputDireccion) inputDireccion.value = t.etiqueta;
+            cerrarSugerencias();
+            return;
+        }
         if (origen === 'dom') {
             // Elegida desde Domicilio: la etiqueta ya trae calle + zona
             if (inputDomicilio) {
@@ -364,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     conectarBuscador(inputBarrio, sugList, 'ubi');
     conectarBuscador(inputDomicilio, domList, 'dom');
+    conectarBuscador(inputDireccion, dirList, 'dir');
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.ubicacion-box')) cerrarSugerencias();
@@ -419,7 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnVolver) btnVolver.classList.toggle('hidden', !isStep2);
         errorBox?.classList.add('hidden');
         syncRequired();
-        formulario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const authContent = document.querySelector('.auth-content');
+        if (authContent) authContent.scrollTop = 0;
     }
 
     // Los required solo valen en campos visibles: si un required queda en un
