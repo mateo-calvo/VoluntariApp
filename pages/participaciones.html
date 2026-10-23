@@ -8,6 +8,30 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/panel.css">
+  <style>
+    .filter-btn {
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      border: 1px solid var(--color-border-soft, #e2e8f0);
+      background: #ffffff;
+      color: var(--color-navy, #1e293b);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .filter-btn:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .filter-btn.active {
+      background: var(--color-green, #1A7A5E);
+      color: #ffffff;
+      border-color: var(--color-green, #1A7A5E);
+      box-shadow: 0 2px 6px rgba(26, 122, 94, 0.25);
+    }
+  </style>
 </head>
 <body>
   <header class="navbar-background">
@@ -30,6 +54,14 @@
     <h1 class="panel-title">Mis participaciones</h1>
     <p class="panel-subtitle">Convocatorias en las que te anotaste como voluntario.</p>
 
+    <!-- Filtros de estado -->
+    <div class="panel-filters" id="status-filters" style="display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 20px 0;">
+      <button class="filter-btn active" data-filtro="participando" type="button">Participando</button>
+      <button class="filter-btn" data-filtro="finalizada" type="button">Finalizadas</button>
+      <button class="filter-btn" data-filtro="cancelada" type="button">Canceladas</button>
+      <button class="filter-btn" data-filtro="todas" type="button">Todas</button>
+    </div>
+
     <p class="form-error hidden" id="panel-error" role="alert"></p>
     <p class="form-success hidden" id="panel-ok" role="status"></p>
 
@@ -43,6 +75,7 @@
     </section>
   </main>
 
-  <script src="participaciones.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="participaciones.js?v=5"></script>
 </body>
 </html>

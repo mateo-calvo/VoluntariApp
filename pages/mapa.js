@@ -134,10 +134,7 @@ function aplicarOverridesDemo() {
     const oLng = Number(override.lng);
     state.items.forEach(item => {
       const isMatch = (
-        (item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase().includes('cruz roja')) ||
-        (item.nombre && item.nombre.toLowerCase().includes('cruz roja')) ||
-        (override.nombre && item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase() === override.nombre.toLowerCase()) ||
-        item.esDemo
+        (override.nombre && item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase() === override.nombre.toLowerCase())
       );
       if (isMatch) {
         item.lat = oLat;
@@ -145,49 +142,38 @@ function aplicarOverridesDemo() {
         item.barrio = override.barrio || item.barrio;
         item.distancia = haversineKm(CABA_CENTER[0], CABA_CENTER[1], oLat, oLng);
         if (override.linkPago) item.linkPago = override.linkPago;
-        item.esDemoModificado = true;
       }
     });
   }
-
-  // Incorporar ONGs registradas localmente en modo demo
-  list.forEach(ong => {
-    const yaExiste = state.items.some(i =>
-      (i.nombreOrganizacion && i.nombreOrganizacion.toLowerCase() === (ong.nombrePublico || '').toLowerCase())
-    );
-    if (!yaExiste && ong.nombrePublico && ong.lat && ong.lng) {
-      const cat = normalizarCategoria(ong.categoria);
-      const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
-      state.items.unshift({
-        id: `demo-${ong.cuit || Math.random().toString(36).substring(2, 9)}`,
-        nombreOrganizacion: ong.nombrePublico,
-        nombre: `${ong.nombrePublico} — Convocatoria`,
-        barrio: ong.barrio || 'Buenos Aires',
-        categoria: cat,
-        emoji: estilo.emoji,
-        iconBg: estilo.iconBg,
-        lat: Number(ong.lat),
-        lng: Number(ong.lng),
-        totalCupos: Number(ong.cupos) || 5,
-        inscriptos: 0,
-        voluntarios: 0,
-        rating: 5.0,
-        distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], Number(ong.lat), Number(ong.lng)),
-        cupos: Number(ong.cupos) || 5,
-        verificada: true,
-        web: ong.web || '',
-        linkPago: ong.linkPago || '',
-        contacto: ong.contacto || '',
-        descripcion: ong.descripcion || '',
-        necesidades: ong.necesidades || '',
-        esDemo: true,
-        esDemoModificado: true,
-      });
-    }
-  });
 }
 
 // ---- Carga de datos: API de Django (Supabase) con manejo de errores ----
+async function syncMisPostulaciones() {
+  const token = sessionStorage.getItem('va_token');
+  const session = getSession();
+  if (!token || !session || session.rol !== 'voluntario') return;
+  try {
+    const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+    const res = await fetch(`${baseUrl}/api/voluntario/mis-postulaciones?estado=activas`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const posts = await res.json();
+      if (Array.isArray(posts)) {
+        const mapped = posts.map((p) => ({
+          id: String(p.convocatoria_id),
+          nombre: p.titulo_convocatoria,
+          barrio: p.lugar || '',
+          fecha: p.created_at,
+        }));
+        localStorage.setItem('va_parts_demo', JSON.stringify(mapped));
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo sincronizar mis postulaciones:', e);
+  }
+}
+
 async function loadItems() {
   state.isLoading = true;
   state.error = null;
@@ -202,6 +188,7 @@ async function loadItems() {
     if (!res.ok) throw new Error(`El servidor respondió con código ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data)) {
+      await syncMisPostulaciones();
       state.items = data.map(mapApiItem);
       aplicarOverridesDemo();
       state.isLoading = false;
@@ -314,11 +301,15 @@ function renderMarkers(list) {
       icon: makeIcon(item, item.id === state.selectedId),
     }).addTo(map);
 
+    const yaIn = yaParticipa(item.id);
+    const badgeHtml = yaIn ? `<div style="margin-top: 4px;"><span style="background: #27ae60; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 700; display: inline-block;">Participando ✓</span></div>` : '';
+
     marker.bindPopup(`
       <strong>${item.emoji} ${esc(item.nombre)}</strong><br>
       📍 ${esc(item.barrio)}<br>
       ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.totalCupos} cupos totales<br>
       <span class="popup-cupos">🤝 ${item.cupos} disponibles</span>
+      ${badgeHtml}
       <div style="margin-top: 8px;">
         <button class="popup-detail-btn" data-id="${item.id}" type="button">Ver detalle completo →</button>
       </div>
@@ -392,18 +383,26 @@ function renderList(list) {
 
   container.innerHTML = list
     .map(
-      (o) => `
+      (o) => {
+        const yaIn = yaParticipa(o.id);
+        const postuladoBadge = yaIn ? `<span style="background:#27ae60; color:#fff; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:700; margin-left:6px; display:inline-block; vertical-align:middle;">Participando ✓</span>` : '';
+        const cuposText = yaIn
+          ? `<span class="ong-cupos" style="color:#27ae60; font-weight:700;">🤝 Ya estás anotado &nbsp;·&nbsp; ${o.cupos} lugares libres</span>`
+          : `<span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>`;
+
+        return `
     <article class="ong-card ${o.id === state.selectedId ? "active" : ""}" data-id="${o.id}">
       <div class="ong-emoji">${o.emoji}</div>
       <div class="ong-info">
-        <h3 class="ong-name">${o.nombre} ${reviewBadge(o)}</h3>
+        <h3 class="ong-name">${o.nombre} ${reviewBadge(o)} ${postuladoBadge}</h3>
         <p class="ong-barrio">📍 ${o.barrio}</p>
         <div class="ong-meta"><span>👥 ${o.totalCupos} cupos totales</span><span class="rating">★ ${o.rating}</span></div>
         <p class="ong-dist">➤ ${o.distancia.toFixed(1)} km</p>
-        <span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>
+        ${cuposText}
       </div>
       <span class="ong-arrow">›</span>
-    </article>`
+    </article>`;
+      }
     )
     .join("");
 
@@ -462,29 +461,28 @@ function renderDetail() {
   const sinCupos = item.cupos <= 0;
 
   let btnHtml;
-  if (sinCupos) {
+  if (sinCupos && !alreadyIn) {
     btnHtml = `<button class="btn-primary" disabled>Sin cupos por ahora</button>`;
   } else if (alreadyIn) {
-    btnHtml = `<button class="btn-primary" disabled>Ya estás participando ✓</button>`;
+    btnHtml = `
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary" disabled style="background:#27ae60; cursor:default;">Ya estás participando ✓</button>
+        <button class="btn-secondary" id="detail-cancel" style="color:#c0392b; border-color:#c0392b; padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">Cancelar mi postulación</button>
+      </div>`;
   } else {
     btnHtml = `<button class="btn-primary" id="detail-join">Quiero participar</button>`;
   }
 
   const web = safeLink(item.web);
-  const mpLink = obtenerLinkMercadoPago(item.linkPago);
+  const mpLink = obtenerLinkMercadoPago(item.linkPago) || 'https://link.mercadopago.com.ar/voluntariapp';
 
-
-
-  let donarBtnHtml = '';
-  if (mpLink) {
-    donarBtnHtml = `
-      <button type="button" class="btn-donar-ong" id="detail-donar-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-        </svg>
-        <span>Donar a esta ONG</span>
-      </button>`;
-  }
+  const donarBtnHtml = `
+    <button type="button" class="btn-donar-ong" id="detail-donar-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <span>Donar a esta ONG</span>
+    </button>`;
 
   const totalPlazas = Math.max(1, Number(item.cupos || 0) + Number(item.voluntarios || 0));
   const ocupacionReal = Math.round((Number(item.voluntarios || 0) / totalPlazas) * 100);
@@ -585,19 +583,18 @@ function renderDetail() {
   });
 
   document.getElementById("detail-join")?.addEventListener("click", () => joinConvocatoria(item));
+  document.getElementById("detail-cancel")?.addEventListener("click", () => cancelConvocatoria(item));
 
 
 
-  if (mpLink) {
-    document.getElementById("detail-donar-btn")?.addEventListener("click", () => {
-      if (window.DonarONG) {
-        window.DonarONG.abrir({
-          nombre: item.nombreOrganizacion || item.nombre,
-          mpLink: mpLink,
-        });
-      }
-    });
-  }
+  document.getElementById("detail-donar-btn")?.addEventListener("click", () => {
+    if (window.DonarONG) {
+      window.DonarONG.abrir({
+        nombre: item.nombreOrganizacion || item.nombre,
+        mpLink: mpLink,
+      });
+    }
+  });
 }
 
 async function joinConvocatoria(item) {
@@ -615,28 +612,42 @@ async function joinConvocatoria(item) {
   const token = sessionStorage.getItem('va_token');
   if (token) {
     try {
-      const res = await fetch(`/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
+      const btn = document.getElementById('detail-join');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+      }
+      const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+      const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        item.cupos = Math.max(0, item.cupos - 1);
+        item.cupos = data.lugares_libres != null ? data.lugares_libres : Math.max(0, item.cupos - 1);
+        item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : (item.inscriptos || 0) + 1;
+        item.voluntarios = item.inscriptos;
         guardarParticipacion(item);
-        toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
+        toast(data.message || '¡Listo! Ya estás participando en esta convocatoria.', 'success');
         refresh(false);
         return;
       }
-      if (res.status === 409) {
-        toast('Ya estás participando en esta convocatoria.', 'error');
+      if (res.status === 400 || res.status === 409) {
+        toast(data.message || 'No se pudo registrar tu participación.', 'error');
+        if (data.message && data.message.includes('Ya estás postulado')) {
+          guardarParticipacion(item);
+          refresh(false);
+        }
         return;
       }
       throw new Error(data.message || 'Error del servidor');
     } catch (err) {
-      if (!(err instanceof TypeError)) {
-        toast(err.message || 'No se pudo registrar tu participación.', 'error');
-        return;
-      }
+      toast(err.message || 'No pudimos conectar con el servidor.', 'error');
+      refresh(false);
+      return;
     }
   }
 
@@ -655,6 +666,119 @@ async function joinConvocatoria(item) {
   item.voluntarios = item.inscriptos;
   toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
   refresh(false);
+}
+
+function confirmarCancelacionModal(titulo, onConfirm) {
+  document.getElementById('modal-cancelar-postulacion')?.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'modal-cancelar-postulacion';
+  backdrop.style.cssText = `
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  `;
+
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: #ffffff; max-width: 440px; width: 100%;
+    border-radius: 16px; padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    font-family: inherit; color: #1e293b;
+  `;
+
+  const safeTitulo = String(titulo || 'esta convocatoria').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  modal.innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <div style="width:40px; height:40px; border-radius:50%; background:#fee2e2; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+        ⚠️
+      </div>
+      <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#0f172a;">¿Cancelar postulación?</h3>
+    </div>
+    <p style="margin:0 0 20px 0; font-size:0.95rem; line-height:1.5; color:#475569;">
+      ¿Estás seguro de que querés cancelar tu postulación a <strong>"${safeTitulo}"</strong>? Tu lugar quedará disponible para otro voluntario.
+    </p>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button id="modal-cancel-cerrar" type="button" style="padding:10px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; font-weight:600; cursor:pointer;">
+        No, mantener
+      </button>
+      <button id="modal-cancel-confirmar" type="button" style="padding:10px 16px; border-radius:8px; border:none; background:#dc2626; color:#ffffff; font-weight:600; cursor:pointer;">
+        Sí, cancelar postulación
+      </button>
+    </div>
+  `;
+
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.remove();
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+  modal.querySelector('#modal-cancel-cerrar').addEventListener('click', close);
+  modal.querySelector('#modal-cancel-confirmar').addEventListener('click', async () => {
+    const btn = modal.querySelector('#modal-cancel-confirmar');
+    btn.disabled = true;
+    btn.textContent = 'Cancelando...';
+    try {
+      await onConfirm();
+      close();
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Sí, cancelar postulación';
+    }
+  });
+}
+
+function cancelConvocatoria(item) {
+  confirmarCancelacionModal(item.nombre || item.titulo, async () => {
+    const token = sessionStorage.getItem('va_token');
+    const btn = document.getElementById('detail-cancel');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Cancelando...';
+    }
+    if (token) {
+      try {
+        const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+        const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          item.cupos = data.lugares_libres != null ? data.lugares_libres : (item.cupos || 0) + 1;
+          item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : Math.max(0, (item.inscriptos || 1) - 1);
+          item.voluntarios = item.inscriptos;
+          const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
+          localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+          toast(data.message || 'Participación cancelada.', 'info');
+          refresh(false);
+          return;
+        }
+        throw new Error(data.message || 'No se pudo cancelar la participación.');
+      } catch (err) {
+        toast(err.message || 'Error al conectar con el servidor.', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Cancelar mi postulación';
+        }
+        throw err;
+      }
+    }
+
+    const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
+    localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+    item.cupos = (item.cupos || 0) + 1;
+    item.inscriptos = Math.max(0, (item.inscriptos || 1) - 1);
+    item.voluntarios = item.inscriptos;
+    toast('Participación cancelada.', 'info');
+    refresh(false);
+  });
 }
 
 function selectItem(id, openPopup) {

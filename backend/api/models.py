@@ -302,3 +302,58 @@ class Convocatoria(models.Model):
     def __str__(self):
         return f"{self.titulo} - {self.ong.nombre_organizacion if self.ong else ''}"
 
+
+class Voluntario(models.Model):
+    id = models.UUIDField(primary_key=True)
+    nombre = models.CharField(max_length=150)
+    apellido = models.CharField(max_length=100)
+    email = models.CharField(max_length=255, blank=True, null=True)
+    telefono = models.CharField(max_length=30, blank=True, null=True)
+    dni = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = "voluntarios"
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido}"
+
+
+class Postulacion(models.Model):
+    class Estado(models.TextChoices):
+        POSTULADO = "POSTULADO", "Postulado"
+        CONFIRMADO = "CONFIRMADO", "Confirmado"
+        ASISTIO = "ASISTIO", "Asistió"
+        CANCELADO = "CANCELADO", "Cancelado"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    convocatoria = models.ForeignKey(
+        Convocatoria,
+        on_delete=models.CASCADE,
+        db_column="convocatoria_id",
+        related_name="postulaciones",
+    )
+    voluntario = models.ForeignKey(
+        Voluntario,
+        on_delete=models.CASCADE,
+        db_column="voluntario_id",
+        related_name="postulaciones",
+    )
+    estado = models.CharField(
+        max_length=50,
+        choices=Estado.choices,
+        default=Estado.POSTULADO,
+    )
+    codigo_validacion = models.CharField(max_length=100, blank=True, null=True)
+    horas_acreditadas = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = "postulaciones"
+        unique_together = (("convocatoria", "voluntario"),)
+
+    def __str__(self):
+        return f"{self.voluntario} -> {self.convocatoria}"
+
