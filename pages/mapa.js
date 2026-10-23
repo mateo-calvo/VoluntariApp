@@ -188,6 +188,32 @@ function aplicarOverridesDemo() {
 }
 
 // ---- Carga de datos: API de Django (Supabase) con manejo de errores ----
+async function syncMisPostulaciones() {
+  const token = sessionStorage.getItem('va_token');
+  const session = getSession();
+  if (!token || !session || session.rol !== 'voluntario') return;
+  try {
+    const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+    const res = await fetch(`${baseUrl}/api/voluntario/mis-postulaciones?estado=activas`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const posts = await res.json();
+      if (Array.isArray(posts)) {
+        const mapped = posts.map((p) => ({
+          id: String(p.convocatoria_id),
+          nombre: p.titulo_convocatoria,
+          barrio: p.lugar || '',
+          fecha: p.created_at,
+        }));
+        localStorage.setItem('va_parts_demo', JSON.stringify(mapped));
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo sincronizar mis postulaciones:', e);
+  }
+}
+
 async function loadItems() {
   state.isLoading = true;
   state.error = null;
@@ -202,6 +228,7 @@ async function loadItems() {
     if (!res.ok) throw new Error(`El servidor respondió con código ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data)) {
+      await syncMisPostulaciones();
       state.items = data.map(mapApiItem);
       aplicarOverridesDemo();
       state.isLoading = false;
@@ -462,10 +489,14 @@ function renderDetail() {
   const sinCupos = item.cupos <= 0;
 
   let btnHtml;
-  if (sinCupos) {
+  if (sinCupos && !alreadyIn) {
     btnHtml = `<button class="btn-primary" disabled>Sin cupos por ahora</button>`;
   } else if (alreadyIn) {
-    btnHtml = `<button class="btn-primary" disabled>Ya estás participando ✓</button>`;
+    btnHtml = `
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary" disabled style="background:#27ae60; cursor:default;">Ya estás participando ✓</button>
+        <button class="btn-secondary" id="detail-cancel" style="color:#c0392b; border-color:#c0392b; padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">Cancelar mi postulación</button>
+      </div>`;
   } else {
     btnHtml = `<button class="btn-primary" id="detail-join">Quiero participar</button>`;
   }
@@ -585,6 +616,7 @@ function renderDetail() {
   });
 
   document.getElementById("detail-join")?.addEventListener("click", () => joinConvocatoria(item));
+  document.getElementById("detail-cancel")?.addEventListener("click", () => cancelConvocatoria(item));
 
 
 
@@ -668,6 +700,54 @@ async function joinConvocatoria(item) {
   item.inscriptos = (item.inscriptos || 0) + 1;
   item.voluntarios = item.inscriptos;
   toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
+  refresh(false);
+}
+
+async function cancelConvocatoria(item) {
+  const token = sessionStorage.getItem('va_token');
+  const btn = document.getElementById('detail-cancel');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Cancelando...';
+  }
+  if (token) {
+    try {
+      const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+      const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        item.cupos = data.lugares_libres != null ? data.lugares_libres : (item.cupos || 0) + 1;
+        item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : Math.max(0, (item.inscriptos || 1) - 1);
+        item.voluntarios = item.inscriptos;
+        const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
+        localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+        toast(data.message || 'Participación cancelada.', 'info');
+        refresh(false);
+        return;
+      }
+      throw new Error(data.message || 'No se pudo cancelar la participación.');
+    } catch (err) {
+      toast(err.message || 'Error al conectar con el servidor.', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Cancelar mi postulación';
+      }
+      return;
+    }
+  }
+
+  const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
+  localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+  item.cupos = (item.cupos || 0) + 1;
+  item.inscriptos = Math.max(0, (item.inscriptos || 1) - 1);
+  item.voluntarios = item.inscriptos;
+  toast('Participación cancelada.', 'info');
   refresh(false);
 }
 

@@ -54,10 +54,45 @@ function fechaCorta(iso) {
   return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function pintarParticipaciones() {
+async function pintarParticipaciones() {
   const list = document.getElementById('parts-list');
   const empty = document.getElementById('parts-empty');
-  const parts = leerParticipaciones();
+
+  let parts = [];
+  const token = sessionStorage.getItem('va_token');
+
+  if (token) {
+    try {
+      const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+      const res = await fetch(`${baseUrl}/api/voluntario/mis-postulaciones`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          parts = data.map((p) => ({
+            id: String(p.convocatoria_id),
+            nombre: p.titulo_convocatoria,
+            organizacion: p.nombre_organizacion,
+            barrio: p.lugar || '',
+            fecha: p.created_at || p.fecha,
+            estado: p.estado,
+          }));
+
+          // Sincronizar las activas en localStorage para el mapa
+          const activas = parts
+            .filter((p) => ['POSTULADO', 'CONFIRMADO'].includes(p.estado))
+            .map((p) => ({ id: p.id, nombre: p.nombre, barrio: p.barrio, fecha: p.fecha }));
+          localStorage.setItem('va_parts_demo', JSON.stringify(activas));
+        }
+      }
+    } catch (e) {
+      console.warn('Error al obtener mis postulaciones del servidor:', e);
+      parts = leerParticipaciones();
+    }
+  } else {
+    parts = leerParticipaciones();
+  }
 
   if (!parts.length) {
     list.innerHTML = '';
@@ -71,24 +106,66 @@ function pintarParticipaciones() {
     const nombre = typeof p === 'string' ? 'Convocatoria ' + esc(id) : esc(p.nombre || ('Convocatoria ' + id));
     const barrio = typeof p === 'string' ? '' : esc(p.barrio || '');
     const fecha = typeof p === 'string' ? '' : fechaCorta(p.fecha);
+    const estado = p.estado || 'POSTULADO';
+    const esActiva = ['POSTULADO', 'CONFIRMADO'].includes(estado);
+    const badgeText = estado === 'CONFIRMADO' ? 'Confirmado ✓' : (estado === 'CANCELADO' ? 'Cancelado' : (estado === 'RECHAZADO' ? 'Rechazado' : 'Participando ✓'));
+    const badgeStyle = !esActiva ? 'style="background:#95a5a6; color:#fff;"' : '';
+
     return `
       <article class="panel-card">
         <h3>🤝 ${nombre}</h3>
-        <p class="meta">${barrio ? '📍 ' + barrio + ' &nbsp;·&nbsp; ' : ''}${fecha ? 'Anotado el ' + fecha : ''}</p>
+        <p class="meta">
+          ${p.organizacion ? '🏢 <strong>' + esc(p.organizacion) + '</strong> &nbsp;·&nbsp; ' : ''}
+          ${barrio ? '📍 ' + barrio + ' &nbsp;·&nbsp; ' : ''}
+          ${fecha ? 'Anotado el ' + fecha : ''}
+        </p>
         <div class="row">
-          <span class="badge">Participando ✓</span>
+          <span class="badge" ${badgeStyle}>${badgeText}</span>
           <a class="btn btn-secondary btn-sm" href="mapa.html?conv=${encodeURIComponent(id)}">Ver en mapa</a>
-          <button class="btn btn-danger btn-sm" data-anular="${esc(id)}" type="button">Anular</button>
+          ${esActiva ? `<button class="btn btn-danger btn-sm" data-anular="${esc(id)}" type="button">Anular</button>` : ''}
         </div>
       </article>`;
   }).join('');
 
   list.querySelectorAll('[data-anular]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.dataset.anular;
+      const ok = document.getElementById('panel-ok');
+      const errEl = document.getElementById('panel-error');
+      if (ok) ok.classList.add('hidden');
+      if (errEl) errEl.classList.add('hidden');
+
+      btn.disabled = true;
+      btn.textContent = 'Anulando...';
+
+      const token = sessionStorage.getItem('va_token');
+      if (token) {
+        try {
+          const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+          const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(id)}/participar`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            }
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.message || 'No se pudo cancelar la participación.');
+          }
+        } catch (err) {
+          if (errEl) {
+            errEl.textContent = err.message || 'Error al conectar con el servidor.';
+            errEl.classList.remove('hidden');
+          }
+          btn.disabled = false;
+          btn.textContent = 'Anular';
+          return;
+        }
+      }
+
       const rest = leerParticipaciones().filter((p) => String(typeof p === 'string' ? p : p.id) !== String(id));
       localStorage.setItem('va_parts_demo', JSON.stringify(rest));
-      const ok = document.getElementById('panel-ok');
       if (ok) {
         ok.textContent = 'Participación anulada. El cupo vuelve a estar disponible.';
         ok.classList.remove('hidden');

@@ -408,6 +408,8 @@ class PostulacionSerializer(serializers.ModelSerializer):
     nombre_organizacion = serializers.CharField(
         source="convocatoria.ong.nombre_organizacion", default="", read_only=True
     )
+    lugar = serializers.CharField(source="convocatoria.lugar", default="", read_only=True)
+    fecha = serializers.CharField(source="convocatoria.fecha", default="", read_only=True)
 
     class Meta:
         model = Postulacion
@@ -416,6 +418,8 @@ class PostulacionSerializer(serializers.ModelSerializer):
             "convocatoria_id",
             "titulo_convocatoria",
             "nombre_organizacion",
+            "lugar",
+            "fecha",
             "estado",
             "created_at",
         ]
