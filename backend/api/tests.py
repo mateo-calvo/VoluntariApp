@@ -13,7 +13,7 @@ from rest_framework.test import APIClient
 
 from config.exceptions import mensaje_throttled
 
-from .models import Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
+from .models import Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards, VistaConvocatoriasMapa
 
 
 class HealthCheckTests(TestCase):
@@ -240,10 +240,10 @@ class ConvocatoriasEndpointTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    @patch("api.views.VistaConvocatoriasCards.objects.all")
+    @patch("api.views.VistaConvocatoriasMapa.objects.all")
     def test_listar_convocatorias_retorna_200_con_campos(self, mock_all):
         # Simulamos una convocatoria proveniente de la vista de Supabase
-        mock_convocatoria = VistaConvocatoriasCards(
+        mock_convocatoria = VistaConvocatoriasMapa(
             convocatoria_id=uuid.uuid4(),
             titulo="Campaña de Donación de Sangre",
             descripcion="Ayudá en la jornada de salud comunitaria.",
@@ -258,13 +258,14 @@ class ConvocatoriasEndpointTests(TestCase):
             lugares_libres=12,
             horas_estimadas=4,
             requiere_aprobacion=False,
-            estado_convocatoria="abierta",
+            estado_convocatoria="ABIERTA",
             ong_id=uuid.uuid4(),
             nombre_organizacion="Cruz Roja Argentina",
             ong_rating=4.9,
             ong_verificada=True,
             ong_logo_url="",
             ong_link_donacion="https://donar.cruzroja.org",
+            ong_email_contacto="contacto@cruzroja.org.ar",
             causa_id=1,
             causa_nombre="Salud",
             localidad_id=1,
@@ -289,8 +290,9 @@ class ConvocatoriasEndpointTests(TestCase):
         self.assertEqual(primera["inscriptos_actuales"], 3)
         self.assertEqual(primera["causa_nombre"], "Salud")
         self.assertEqual(primera["localidad_nombre"], "Flores")
+        self.assertEqual(primera["ong_email_contacto"], "contacto@cruzroja.org.ar")
 
-    @patch("api.views.VistaConvocatoriasCards.objects.all")
+    @patch("api.views.VistaConvocatoriasMapa.objects.all")
     def test_listar_convocatorias_vacia(self, mock_all):
         mock_all.return_value = []
         response = self.client.get("/api/convocatorias/")

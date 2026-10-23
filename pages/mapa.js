@@ -218,7 +218,7 @@ async function loadItems() {
   }
 }
 
-// Adaptador: traduce las columnas de vista_convocatorias_cards al formato del mapa
+// Adaptador: traduce las columnas de vista_convocatorias_mapa al formato del mapa
 function mapApiItem(c) {
   const cat = normalizarCategoria(c.causa_nombre || c.categoria);
   const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
@@ -231,11 +231,25 @@ function mapApiItem(c) {
   const yaIn = yaParticipa(id);
   const cuposRestantes = Math.max(0, libresBase - (yaIn ? 1 : 0));
 
+  const dir = c.direccion || '';
+  const barrio = c.localidad_nombre || '';
+  let ubicacionConvocatoria = '';
+
+  if (dir && barrio) {
+    ubicacionConvocatoria = dir.toLowerCase().includes(barrio.toLowerCase()) ? dir : `${dir}, ${barrio}`;
+  } else {
+    ubicacionConvocatoria = dir || c.lugar || barrio || 'Buenos Aires';
+  }
+
   return {
     id: id,
     nombreOrganizacion: c.nombre_organizacion || '',
     nombre: c.nombre_organizacion ? `${c.nombre_organizacion} — ${c.titulo}` : (c.titulo || 'Convocatoria'),
-    barrio: [c.localidad_nombre, c.provincia_nombre].filter(Boolean).join(', ') || c.lugar || c.direccion || '',
+    barrio: ubicacionConvocatoria,
+    lugar: c.lugar || '',
+    direccion: c.direccion || '',
+    localidad: c.localidad_nombre || '',
+    provincia: c.provincia_nombre || '',
     categoria: cat,
     emoji: estilo.emoji,
     iconBg: estilo.iconBg,
@@ -250,7 +264,7 @@ function mapApiItem(c) {
     verificada: c.ong_verificada ?? true,
     web: c.web || '',
     linkPago: c.ong_link_donacion || '',
-    contacto: c.direccion || c.lugar || '',
+    contacto: c.ong_email_contacto || c.email_contacto || '',
     descripcion: c.descripcion || '',
     necesidades: c.necesidades || '',
   };

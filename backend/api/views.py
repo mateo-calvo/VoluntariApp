@@ -4,7 +4,17 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Administrador, Causa, Convocatoria, Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
+from .models import (
+    Administrador,
+    Causa,
+    Convocatoria,
+    Localidad,
+    Ong,
+    Provincia,
+    Usuario,
+    VistaConvocatoriasCards,
+    VistaConvocatoriasMapa,
+)
 from .serializers import (
     CausaSerializer,
     ConvocatoriaSerializer,
@@ -15,6 +25,7 @@ from .serializers import (
     RegistroOngSerializer,
     RegistroVoluntarioSerializer,
     VistaConvocatoriasCardsSerializer,
+    VistaConvocatoriasMapaSerializer,
 )
 from .throttles import RegistroThrottle
 import json
@@ -105,9 +116,9 @@ def register_voluntario(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def listar_convocatorias(request):
-    """Devuelve las convocatorias públicas consumiendo la vista de Supabase."""
-    convocatorias = VistaConvocatoriasCards.objects.all()
-    serializer = VistaConvocatoriasCardsSerializer(convocatorias, many=True)
+    """Devuelve las convocatorias públicas abiertas para el mapa consumiendo la vista de Supabase."""
+    convocatorias = VistaConvocatoriasMapa.objects.all()
+    serializer = VistaConvocatoriasMapaSerializer(convocatorias, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
