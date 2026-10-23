@@ -134,10 +134,7 @@ function aplicarOverridesDemo() {
     const oLng = Number(override.lng);
     state.items.forEach(item => {
       const isMatch = (
-        (item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase().includes('cruz roja')) ||
-        (item.nombre && item.nombre.toLowerCase().includes('cruz roja')) ||
-        (override.nombre && item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase() === override.nombre.toLowerCase()) ||
-        item.esDemo
+        (override.nombre && item.nombreOrganizacion && item.nombreOrganizacion.toLowerCase() === override.nombre.toLowerCase())
       );
       if (isMatch) {
         item.lat = oLat;
@@ -145,46 +142,9 @@ function aplicarOverridesDemo() {
         item.barrio = override.barrio || item.barrio;
         item.distancia = haversineKm(CABA_CENTER[0], CABA_CENTER[1], oLat, oLng);
         if (override.linkPago) item.linkPago = override.linkPago;
-        item.esDemoModificado = true;
       }
     });
   }
-
-  // Incorporar ONGs registradas localmente en modo demo
-  list.forEach(ong => {
-    const yaExiste = state.items.some(i =>
-      (i.nombreOrganizacion && i.nombreOrganizacion.toLowerCase() === (ong.nombrePublico || '').toLowerCase())
-    );
-    if (!yaExiste && ong.nombrePublico && ong.lat && ong.lng) {
-      const cat = normalizarCategoria(ong.categoria);
-      const estilo = CATEGORIA_ESTILOS[cat] || { emoji: '🤝', iconBg: '#1A7A5E' };
-      state.items.unshift({
-        id: `demo-${ong.cuit || Math.random().toString(36).substring(2, 9)}`,
-        nombreOrganizacion: ong.nombrePublico,
-        nombre: `${ong.nombrePublico} — Convocatoria`,
-        barrio: ong.barrio || 'Buenos Aires',
-        categoria: cat,
-        emoji: estilo.emoji,
-        iconBg: estilo.iconBg,
-        lat: Number(ong.lat),
-        lng: Number(ong.lng),
-        totalCupos: Number(ong.cupos) || 5,
-        inscriptos: 0,
-        voluntarios: 0,
-        rating: 5.0,
-        distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], Number(ong.lat), Number(ong.lng)),
-        cupos: Number(ong.cupos) || 5,
-        verificada: true,
-        web: ong.web || '',
-        linkPago: ong.linkPago || '',
-        contacto: ong.contacto || '',
-        descripcion: ong.descripcion || '',
-        necesidades: ong.necesidades || '',
-        esDemo: true,
-        esDemoModificado: true,
-      });
-    }
-  });
 }
 
 // ---- Carga de datos: API de Django (Supabase) con manejo de errores ----
@@ -341,11 +301,15 @@ function renderMarkers(list) {
       icon: makeIcon(item, item.id === state.selectedId),
     }).addTo(map);
 
+    const yaIn = yaParticipa(item.id);
+    const badgeHtml = yaIn ? `<div style="margin-top: 4px;"><span style="background: #27ae60; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 700; display: inline-block;">Participando ✓</span></div>` : '';
+
     marker.bindPopup(`
       <strong>${item.emoji} ${esc(item.nombre)}</strong><br>
       📍 ${esc(item.barrio)}<br>
       ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.totalCupos} cupos totales<br>
       <span class="popup-cupos">🤝 ${item.cupos} disponibles</span>
+      ${badgeHtml}
       <div style="margin-top: 8px;">
         <button class="popup-detail-btn" data-id="${item.id}" type="button">Ver detalle completo →</button>
       </div>
@@ -419,18 +383,26 @@ function renderList(list) {
 
   container.innerHTML = list
     .map(
-      (o) => `
+      (o) => {
+        const yaIn = yaParticipa(o.id);
+        const postuladoBadge = yaIn ? `<span style="background:#27ae60; color:#fff; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:700; margin-left:6px; display:inline-block; vertical-align:middle;">Participando ✓</span>` : '';
+        const cuposText = yaIn
+          ? `<span class="ong-cupos" style="color:#27ae60; font-weight:700;">🤝 Ya estás anotado &nbsp;·&nbsp; ${o.cupos} lugares libres</span>`
+          : `<span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>`;
+
+        return `
     <article class="ong-card ${o.id === state.selectedId ? "active" : ""}" data-id="${o.id}">
       <div class="ong-emoji">${o.emoji}</div>
       <div class="ong-info">
-        <h3 class="ong-name">${o.nombre} ${reviewBadge(o)}</h3>
+        <h3 class="ong-name">${o.nombre} ${reviewBadge(o)} ${postuladoBadge}</h3>
         <p class="ong-barrio">📍 ${o.barrio}</p>
         <div class="ong-meta"><span>👥 ${o.totalCupos} cupos totales</span><span class="rating">★ ${o.rating}</span></div>
         <p class="ong-dist">➤ ${o.distancia.toFixed(1)} km</p>
-        <span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>
+        ${cuposText}
       </div>
       <span class="ong-arrow">›</span>
-    </article>`
+    </article>`;
+      }
     )
     .join("");
 
@@ -502,20 +474,15 @@ function renderDetail() {
   }
 
   const web = safeLink(item.web);
-  const mpLink = obtenerLinkMercadoPago(item.linkPago);
+  const mpLink = obtenerLinkMercadoPago(item.linkPago) || 'https://link.mercadopago.com.ar/voluntariapp';
 
-
-
-  let donarBtnHtml = '';
-  if (mpLink) {
-    donarBtnHtml = `
-      <button type="button" class="btn-donar-ong" id="detail-donar-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-        </svg>
-        <span>Donar a esta ONG</span>
-      </button>`;
-  }
+  const donarBtnHtml = `
+    <button type="button" class="btn-donar-ong" id="detail-donar-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+      <span>Donar a esta ONG</span>
+    </button>`;
 
   const totalPlazas = Math.max(1, Number(item.cupos || 0) + Number(item.voluntarios || 0));
   const ocupacionReal = Math.round((Number(item.voluntarios || 0) / totalPlazas) * 100);
@@ -620,16 +587,14 @@ function renderDetail() {
 
 
 
-  if (mpLink) {
-    document.getElementById("detail-donar-btn")?.addEventListener("click", () => {
-      if (window.DonarONG) {
-        window.DonarONG.abrir({
-          nombre: item.nombreOrganizacion || item.nombre,
-          mpLink: mpLink,
-        });
-      }
-    });
-  }
+  document.getElementById("detail-donar-btn")?.addEventListener("click", () => {
+    if (window.DonarONG) {
+      window.DonarONG.abrir({
+        nombre: item.nombreOrganizacion || item.nombre,
+        mpLink: mpLink,
+      });
+    }
+  });
 }
 
 async function joinConvocatoria(item) {
