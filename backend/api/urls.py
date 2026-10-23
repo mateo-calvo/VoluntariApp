@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     # Auth
     path("auth/register-voluntario", views.register_voluntario, name="register_voluntario"),
+    path("auth/register-ong", views.register_ong, name="register_ong"),
     path("auth/login", views.login_view, name="login"),
 
     # Convocatorias (mapa y listado)

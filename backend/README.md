@@ -62,7 +62,7 @@ El sistema cuenta con usuarios reales en Supabase para probar cada rol:
 | **ONG** | `contacto@cruzroja.org.ar` | `Ong1234!` | Redirige al panel de la ONG (`mi-ong.html`) |
 | **Admin** | `admin@voluntariapp.org` | `Admin1234!` | Redirige al panel de administración (`admin.html`) |
 
-> En la pantalla de login (`pages/login.html`) también se encuentran los botones de acceso rápido que cargan estas credenciales automáticamente.
+> En la pantalla de login (`pages/login.html`) se encuentran los botones de acceso rápido que permiten seleccionar el rol y adaptan el contexto del formulario.
 
 ---
 
