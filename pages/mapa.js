@@ -615,28 +615,42 @@ async function joinConvocatoria(item) {
   const token = sessionStorage.getItem('va_token');
   if (token) {
     try {
-      const res = await fetch(`/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
+      const btn = document.getElementById('detail-join');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+      }
+      const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+      const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        item.cupos = Math.max(0, item.cupos - 1);
+        item.cupos = data.lugares_libres != null ? data.lugares_libres : Math.max(0, item.cupos - 1);
+        item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : (item.inscriptos || 0) + 1;
+        item.voluntarios = item.inscriptos;
         guardarParticipacion(item);
-        toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
+        toast(data.message || '¡Listo! Ya estás participando en esta convocatoria.', 'success');
         refresh(false);
         return;
       }
-      if (res.status === 409) {
-        toast('Ya estás participando en esta convocatoria.', 'error');
+      if (res.status === 400 || res.status === 409) {
+        toast(data.message || 'No se pudo registrar tu participación.', 'error');
+        if (data.message && data.message.includes('Ya estás postulado')) {
+          guardarParticipacion(item);
+          refresh(false);
+        }
         return;
       }
       throw new Error(data.message || 'Error del servidor');
     } catch (err) {
-      if (!(err instanceof TypeError)) {
-        toast(err.message || 'No se pudo registrar tu participación.', 'error');
-        return;
-      }
+      toast(err.message || 'No pudimos conectar con el servidor.', 'error');
+      refresh(false);
+      return;
     }
   }
 

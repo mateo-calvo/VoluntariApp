@@ -18,6 +18,7 @@ urlpatterns = [
 
     # Convocatorias (mapa y listado)
     path("convocatorias/", views.listar_convocatorias, name="listar_convocatorias"),
+    path("convocatorias/<uuid:id>/participar", views.postular_convocatoria, name="postular_convocatoria"),
 
     # Provincias
     path("provincias/", views.listar_provincias, name="listar_provincias"),
