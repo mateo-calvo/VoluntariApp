@@ -410,6 +410,9 @@ class PostulacionSerializer(serializers.ModelSerializer):
     )
     lugar = serializers.CharField(source="convocatoria.lugar", default="", read_only=True)
     fecha = serializers.CharField(source="convocatoria.fecha", default="", read_only=True)
+    estado_convocatoria = serializers.CharField(
+        source="convocatoria.estado", default="ABIERTA", read_only=True
+    )
 
     class Meta:
         model = Postulacion
@@ -421,6 +424,7 @@ class PostulacionSerializer(serializers.ModelSerializer):
             "lugar",
             "fecha",
             "estado",
+            "estado_convocatoria",
             "created_at",
         ]
         read_only_fields = ["id", "estado", "created_at"]
