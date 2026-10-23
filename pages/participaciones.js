@@ -128,49 +128,117 @@ async function pintarParticipaciones() {
   }).join('');
 
   list.querySelectorAll('[data-anular]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const id = btn.dataset.anular;
-      const ok = document.getElementById('panel-ok');
-      const errEl = document.getElementById('panel-error');
-      if (ok) ok.classList.add('hidden');
-      if (errEl) errEl.classList.add('hidden');
+      const card = btn.closest('.panel-card');
+      const nombre = card ? card.querySelector('h3')?.textContent.replace(/^🤝\s*/, '') : 'esta convocatoria';
 
-      btn.disabled = true;
-      btn.textContent = 'Anulando...';
+      confirmarCancelacionModal(nombre, async () => {
+        const ok = document.getElementById('panel-ok');
+        const errEl = document.getElementById('panel-error');
+        if (ok) ok.classList.add('hidden');
+        if (errEl) errEl.classList.add('hidden');
 
-      const token = sessionStorage.getItem('va_token');
-      if (token) {
-        try {
-          const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
-          const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(id)}/participar`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
+        btn.disabled = true;
+        btn.textContent = 'Anulando...';
+
+        const token = sessionStorage.getItem('va_token');
+        if (token) {
+          try {
+            const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+            const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(id)}/participar`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              }
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              throw new Error(data.message || 'No se pudo cancelar la participación.');
             }
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            throw new Error(data.message || 'No se pudo cancelar la participación.');
+          } catch (err) {
+            if (errEl) {
+              errEl.textContent = err.message || 'Error al conectar con el servidor.';
+              errEl.classList.remove('hidden');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Anular';
+            throw err;
           }
-        } catch (err) {
-          if (errEl) {
-            errEl.textContent = err.message || 'Error al conectar con el servidor.';
-            errEl.classList.remove('hidden');
-          }
-          btn.disabled = false;
-          btn.textContent = 'Anular';
-          return;
         }
-      }
 
-      const rest = leerParticipaciones().filter((p) => String(typeof p === 'string' ? p : p.id) !== String(id));
-      localStorage.setItem('va_parts_demo', JSON.stringify(rest));
-      if (ok) {
-        ok.textContent = 'Participación anulada. El cupo vuelve a estar disponible.';
-        ok.classList.remove('hidden');
-      }
-      pintarParticipaciones();
+        const rest = leerParticipaciones().filter((p) => String(typeof p === 'string' ? p : p.id) !== String(id));
+        localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+        if (ok) {
+          ok.textContent = 'Participación anulada. El cupo vuelve a estar disponible.';
+          ok.classList.remove('hidden');
+        }
+        pintarParticipaciones();
+      });
     });
+  });
+}
+
+function confirmarCancelacionModal(titulo, onConfirm) {
+  document.getElementById('modal-cancelar-postulacion')?.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'modal-cancelar-postulacion';
+  backdrop.style.cssText = `
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  `;
+
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: #ffffff; max-width: 440px; width: 100%;
+    border-radius: 16px; padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    font-family: inherit; color: #1e293b;
+  `;
+
+  const safeTitulo = esc(titulo || 'esta convocatoria');
+
+  modal.innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <div style="width:40px; height:40px; border-radius:50%; background:#fee2e2; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+        ⚠️
+      </div>
+      <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#0f172a;">¿Cancelar postulación?</h3>
+    </div>
+    <p style="margin:0 0 20px 0; font-size:0.95rem; line-height:1.5; color:#475569;">
+      ¿Estás seguro de que querés cancelar tu postulación a <strong>"${safeTitulo}"</strong>? Tu lugar quedará disponible para otro voluntario.
+    </p>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button id="modal-cancel-cerrar" type="button" style="padding:10px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; font-weight:600; cursor:pointer;">
+        No, mantener
+      </button>
+      <button id="modal-cancel-confirmar" type="button" style="padding:10px 16px; border-radius:8px; border:none; background:#dc2626; color:#ffffff; font-weight:600; cursor:pointer;">
+        Sí, cancelar postulación
+      </button>
+    </div>
+  `;
+
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.remove();
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+  modal.querySelector('#modal-cancel-cerrar').addEventListener('click', close);
+  modal.querySelector('#modal-cancel-confirmar').addEventListener('click', async () => {
+    const btn = modal.querySelector('#modal-cancel-confirmar');
+    btn.disabled = true;
+    btn.textContent = 'Cancelando...';
+    try {
+      await onConfirm();
+      close();
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Sí, cancelar postulación';
+    }
   });
 }

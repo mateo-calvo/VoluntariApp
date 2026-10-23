@@ -703,52 +703,117 @@ async function joinConvocatoria(item) {
   refresh(false);
 }
 
-async function cancelConvocatoria(item) {
-  const token = sessionStorage.getItem('va_token');
-  const btn = document.getElementById('detail-cancel');
-  if (btn) {
+function confirmarCancelacionModal(titulo, onConfirm) {
+  document.getElementById('modal-cancelar-postulacion')?.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'modal-cancelar-postulacion';
+  backdrop.style.cssText = `
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  `;
+
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: #ffffff; max-width: 440px; width: 100%;
+    border-radius: 16px; padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    font-family: inherit; color: #1e293b;
+  `;
+
+  const safeTitulo = String(titulo || 'esta convocatoria').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  modal.innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <div style="width:40px; height:40px; border-radius:50%; background:#fee2e2; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+        ⚠️
+      </div>
+      <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#0f172a;">¿Cancelar postulación?</h3>
+    </div>
+    <p style="margin:0 0 20px 0; font-size:0.95rem; line-height:1.5; color:#475569;">
+      ¿Estás seguro de que querés cancelar tu postulación a <strong>"${safeTitulo}"</strong>? Tu lugar quedará disponible para otro voluntario.
+    </p>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button id="modal-cancel-cerrar" type="button" style="padding:10px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; font-weight:600; cursor:pointer;">
+        No, mantener
+      </button>
+      <button id="modal-cancel-confirmar" type="button" style="padding:10px 16px; border-radius:8px; border:none; background:#dc2626; color:#ffffff; font-weight:600; cursor:pointer;">
+        Sí, cancelar postulación
+      </button>
+    </div>
+  `;
+
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.remove();
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+  modal.querySelector('#modal-cancel-cerrar').addEventListener('click', close);
+  modal.querySelector('#modal-cancel-confirmar').addEventListener('click', async () => {
+    const btn = modal.querySelector('#modal-cancel-confirmar');
     btn.disabled = true;
     btn.textContent = 'Cancelando...';
-  }
-  if (token) {
     try {
-      const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
-      const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        item.cupos = data.lugares_libres != null ? data.lugares_libres : (item.cupos || 0) + 1;
-        item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : Math.max(0, (item.inscriptos || 1) - 1);
-        item.voluntarios = item.inscriptos;
-        const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
-        localStorage.setItem('va_parts_demo', JSON.stringify(rest));
-        toast(data.message || 'Participación cancelada.', 'info');
-        refresh(false);
-        return;
-      }
-      throw new Error(data.message || 'No se pudo cancelar la participación.');
-    } catch (err) {
-      toast(err.message || 'Error al conectar con el servidor.', 'error');
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = 'Cancelar mi postulación';
-      }
-      return;
+      await onConfirm();
+      close();
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Sí, cancelar postulación';
     }
-  }
+  });
+}
 
-  const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
-  localStorage.setItem('va_parts_demo', JSON.stringify(rest));
-  item.cupos = (item.cupos || 0) + 1;
-  item.inscriptos = Math.max(0, (item.inscriptos || 1) - 1);
-  item.voluntarios = item.inscriptos;
-  toast('Participación cancelada.', 'info');
-  refresh(false);
+function cancelConvocatoria(item) {
+  confirmarCancelacionModal(item.nombre || item.titulo, async () => {
+    const token = sessionStorage.getItem('va_token');
+    const btn = document.getElementById('detail-cancel');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Cancelando...';
+    }
+    if (token) {
+      try {
+        const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+        const res = await fetch(`${baseUrl}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          item.cupos = data.lugares_libres != null ? data.lugares_libres : (item.cupos || 0) + 1;
+          item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : Math.max(0, (item.inscriptos || 1) - 1);
+          item.voluntarios = item.inscriptos;
+          const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
+          localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+          toast(data.message || 'Participación cancelada.', 'info');
+          refresh(false);
+          return;
+        }
+        throw new Error(data.message || 'No se pudo cancelar la participación.');
+      } catch (err) {
+        toast(err.message || 'Error al conectar con el servidor.', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Cancelar mi postulación';
+        }
+        throw err;
+      }
+    }
+
+    const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
+    localStorage.setItem('va_parts_demo', JSON.stringify(rest));
+    item.cupos = (item.cupos || 0) + 1;
+    item.inscriptos = Math.max(0, (item.inscriptos || 1) - 1);
+    item.voluntarios = item.inscriptos;
+    toast('Participación cancelada.', 'info');
+    refresh(false);
+  });
 }
 
 function selectItem(id, openPopup) {
