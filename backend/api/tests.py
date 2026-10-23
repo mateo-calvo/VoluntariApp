@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest.mock import MagicMock, patch
 
@@ -647,6 +648,116 @@ class RegistroOngEndpointTests(TestCase):
         self.assertEqual(kwargs["defaults"]["cuit"], "30-12345678-9")
         self.assertEqual(kwargs["defaults"]["nombre_organizacion"], "Fundación Huellas del Sur")
         self.assertFalse(kwargs["defaults"]["esta_verificada"])
+
+
+class OngMiPerfilEndpointTests(TestCase):
+    """Pruebas del endpoint /api/ong/mi-perfil."""
+
+    URL = "/api/ong/mi-perfil"
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user_uuid = uuid.UUID("b0000000-0000-0000-0000-000000000001")
+
+    def test_acceso_sin_token_devuelve_401(self):
+        res = self.client.get(self.URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch("urllib.request.urlopen")
+    def test_acceso_rol_no_ong_devuelve_403(self, mock_urlopen):
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({
+            "id": str(self.user_uuid),
+            "user_metadata": {"rol": "voluntario"},
+        }).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+        mock_urlopen.return_value = mock_resp
+
+        res = self.client.get(self.URL, HTTP_AUTHORIZATION="Bearer token-voluntario")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch("api.views.Ong.objects.filter")
+    @patch("urllib.request.urlopen")
+    def test_get_perfil_ong_exitoso(self, mock_urlopen, mock_ong_filter):
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({
+            "id": str(self.user_uuid),
+            "user_metadata": {"rol": "ong"},
+        }).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+        mock_urlopen.return_value = mock_resp
+
+        mock_ong = MagicMock()
+        mock_ong.id = self.user_uuid
+        mock_ong.nombre_organizacion = "Cruz Roja Argentina"
+        mock_ong.cuit = "30-12345678-9"
+        mock_ong.descripcion_institucional = "Organización humanitaria"
+        mock_ong.provincia_id = 1
+        mock_ong.localidad_id = 1
+        mock_ong.provincia.nombre = "CABA"
+        mock_ong.localidad.nombre = "Palermo"
+        mock_ong.direccion = "Av. Las Heras 2214"
+        mock_ong.telefono_contacto = "1144332211"
+        mock_ong.email_contacto = "contacto@cruzroja.org.ar"
+        mock_ong.contacto = "Juan Pérez"
+        mock_ong.sitio_web = "https://cruzroja.org.ar"
+        mock_ong.link_donacion = "https://donar.cruzroja.org.ar"
+        mock_ong.logo_url = ""
+        mock_ong.rating = 4.9
+        mock_ong.esta_verificada = True
+        mock_ong.created_at = "2026-10-20T00:00:00Z"
+
+        mock_ong_filter.return_value.first.return_value = mock_ong
+
+        res = self.client.get(self.URL, HTTP_AUTHORIZATION="Bearer token-ong-valido")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        data = res.json()
+        self.assertEqual(data["nombre_organizacion"], "Cruz Roja Argentina")
+        self.assertEqual(data["cuit"], "30-12345678-9")
+        self.assertTrue(data["esta_verificada"])
+
+    @patch("api.views.Ong.objects.filter")
+    @patch("urllib.request.urlopen")
+    def test_put_perfil_ong_actualiza_campos(self, mock_urlopen, mock_ong_filter):
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({
+            "id": str(self.user_uuid),
+            "user_metadata": {"rol": "ong"},
+        }).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+        mock_urlopen.return_value = mock_resp
+
+        mock_ong = MagicMock()
+        mock_ong.id = self.user_uuid
+        mock_ong.nombre_organizacion = "Nombre Anterior"
+        mock_ong.cuit = "30-12345678-9"
+        mock_ong.descripcion_institucional = "Descripción previa de prueba"
+        mock_ong.provincia_id = 1
+        mock_ong.localidad_id = 1
+        mock_ong.provincia.nombre = "CABA"
+        mock_ong.localidad.nombre = "Palermo"
+        mock_ong.direccion = "Calle Vieja 100"
+        mock_ong.telefono_contacto = ""
+        mock_ong.email_contacto = "contacto@ong.org"
+        mock_ong.contacto = "Referente"
+        mock_ong.sitio_web = ""
+        mock_ong.link_donacion = ""
+        mock_ong.logo_url = ""
+        mock_ong.rating = 5.0
+        mock_ong.esta_verificada = False
+        mock_ong.created_at = "2026-10-20T00:00:00Z"
+
+        mock_ong_filter.return_value.first.return_value = mock_ong
+
+        payload = {
+            "nombre_organizacion": "Nombre Nuevo ONG",
+            "descripcion_institucional": "Nueva descripción de al menos 10 caracteres.",
+            "direccion": "Calle Nueva 200",
+            "contacto": "Nuevo Referente",
+        }
+        res = self.client.put(self.URL, payload, format="json", HTTP_AUTHORIZATION="Bearer token-ong-valido")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("éxito", res.json()["message"])
 
 
 

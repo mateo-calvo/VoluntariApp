@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ?next= solo se acepta si es EXACTAMENTE una de estas páginas propias.
     // Cualquier otra cosa (https://..., javascript:..., //otro-sitio) se ignora:
     // evita redirigir a sitios externos o ejecutar código desde la URL.
-    const NEXT_PERMITIDOS = ['mapa.html', 'admin.html', 'mi-ong.html', 'participaciones.html'];
+    const NEXT_PERMITIDOS = ['mapa.html', 'admin.html', 'mi-ong.html', 'mis-convocatorias.html', 'participaciones.html'];
     const nextParam = params.get('next');
     const next = NEXT_PERMITIDOS.includes(nextParam) ? nextParam : null;
 

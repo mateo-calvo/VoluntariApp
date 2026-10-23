@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import Localidad, Provincia, Usuario, VistaConvocatoriasCards
+from .models import Causa, Convocatoria, Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
 
 GENEROS_PERMITIDOS = [
     "Femenino",
@@ -226,3 +226,161 @@ class RegistroOngSerializer(serializers.Serializer):
                     "El link de donación/pago debe comenzar con https:// o http://"
                 )
         return value
+
+
+class OngPerfilSerializer(serializers.ModelSerializer):
+    """Permite leer y actualizar la ficha pública de una ONG."""
+
+    cuit = serializers.CharField(read_only=True)
+    esta_verificada = serializers.BooleanField(read_only=True)
+    rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    email_contacto = serializers.EmailField(read_only=True)
+    provincia_nombre = serializers.SerializerMethodField(read_only=True)
+    localidad_nombre = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Ong
+        fields = [
+            "id",
+            "nombre_organizacion",
+            "cuit",
+            "descripcion_institucional",
+            "provincia_id",
+            "localidad_id",
+            "provincia_nombre",
+            "localidad_nombre",
+            "direccion",
+            "telefono_contacto",
+            "email_contacto",
+            "contacto",
+            "sitio_web",
+            "link_donacion",
+            "logo_url",
+            "rating",
+            "esta_verificada",
+            "created_at",
+        ]
+        read_only_fields = ["id", "cuit", "email_contacto", "rating", "esta_verificada", "created_at"]
+
+    def get_provincia_nombre(self, obj):
+        try:
+            return obj.provincia.nombre if obj.provincia else ""
+        except Exception:
+            return ""
+
+    def get_localidad_nombre(self, obj):
+        try:
+            return obj.localidad.nombre if obj.localidad else ""
+        except Exception:
+            return ""
+
+    def validate_nombre_organizacion(self, value):
+        value = value.strip()
+        if len(value) < 3:
+            raise serializers.ValidationError("El nombre debe tener al menos 3 caracteres.")
+        return value
+
+    def validate_descripcion_institucional(self, value):
+        if value:
+            value = value.strip()
+            if len(value) < 10:
+                raise serializers.ValidationError("La descripción debe tener al menos 10 caracteres.")
+        return value
+
+    def validate_sitio_web(self, value):
+        if value:
+            value = value.strip()
+            if not (value.startswith("http://") or value.startswith("https://")):
+                raise serializers.ValidationError("El sitio web debe comenzar con https:// o http://")
+        return value
+
+    def validate_link_donacion(self, value):
+        if value:
+            value = value.strip()
+            if not (value.startswith("http://") or value.startswith("https://")):
+                raise serializers.ValidationError("El link de donación debe comenzar con https:// o http://")
+        return value
+
+
+class CausaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Causa
+        fields = ["id", "nombre", "descripcion"]
+
+
+class ConvocatoriaSerializer(serializers.ModelSerializer):
+    causa_id = serializers.PrimaryKeyRelatedField(
+        queryset=Causa.objects.all(), source="causa", required=True
+    )
+    provincia_id = serializers.PrimaryKeyRelatedField(
+        queryset=Provincia.objects.all(), source="provincia", required=False, allow_null=True
+    )
+    localidad_id = serializers.PrimaryKeyRelatedField(
+        queryset=Localidad.objects.all(), source="localidad", required=False, allow_null=True
+    )
+    causa_nombre = serializers.SerializerMethodField(read_only=True)
+    provincia_nombre = serializers.SerializerMethodField(read_only=True)
+    localidad_nombre = serializers.SerializerMethodField(read_only=True)
+    latitud = serializers.DecimalField(
+        max_digits=18, decimal_places=12, required=False, allow_null=True
+    )
+    longitud = serializers.DecimalField(
+        max_digits=18, decimal_places=12, required=False, allow_null=True
+    )
+
+    class Meta:
+        model = Convocatoria
+        fields = [
+            "id",
+            "ong_id",
+            "causa_id",
+            "causa_nombre",
+            "estado",
+            "titulo",
+            "descripcion",
+            "provincia_id",
+            "localidad_id",
+            "provincia_nombre",
+            "localidad_nombre",
+            "direccion",
+            "lugar",
+            "fecha",
+            "hora",
+            "latitud",
+            "longitud",
+            "cupos_totales",
+            "horas_estimadas",
+            "requiere_aprobacion",
+            "created_at",
+        ]
+        read_only_fields = ["id", "ong_id", "created_at"]
+
+    def get_causa_nombre(self, obj):
+        return obj.causa.nombre if obj.causa else ""
+
+    def get_provincia_nombre(self, obj):
+        return obj.provincia.nombre if obj.provincia else ""
+
+    def get_localidad_nombre(self, obj):
+        return obj.localidad.nombre if obj.localidad else ""
+
+    def validate_latitud(self, value):
+        if value is not None:
+            return round(value, 6)
+        return value
+
+    def validate_longitud(self, value):
+        if value is not None:
+            return round(value, 6)
+        return value
+
+    def validate_estado(self, value):
+        if value:
+            val = str(value).strip().upper()
+            if val in ["CERRADA", "CERRADO", "COMPLETO"]:
+                return "COMPLETA"
+            if val in ["PAUSADA", "SUSPENDIDA"]:
+                return "CANCELADA"
+            if val in ["ABIERTA", "COMPLETA", "FINALIZADA", "CANCELADA"]:
+                return val
+        return "ABIERTA"

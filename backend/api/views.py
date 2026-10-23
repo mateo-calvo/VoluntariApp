@@ -4,10 +4,13 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Administrador, Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
+from .models import Administrador, Causa, Convocatoria, Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
 from .serializers import (
+    CausaSerializer,
+    ConvocatoriaSerializer,
     LocalidadSerializer,
     LoginSerializer,
+    OngPerfilSerializer,
     ProvinciaSerializer,
     RegistroOngSerializer,
     RegistroVoluntarioSerializer,
@@ -319,3 +322,178 @@ def register_ong(request):
     except Exception as err:
         print(f"[REGISTRO ONG ERROR INESPERADO] {err}")
         return Response({"message": "Ocurrió un error inesperado al procesar el registro."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def obtener_usuario_desde_token(request):
+    """Extrae el token Bearer del header Authorization y valida el usuario con Supabase Auth."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None, "Falta el token de autorización (Bearer)."
+
+    token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        return None, "Token de autorización vacío."
+
+    supabase_url = os.getenv("SUPABASE_URL", "https://fzfiwitvjqlrqimxxcmt.supabase.co")
+    anon_key = os.getenv("SUPABASE_ANON_KEY", "")
+
+    req = urllib.request.Request(
+        f"{supabase_url}/auth/v1/user",
+        headers={
+            "apikey": anon_key,
+            "Authorization": f"Bearer {token}",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            user_data = json.loads(resp.read().decode("utf-8"))
+            return user_data, None
+    except urllib.error.HTTPError:
+        return None, "Token inválido o expirado."
+    except Exception as err:
+        print(f"[AUTH SUPABASE ERROR] {err}")
+        return None, "Error de comunicación con el servicio de autenticación."
+
+
+@api_view(["GET", "PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def ong_mi_perfil(request):
+    """Permite a la ONG autenticada consultar (GET) y actualizar (PUT) su propia ficha pública."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    rol = user_data.get("user_metadata", {}).get("rol")
+    if rol != "ong":
+        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
+
+    user_email = user_data.get("email")
+    try:
+        ong = Ong.objects.filter(id=user_id).first()
+        if not ong and user_email:
+            ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
+    except Exception as db_err:
+        print(f"[ONG MI PERFIL DB ERROR] {db_err}")
+        ong = None
+
+    if not ong:
+        return Response({"message": "No se encontró la organización asociada a esta cuenta."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        serializer = OngPerfilSerializer(ong)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == "PUT":
+        serializer = OngPerfilSerializer(ong, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response({"message": primer_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response({
+            "message": "Ficha de la organización actualizada con éxito.",
+            "data": serializer.data,
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def listar_causas(request):
+    """Devuelve el catálogo de causas / categorías de voluntariado."""
+    causas = Causa.objects.all()
+    serializer = CausaSerializer(causas, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET", "POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def ong_mis_convocatorias(request):
+    """Permite a la ONG autenticada listar (GET) y crear (POST) sus convocatorias."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    rol = user_data.get("user_metadata", {}).get("rol")
+    if rol != "ong":
+        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = user_data.get("id")
+    user_email = user_data.get("email")
+    ong = Ong.objects.filter(id=user_id).first()
+    if not ong and user_email:
+        ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
+
+    if not ong:
+        return Response({"message": "No se encontró la organización asociada a esta cuenta."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        convocatorias = Convocatoria.objects.filter(ong=ong)
+        serializer = ConvocatoriaSerializer(convocatorias, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == "POST":
+        serializer = ConvocatoriaSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"message": primer_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            convocatoria = serializer.save(ong=ong)
+            return Response({
+                "message": "Convocatoria publicada con éxito.",
+                "data": ConvocatoriaSerializer(convocatoria).data,
+            }, status=status.HTTP_201_CREATED)
+        except Exception as db_err:
+            print(f"[CONVOCATORIA POST ERROR] {db_err}")
+            return Response({"message": f"Error al guardar en la base de datos: {db_err}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def ong_detalle_convocatoria(request, convocatoria_id):
+    """Permite consultar, editar o pausar/cerrar una convocatoria específica de la ONG."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    rol = user_data.get("user_metadata", {}).get("rol")
+    if rol != "ong":
+        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = user_data.get("id")
+    user_email = user_data.get("email")
+    ong = Ong.objects.filter(id=user_id).first()
+    if not ong and user_email:
+        ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
+
+    if not ong:
+        return Response({"message": "No se encontró la organización asociada."}, status=status.HTTP_404_NOT_FOUND)
+
+    convocatoria = Convocatoria.objects.filter(id=convocatoria_id, ong=ong).first()
+    if not convocatoria:
+        return Response({"message": "Convocatoria no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        serializer = ConvocatoriaSerializer(convocatoria)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == "PUT":
+        serializer = ConvocatoriaSerializer(convocatoria, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response({"message": primer_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer.save()
+            return Response({
+                "message": "Convocatoria actualizada con éxito.",
+                "data": serializer.data,
+            }, status=status.HTTP_200_OK)
+        except Exception as db_err:
+            print(f"[CONVOCATORIA PUT ERROR] {db_err}")
+            return Response({"message": f"Error al actualizar en la base de datos: {db_err}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == "DELETE":
+        convocatoria.estado = "CANCELADA"
+        convocatoria.save()
+        return Response({"message": "Convocatoria cancelada/cerrada con éxito."}, status=status.HTTP_200_OK)

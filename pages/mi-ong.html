@@ -18,7 +18,8 @@
       </a>
       <ul class="nav-links">
         <li><a href="mapa.html">Mapa</a></li>
-        <li><a href="#" class="active-link">Mi ONG</a></li>
+        <li><a href="mis-convocatorias.html">Mis Convocatorias</a></li>
+        <li><a href="mi-ong.html" class="active-link">Mi Perfil</a></li>
       </ul>
       <div class="panel-user">
         <div class="user-chip"><span class="avatar" id="user-avatar">O</span><span class="username" id="user-name"></span></div>
@@ -28,48 +29,31 @@
   </header>
 
   <main class="panel-main">
-    <h1 class="panel-title">Mi ONG <span class="badge warn hidden" id="ong-estado">En revisión</span></h1>
-    <p class="panel-subtitle">Completá y mantené actualizada tu ficha pública: es lo que ven los voluntarios en el mapa.</p>
+    <h1 class="panel-title">Perfil institucional <span class="badge warn hidden" id="ong-estado">En revisión</span></h1>
+    <p class="panel-subtitle">Completá y mantené actualizada la información de tu organización.</p>
 
     <p class="form-error hidden" id="panel-error" role="alert"></p>
     <p class="form-success hidden" id="panel-ok" role="status"></p>
 
     <section class="panel-section">
-      <h2>Ficha pública</h2>
+      <h2>Datos de la organización</h2>
       <form id="ong-form" class="panel-card form-grid" action="#" method="POST">
         <div class="form-group">
-          <label for="f-nombre">Nombre público *</label>
-          <input type="text" id="f-nombre" required maxlength="80">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="f-categoria">Categoría *</label>
-            <select id="f-categoria">
-              <option value="desarrollo-social">Desarrollo social</option>
-              <option value="salud">Salud</option>
-              <option value="educacion">Educación</option>
-              <option value="medioambiente">Medioambiente</option>
-              <option value="infancias">Infancias y juventudes</option>
-              <option value="derechos">Derechos humanos</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="f-barrio">Barrio / localidad *</label>
-            <div class="ubicacion-box">
-              <input type="text" id="f-barrio" name="barrio" placeholder="Escribí calle, barrio o ciudad…" required maxlength="80" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="f-barrio-sugerencias" aria-autocomplete="list">
-              <ul class="ubicacion-sugerencias hidden" id="f-barrio-sugerencias" role="listbox" aria-label="Ubicaciones sugeridas"></ul>
-            </div>
-            <input type="hidden" id="f-lat" name="lat">
-            <input type="hidden" id="f-lng" name="lng">
-          </div>
+          <label for="f-nombre">Nombre de la organización *</label>
+          <input type="text" id="f-nombre" required maxlength="120">
         </div>
         <div class="form-group">
-          <label for="f-descripcion">Descripción (máx. 280) *</label>
-          <input type="text" id="f-descripcion" required maxlength="280">
+          <label for="f-barrio">Dirección / Localidad *</label>
+          <div class="ubicacion-box">
+            <input type="text" id="f-barrio" name="barrio" placeholder="Escribí calle, barrio o ciudad…" required maxlength="120" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="f-barrio-sugerencias" aria-autocomplete="list">
+            <ul class="ubicacion-sugerencias hidden" id="f-barrio-sugerencias" role="listbox" aria-label="Ubicaciones sugeridas"></ul>
+          </div>
+          <input type="hidden" id="f-lat" name="lat">
+          <input type="hidden" id="f-lng" name="lng">
         </div>
         <div class="form-group">
-          <label for="f-necesidades">Qué voluntarios necesitan</label>
-          <input type="text" id="f-necesidades" maxlength="140">
+          <label for="f-descripcion">Descripción institucional / Misión *</label>
+          <textarea id="f-descripcion" required maxlength="600" rows="4" style="width:100%;padding:10px;border:1px solid #d0d7de;border-radius:6px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -81,19 +65,19 @@
             <input type="url" id="f-pago" placeholder="https://...">
           </div>
         </div>
-        <div class="form-group">
-          <label for="f-contacto">Contacto *</label>
-          <input type="text" id="f-contacto" required maxlength="80">
-        </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="f-cupos">Cupos por convocatoria</label>
-            <input type="number" id="f-cupos" min="1" max="500" value="5">
+            <label for="f-contacto">Persona de contacto / referente *</label>
+            <input type="text" id="f-contacto" required maxlength="80" placeholder="Nombre del referente">
+          </div>
+          <div class="form-group">
+            <label for="f-telefono">Teléfono de contacto</label>
+            <input type="tel" id="f-telefono" maxlength="50" placeholder="+54 11 ...">
           </div>
         </div>
-        <div class="row">
+        <div class="row" style="margin-top:10px;">
           <button type="submit" class="btn btn-primary" id="ong-guardar">Guardar cambios</button>
-          <a class="btn btn-secondary" href="mapa.html">Ver mi ficha en el mapa</a>
+          <a class="btn btn-secondary" href="mis-convocatorias.html">Gestionar mis convocatorias</a>
         </div>
       </form>
     </section>

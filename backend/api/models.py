@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
@@ -187,4 +188,71 @@ class Ong(models.Model):
 
     def __str__(self):
         return self.nombre_organizacion
+
+
+class Causa(models.Model):
+    id = models.IntegerField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = "causas"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
+class Convocatoria(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ong = models.ForeignKey(
+        Ong,
+        on_delete=models.DO_NOTHING,
+        db_column="ong_id",
+        related_name="convocatorias",
+    )
+    causa = models.ForeignKey(
+        Causa,
+        on_delete=models.DO_NOTHING,
+        db_column="causa_id",
+        related_name="convocatorias",
+        blank=True,
+        null=True,
+    )
+    estado = models.CharField(max_length=50, default="ABIERTA")
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, null=True)
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.DO_NOTHING,
+        db_column="provincia_id",
+        blank=True,
+        null=True,
+    )
+    localidad = models.ForeignKey(
+        Localidad,
+        on_delete=models.DO_NOTHING,
+        db_column="localidad_id",
+        blank=True,
+        null=True,
+    )
+    direccion = models.CharField(max_length=255, blank=True, null=True)
+    lugar = models.CharField(max_length=255, blank=True, null=True)
+    fecha = models.DateField(blank=True, null=True)
+    hora = models.TimeField(blank=True, null=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    cupos_totales = models.IntegerField(default=10)
+    horas_estimadas = models.IntegerField(default=4)
+    requiere_aprobacion = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = "convocatorias"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.titulo} - {self.ong.nombre_organizacion if self.ong else ''}"
 

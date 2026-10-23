@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Convocatorias | VoluntariApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/panel.css">
+  <link rel="stylesheet" href="../css/autocomplete.css">
+  <style>
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .convocatorias-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .convocatoria-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .convocatoria-card:hover {
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+    .convocatoria-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .convocatoria-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--color-navy);
+      margin: 0;
+    }
+    .convocatoria-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13.5px;
+      color: var(--color-muted);
+    }
+    .convocatoria-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .convocatoria-desc {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #334155;
+    }
+    .convocatoria-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      backdrop-filter: blur(2px);
+    }
+    .modal-overlay.hidden {
+      display: none !important;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--color-navy);
+      margin: 0;
+    }
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--color-muted);
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .btn-close:hover {
+      background: #f1f5f9;
+      color: var(--color-navy);
+    }
+    .empty-state {
+      background: #fff;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--color-muted);
+    }
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--color-navy);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar-background">
+    <nav class="panel-navbar">
+      <a href="../index.html" class="logo" title="Volver al inicio">
+        <img src="../images/logo.png" alt="VoluntariApp">
+      </a>
+      <ul class="nav-links">
+        <li><a href="mapa.html">Mapa</a></li>
+        <li><a href="mis-convocatorias.html" class="active-link">Mis Convocatorias</a></li>
+        <li><a href="mi-ong.html">Mi Perfil</a></li>
+      </ul>
+      <div class="panel-user">
+        <div class="user-chip"><span class="avatar" id="user-avatar">O</span><span class="username" id="user-name"></span></div>
+        <a href="#" class="logout-link" id="logout-link">Salir</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="panel-main">
+    <div class="header-actions">
+      <div>
+        <h1 class="panel-title">Mis Convocatorias</h1>
+        <p class="panel-subtitle" style="margin-bottom:0;">Creá y gestioná las oportunidades de voluntariado de tu ONG.</p>
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-nueva-convocatoria">
+        + Nueva convocatoria
+      </button>
+    </div>
+
+    <p class="form-error hidden" id="panel-error" role="alert"></p>
+    <p class="form-success hidden" id="panel-ok" role="status"></p>
+
+    <!-- Stats rápidas -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <strong id="stat-activas">0</strong>
+        <span>Convocatorias abiertas</span>
+      </div>
+      <div class="stat-card">
+        <strong id="stat-total">0</strong>
+        <span>Total creadas</span>
+      </div>
+      <div class="stat-card highlight">
+        <strong id="stat-cupos">0</strong>
+        <span>Cupos disponibles</span>
+      </div>
+    </div>
+
+    <!-- Listado de Convocatorias -->
+    <section class="panel-section">
+      <h2>Convocatorias de tu organización</h2>
+      <div id="convocatorias-lista" class="convocatorias-grid">
+        <div class="empty-state" id="loading-state">
+          <p>Cargando convocatorias...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Crear / Editar Convocatoria -->
+  <div class="modal-overlay hidden" id="modal-convocatoria">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-titulo">Nueva convocatoria</h2>
+        <button type="button" class="btn-close" id="btn-cerrar-modal" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <p class="form-error hidden" id="modal-error" role="alert" style="margin-bottom:14px;"></p>
+
+      <form id="convocatoria-form" class="form-grid">
+        <input type="hidden" id="c-id">
+
+        <div class="form-group">
+          <label for="c-titulo">Título de la convocatoria *</label>
+          <input type="text" id="c-titulo" required maxlength="150" placeholder="Ej: Colecta comunitaria de invierno">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="c-causa">Causa / Categoría *</label>
+            <select id="c-causa" required>
+              <option value="">Seleccioná una causa...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="c-cupos">Cupos de voluntarios *</label>
+            <input type="number" id="c-cupos" min="1" max="500" value="10" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="c-fecha">Fecha del voluntariado *</label>
+            <input type="date" id="c-fecha" required>
+          </div>
+          <div class="form-group">
+            <label for="c-hora">Hora de inicio</label>
+            <input type="time" id="c-hora" value="09:00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="c-provincia">Provincia *</label>
+            <select id="c-provincia" required>
+              <option value="" disabled selected>Selecciona una provincia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="c-localidad">Localidad / Municipio *</label>
+            <select id="c-localidad" required disabled>
+              <option value="" disabled selected>Primero elegí una provincia</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="c-direccion">Lugar o dirección específica *</label>
+          <div class="ubicacion-box">
+            <input type="text" id="c-direccion" placeholder="Calle y altura, o plaza/parque…" required maxlength="180" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="c-dir-sugerencias" aria-autocomplete="list">
+            <ul class="ubicacion-sugerencias hidden" id="c-dir-sugerencias" role="listbox"></ul>
+          </div>
+          <input type="hidden" id="c-lat">
+          <input type="hidden" id="c-lng">
+        </div>
+
+        <div class="form-group">
+          <label for="c-descripcion">Descripción y tareas de los voluntarios *</label>
+          <textarea id="c-descripcion" required maxlength="800" rows="4" style="width:100%;padding:10px;border:1.5px solid transparent;background:var(--color-input-bg);border-radius:6px;font-family:inherit;font-size:14px;resize:vertical;" placeholder="Explicá en qué consiste la actividad, qué deberán hacer y qué se les provee..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="c-horas">Horas estimadas</label>
+            <input type="number" id="c-horas" min="1" max="24" value="4">
+          </div>
+          <div class="form-group hidden" id="grupo-c-estado">
+            <label for="c-estado">Estado</label>
+            <select id="c-estado">
+              <option value="ABIERTA">Abierta</option>
+              <option value="COMPLETA">Cerrada</option>
+              <option value="FINALIZADA">Finalizada</option>
+              <option value="CANCELADA">Cancelada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:16px;">
+          <button type="submit" class="btn btn-primary" id="btn-guardar-convocatoria">Guardar convocatoria</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Cambio de Estado -->
+  <div class="modal-overlay hidden" id="modal-confirmacion">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 38px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 19px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;">Confirmar cambio de estado</h3>
+      <p id="confirmacion-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas cambiar el estado de esta convocatoria?
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-confirmar-cancelar">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirmar-aceptar">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/ubicacion-autocomplete.js"></script>
+  <script src="mis-convocatorias.js"></script>
+</body>
+</html>
