@@ -1,5 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Inyección automática del HTML del Chat con preguntas rápidas actualizadas para ONGs y Voluntarios
+  // Evaluamos la vista antes de inyectar el HTML
+  const esVistaOng = window.location.pathname.includes('ong');
+  const claveSesion = esVistaOng ? 'chat_historial_ong' : 'chat_historial_voluntario';
+
+  // Definimos todas las preguntas rápidas dinámicas según el perfil
+  let chipsHTML = "";
+  if (esVistaOng) {
+    chipsHTML = `
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo publicar una convocatoria?')">¿Cómo publicar convocatoria?</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo edito o cierro una convocatoria publicada?')">¿Cómo editar o cerrar convocatorias?</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Puedo pausar temporariamente una búsqueda de voluntarios?')">¿Cómo pausar una búsqueda?</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo veo los datos de contacto de un voluntario postulado?')">Ver contacto de voluntarios</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo rechazo o acepto una postulación?')">Gestionar postulaciones</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo se gestionan las donaciones que recibe mi causa?')">Donaciones de mi causa</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo donar a la app?')">¿Cómo donar a la app?</button>
+    `;
+  } else {
+    chipsHTML = `
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo postularme a una causa?')">¿Cómo postularme?</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo busco causas cerca de mi ubicación actual?')">Buscar cerca de mí</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Puedo postularme a más de un voluntariado al mismo tiempo?')">Múltiples postulaciones</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo cancelo una postulación si ya no puedo asistir?')">Cancelar postulación</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo usar los filtros del mapa?')">Filtros del mapa</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo guardo causas o las marco como favoritas?')">Guardar favoritas</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Qué significan los iconos en el mapa?')">Iconos del mapa</button>
+      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo donar a la app?')">¿Cómo donar a la app?</button>
+    `;
+  }
+
+  // Inyección automática del HTML del Chat
   const botHTML = `
     <!-- Botón flotante -->
     <button id="voliToggleBtn" class="bot-trigger-btn">
@@ -39,11 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="voli-msg-time">12:22</div>
             
-            <div class="voli-chips-container" id="voliChips">
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo publicar una convocatoria?')">¿Cómo publicar convocatoria?</button>
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo me postulo a un voluntariado?')">¿Cómo postularme?</button>
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Qué requisitos piden las ONGs?')">Requisitos para ONGs</button>
-              <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo contacto a una organización?')">Contactar ONG</button>
+            <div class="voli-chips-container" id="voliChips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+              ${chipsHTML}
             </div>
           </div>
         </div>
@@ -69,10 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("voliInput");
   const chatBody = document.getElementById("voliChatBody");
   const resetBtn = document.getElementById("voliResetBtn");
-
-  // Manejo de almacenamiento independiente por sección (ONG vs Voluntario)
-  const esVistaOng = window.location.pathname.includes('ong');
-  const claveSesion = esVistaOng ? 'chat_historial_ong' : 'chat_historial_voluntario';
 
   // Cargar historial previo de la sesión actual si existe
   const historialGuardado = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
@@ -108,6 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
               ¡Chat reiniciado! ¿En qué puedo ayudarte ahora?
             </div>
             <div class="voli-msg-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div class="voli-chips-container" id="voliChips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+              ${chipsHTML}
+            </div>
           </div>
         </div>
       `;
@@ -125,10 +150,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Enviar mensaje al presionar Enter
   input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") enviarMensaje();
+    if (e.key === "Enter" && !input.disabled) enviarMensaje();
   });
 
-  sendBtn.addEventListener("click", enviarMensaje);
+  sendBtn.addEventListener("click", () => {
+    if (!sendBtn.disabled) enviarMensaje();
+  });
 
   async function enviarMensaje() {
     const texto = input.value.trim();
@@ -138,6 +165,13 @@ document.addEventListener("DOMContentLoaded", () => {
     agregarMensajeUI("user", texto);
     input.value = "";
     sendBtn.classList.remove("active");
+
+    // Bloquear controles mientras la IA está respondiendo
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    // 1. MOSTRAR INDICADOR DE ESCRITURA ("Escribiendo...")
+    const idEscritura = mostrarIndicadorEscritura();
 
     // Petición al Backend
     try {
@@ -152,12 +186,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
       
+      // 2. REMOVER EL INDICADOR DE ESCRITURA
+      removerIndicadorEscritura(idEscritura);
+
       // Limpiamos cualquier asterisco o formato markdown residual de la respuesta
       const textoLimpio = limpiarMarkdown(data.respuesta || data.error || "No pude procesar tu solicitud.");
       agregarMensajeUI("bot", textoLimpio);
       
     } catch (err) {
+      // 3. REMOVER EL INDICADOR EN CASO DE ERROR TAMBIÉN
+      removerIndicadorEscritura(idEscritura);
       agregarMensajeUI("bot", "Ocurrió un error al conectar con TeAyudoIA. Inténtalo más tarde.");
+    } finally {
+      // Habilitar nuevamente los controles al finalizar la respuesta
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // Funciones para manejar la burbuja de "Escribiendo..."
+  function mostrarIndicadorEscritura() {
+    const idUnico = "typing-" + Date.now();
+    const row = document.createElement("div");
+    row.className = "voli-msg-row bot";
+    row.id = idUnico;
+
+    row.innerHTML = `
+      <div class="voli-msg-avatar">🤖</div>
+      <div>
+        <div class="voli-msg-bubble" style="color: #666; font-style: italic; display: flex; align-items: center; gap: 4px;">
+          TeAyudoIA está escribiendo
+          <span class="dot-flashing" style="display:inline-flex; gap:2px;">
+            <span style="animation: blink 1.4s infinite both;">.</span>
+            <span style="animation: blink 1.4s infinite both .2s;">.</span>
+            <span style="animation: blink 1.4s infinite both .4s;">.</span>
+          </span>
+        </div>
+      </div>
+    `;
+
+    chatBody.appendChild(row);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return idUnico;
+  }
+
+  function removerIndicadorEscritura(idUnico) {
+    const elemento = document.getElementById(idUnico);
+    if (elemento) {
+      elemento.remove();
     }
   }
 
@@ -202,6 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Función global para los chips
   window.enviarPreguntaRapida = function(pregunta) {
+    if (input.disabled) return;
     input.value = pregunta;
     enviarMensaje();
   };
