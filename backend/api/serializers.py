@@ -3,7 +3,16 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import Causa, Convocatoria, Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards
+from .models import (
+    Causa,
+    Convocatoria,
+    Localidad,
+    Ong,
+    Provincia,
+    Usuario,
+    VistaConvocatoriasCards,
+    VistaConvocatoriasMapa,
+)
 
 GENEROS_PERMITIDOS = [
     "Femenino",
@@ -51,6 +60,12 @@ class RegistroVoluntarioSerializer(serializers.Serializer):
 class VistaConvocatoriasCardsSerializer(serializers.ModelSerializer):
     class Meta:
         model = VistaConvocatoriasCards
+        fields = "__all__"
+
+
+class VistaConvocatoriasMapaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VistaConvocatoriasMapa
         fields = "__all__"
 
 

@@ -88,6 +88,7 @@ class VistaConvocatoriasCards(models.Model):
     ong_verificada = models.BooleanField(default=False)
     ong_logo_url = models.CharField(max_length=500, blank=True, null=True)
     ong_link_donacion = models.CharField(max_length=500, blank=True, null=True)
+    ong_email_contacto = models.CharField(max_length=255, blank=True, null=True)
 
     # Causa
     causa_id = models.IntegerField()
@@ -102,6 +103,51 @@ class VistaConvocatoriasCards(models.Model):
     class Meta:
         managed = False
         db_table = "vista_convocatorias_cards"
+
+    def __str__(self):
+        return f"{self.titulo} ({self.nombre_organizacion})"
+
+
+class VistaConvocatoriasMapa(models.Model):
+    convocatoria_id = models.UUIDField(primary_key=True)
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, null=True)
+    fecha = models.DateField(blank=True, null=True)
+    hora = models.TimeField(blank=True, null=True)
+    lugar = models.CharField(max_length=255, blank=True, null=True)
+    direccion = models.CharField(max_length=255, blank=True, null=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitud = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    cupos_totales = models.IntegerField(blank=True, null=True)
+    inscriptos_actuales = models.IntegerField(blank=True, null=True)
+    lugares_libres = models.IntegerField(blank=True, null=True)
+    horas_estimadas = models.IntegerField(blank=True, null=True)
+    requiere_aprobacion = models.BooleanField(default=False)
+    estado_convocatoria = models.CharField(max_length=50, blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True)
+
+    # Datos de la ONG
+    ong_id = models.UUIDField()
+    nombre_organizacion = models.CharField(max_length=255)
+    ong_rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
+    ong_verificada = models.BooleanField(default=False)
+    ong_logo_url = models.CharField(max_length=500, blank=True, null=True)
+    ong_link_donacion = models.CharField(max_length=500, blank=True, null=True)
+    ong_email_contacto = models.CharField(max_length=255, blank=True, null=True)
+
+    # Causa
+    causa_id = models.IntegerField()
+    causa_nombre = models.CharField(max_length=100)
+
+    # Ubicación geográfica
+    localidad_id = models.IntegerField()
+    localidad_nombre = models.CharField(max_length=100)
+    provincia_id = models.IntegerField()
+    provincia_nombre = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = "vista_convocatorias_mapa"
 
     def __str__(self):
         return f"{self.titulo} ({self.nombre_organizacion})"
