@@ -1,0 +1,287 @@
+/* ===== ESTILOS AUTÓNOMOS DEL ASISTENTE (TEAYUDOIA) ===== */
+:root {
+  --voli-primario: #1B6E52;
+  --voli-primario-hover: #14523F;
+  --voli-primario-suave: #DCEFE6;
+  --voli-fondo: #F2F5F4;
+  --voli-texto: #1a1a1a;
+  --voli-texto-suave: #6b7280;
+  --voli-borde: #e0e0e0;
+  --voli-blanco: #ffffff;
+  --voli-sidebar-bg: #16232c;
+  --voli-sidebar-hover: #1f2f3a;
+  --voli-sidebar-texto: #c5d2d8;
+  --voli-fuente: 'Segoe UI', Arial, sans-serif;
+}
+
+/* Botón flotante del bot */
+.bot-trigger-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: var(--voli-primario);
+  color: var(--voli-blanco);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: transform 0.2s ease, background-color 0.2s;
+}
+
+.bot-trigger-btn:hover {
+  transform: scale(1.05);
+  background-color: var(--voli-primario-hover);
+}
+
+.bot-trigger-btn .badge-help {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--voli-blanco);
+  color: var(--voli-texto);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border: 1px solid var(--voli-borde);
+}
+
+/* Modal / Ventana del Chat */
+.voli-chat-modal {
+  position: fixed;
+  bottom: 84px;
+  right: 20px;
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  height: 520px;
+  background-color: var(--voli-blanco);
+  border: 1px solid var(--voli-borde);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(22, 35, 44, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9999;
+  font-family: var(--voli-fuente);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.voli-chat-modal.hidden {
+  display: none;
+}
+
+/* Header del Chat */
+.voli-chat-header {
+  background-color: var(--voli-sidebar-bg);
+  color: var(--voli-blanco);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.voli-avatar-box {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  background-color: var(--voli-primario);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.voli-avatar-box .online-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  background-color: #22c55e;
+  border: 2px solid var(--voli-sidebar-bg);
+  border-radius: 50%;
+}
+
+.voli-header-info h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.voli-header-info span {
+  font-size: 11px;
+  color: var(--voli-sidebar-texto);
+}
+
+.voli-header-actions button {
+  background: none;
+  border: none;
+  color: var(--voli-sidebar-texto);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.voli-header-actions button:hover {
+  color: var(--voli-blanco);
+  background-color: var(--voli-sidebar-hover);
+}
+
+/* Barra de sugerencia */
+.voli-suggestion-bar {
+  background-color: var(--voli-primario-suave);
+  color: var(--voli-primario);
+  padding: 8px 14px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(27, 110, 82, 0.1);
+}
+
+/* Área de mensajes */
+.voli-chat-body {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--voli-fondo);
+}
+
+.voli-msg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.voli-msg-row.user {
+  justify-content: flex-end;
+}
+
+.voli-msg-avatar {
+  width: 28px;
+  height: 28px;
+  background-color: var(--voli-primario);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--voli-blanco);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.voli-msg-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.voli-msg-row.bot .voli-msg-bubble {
+  background-color: var(--voli-blanco);
+  color: var(--voli-texto);
+  border: 1px solid var(--voli-borde);
+  border-top-left-radius: 4px;
+}
+
+.voli-msg-row.user .voli-msg-bubble {
+  background-color: var(--voli-primario);
+  color: var(--voli-blanco);
+  border-top-right-radius: 4px;
+}
+
+.voli-msg-time {
+  font-size: 10px;
+  color: var(--voli-texto-suave);
+  margin-top: 4px;
+}
+
+/* Botones de sugerencias (chips) */
+.voli-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.voli-chip {
+  background-color: var(--voli-blanco);
+  border: 1px solid var(--voli-borde);
+  color: var(--voli-primario);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voli-chip:hover {
+  background-color: var(--voli-primario-suave);
+  border-color: var(--voli-primario);
+}
+
+/* Input inferior */
+.voli-chat-footer {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--voli-blanco);
+  border-top: 1px solid var(--voli-borde);
+}
+
+.voli-input-box {
+  flex: 1;
+}
+
+.voli-input-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--voli-borde);
+  outline: none;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--voli-texto);
+  background-color: var(--voli-blanco);
+  box-sizing: border-box;
+}
+
+.voli-input-box input:focus {
+  border-color: var(--voli-primario);
+  box-shadow: 0 0 0 3px var(--voli-primario-suave);
+}
+
+.voli-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--voli-gris-suave, #e5e7eb);
+  border: none;
+  color: var(--voli-texto-suave);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.voli-send-btn.active {
+  background-color: var(--voli-primario);
+  color: var(--voli-blanco);
+}

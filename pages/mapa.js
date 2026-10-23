@@ -253,6 +253,7 @@ function mapApiItem(c) {
     voluntarios: inscriptosActuales + (yaIn ? 1 : 0),
     rating: parseFloat(c.ong_rating || 5.0),
     distancia: haversineKm(CABA_CENTER[0], CABA_CENTER[1], lat, lng),
+    cupos: c.cupos_totales ?? c.cupos_disponibles ?? c.cupos ?? 0,
     cupos: cuposRestantes,
     verificada: c.ong_verificada ?? true,
     web: c.web || '',
