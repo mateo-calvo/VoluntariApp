@@ -84,21 +84,31 @@ function clasificarParticipacion(p) {
     };
   }
 
-  // Finalizadas (si la convocatoria concluyó o el voluntariado ya finalizó)
-  if (estConv === 'FINALIZADA' || estPost === 'FINALIZADO') {
+  // Finalizadas (si la convocatoria concluyó o el voluntariado ya finalizó / asistió)
+  if (estConv === 'FINALIZADA' || estPost === 'FINALIZADO' || estPost === 'ASISTIO') {
     return {
       filtro: 'finalizada',
-      badgeText: 'Finalizada',
-      badgeStyle: 'style="background:#64748b; color:#fff;"',
+      badgeText: estPost === 'ASISTIO' ? 'Asistió ✓' : 'Finalizada',
+      badgeStyle: 'style="background:#0284c7; color:#fff;"',
       puedeAnular: false,
     };
   }
 
-  // Participando (activa en curso)
+  // Confirmado (participación confirmada)
+  if (estPost === 'CONFIRMADO') {
+    return {
+      filtro: 'participando',
+      badgeText: 'Confirmado ✓',
+      badgeStyle: 'style="background:#27ae60; color:#fff;"',
+      puedeAnular: true,
+    };
+  }
+
+  // Pendiente de aprobación por parte de la ONG
   return {
     filtro: 'participando',
-    badgeText: estPost === 'CONFIRMADO' ? 'Confirmado ✓' : 'Participando ✓',
-    badgeStyle: 'style="background:#27ae60; color:#fff;"',
+    badgeText: 'Pendiente de aprobación',
+    badgeStyle: 'style="background:#d97706; color:#fff;"',
     puedeAnular: true,
   };
 }
@@ -181,13 +191,16 @@ function renderizarLista() {
   if (!filtradas.length) {
     list.innerHTML = '';
     if (empty) {
-      const etiquetas = {
-        participando: 'en curso / participando',
-        finalizada: 'finalizadas',
-        cancelada: 'canceladas',
-        todas: 'en tu cuenta',
-      };
-      empty.innerHTML = `No tenés convocatorias ${etiquetas[filtroActual] || ''}.<br><a href="mapa.html" class="btn btn-primary" style="margin-top:12px; display:inline-block;">Explorar el mapa</a>`;
+      if (filtroActual === 'finalizada') {
+        empty.innerHTML = `No asististe a ninguna convocatoria.<br><a href="mapa.html" class="btn btn-primary" style="margin-top:12px; display:inline-block;">Explorar el mapa</a>`;
+      } else {
+        const etiquetas = {
+          participando: 'en curso / participando',
+          cancelada: 'canceladas',
+          todas: 'en tu cuenta',
+        };
+        empty.innerHTML = `No tenés convocatorias ${etiquetas[filtroActual] || ''}.<br><a href="mapa.html" class="btn btn-primary" style="margin-top:12px; display:inline-block;">Explorar el mapa</a>`;
+      }
       empty.classList.remove('hidden');
     }
     return;

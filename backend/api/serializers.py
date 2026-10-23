@@ -338,6 +338,7 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
     causa_nombre = serializers.SerializerMethodField(read_only=True)
     provincia_nombre = serializers.SerializerMethodField(read_only=True)
     localidad_nombre = serializers.SerializerMethodField(read_only=True)
+    postulantes_count = serializers.SerializerMethodField(read_only=True)
     latitud = serializers.DecimalField(
         max_digits=18, decimal_places=12, required=False, allow_null=True
     )
@@ -368,6 +369,7 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
             "cupos_totales",
             "horas_estimadas",
             "requiere_aprobacion",
+            "postulantes_count",
             "created_at",
         ]
         read_only_fields = ["id", "ong_id", "created_at"]
@@ -380,6 +382,12 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
 
     def get_localidad_nombre(self, obj):
         return obj.localidad.nombre if obj.localidad else ""
+
+    def get_postulantes_count(self, obj):
+        try:
+            return obj.postulaciones.filter(estado__in=["POSTULADO", "CONFIRMADO"]).count()
+        except Exception:
+            return 0
 
     def validate_latitud(self, value):
         if value is not None:
@@ -428,3 +436,37 @@ class PostulacionSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "estado", "created_at"]
+
+
+class PostulanteOngSerializer(serializers.ModelSerializer):
+    voluntario_id = serializers.UUIDField(source="voluntario.id", read_only=True)
+    nombre = serializers.SerializerMethodField(read_only=True)
+    email = serializers.SerializerMethodField(read_only=True)
+    telefono = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Postulacion
+        fields = [
+            "id",
+            "convocatoria_id",
+            "voluntario_id",
+            "nombre",
+            "email",
+            "telefono",
+            "estado",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "convocatoria_id", "voluntario_id", "nombre", "email", "telefono", "created_at", "updated_at"]
+
+    def get_nombre(self, obj):
+        if obj.voluntario:
+            n = f"{obj.voluntario.nombre or ''} {obj.voluntario.apellido or ''}".strip()
+            return n if n else "Voluntario"
+        return "Voluntario"
+
+    def get_email(self, obj):
+        return obj.voluntario.email if obj.voluntario else ""
+
+    def get_telefono(self, obj):
+        return obj.voluntario.telefono if obj.voluntario else ""

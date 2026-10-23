@@ -39,6 +39,7 @@ const state = {
   items: [],
   isLoading: true,
   error: null,
+  postulacionesMap: {},
 };
 
 function haversineKm(a, b, c, d) {
@@ -154,13 +155,18 @@ async function syncMisPostulaciones() {
   if (!token || !session || session.rol !== 'voluntario') return;
   try {
     const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
-    const res = await fetch(`${baseUrl}/api/voluntario/mis-postulaciones?estado=activas`, {
+    const res = await fetch(`${baseUrl}/api/voluntario/mis-postulaciones?estado=todas`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (res.ok) {
       const posts = await res.json();
       if (Array.isArray(posts)) {
-        const mapped = posts.map((p) => ({
+        state.postulacionesMap = {};
+        posts.forEach((p) => {
+          state.postulacionesMap[String(p.convocatoria_id)] = p.estado;
+        });
+        const activas = posts.filter((p) => ['POSTULADO', 'CONFIRMADO'].includes(p.estado));
+        const mapped = activas.map((p) => ({
           id: String(p.convocatoria_id),
           nombre: p.titulo_convocatoria,
           barrio: p.lugar || '',
@@ -457,18 +463,25 @@ function renderDetail() {
   document.body.classList.add("detail-open");
 
   const session = getSession();
-  const alreadyIn = yaParticipa(item.id);
+  const estadoPost = state.postulacionesMap ? state.postulacionesMap[String(item.id)] : null;
+  const alreadyIn = yaParticipa(item.id) || ['POSTULADO', 'CONFIRMADO'].includes(estadoPost);
+  const isCancelado = estadoPost === 'CANCELADO';
+  const isFinalizado = ['ASISTIO', 'FINALIZADO'].includes(estadoPost);
   const sinCupos = item.cupos <= 0;
 
   let btnHtml;
-  if (sinCupos && !alreadyIn) {
-    btnHtml = `<button class="btn-primary" disabled>Sin cupos por ahora</button>`;
-  } else if (alreadyIn) {
+  if (alreadyIn) {
     btnHtml = `
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn-primary" disabled style="background:#27ae60; cursor:default;">Ya estás participando ✓</button>
         <button class="btn-secondary" id="detail-cancel" style="color:#c0392b; border-color:#c0392b; padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">Cancelar mi postulación</button>
       </div>`;
+  } else if (isCancelado) {
+    btnHtml = `<button class="btn-primary" disabled style="background:#94a3b8; cursor:not-allowed;" title="Esta postulación fue cancelada y no puede volver a abrirse">Postulación cancelada</button>`;
+  } else if (isFinalizado) {
+    btnHtml = `<button class="btn-primary" disabled style="background:#64748b; cursor:not-allowed;" title="Esta postulación ya se encuentra finalizada">Postulación finalizada</button>`;
+  } else if (sinCupos) {
+    btnHtml = `<button class="btn-primary" disabled>Sin cupos por ahora</button>`;
   } else {
     btnHtml = `<button class="btn-primary" id="detail-join">Quiero participar</button>`;
   }
@@ -630,6 +643,7 @@ async function joinConvocatoria(item) {
         item.cupos = data.lugares_libres != null ? data.lugares_libres : Math.max(0, item.cupos - 1);
         item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : (item.inscriptos || 0) + 1;
         item.voluntarios = item.inscriptos;
+        if (state.postulacionesMap) state.postulacionesMap[String(item.id)] = 'POSTULADO';
         guardarParticipacion(item);
         toast(data.message || '¡Listo! Ya estás participando en esta convocatoria.', 'success');
         refresh(false);
@@ -639,6 +653,10 @@ async function joinConvocatoria(item) {
         toast(data.message || 'No se pudo registrar tu participación.', 'error');
         if (data.message && data.message.includes('Ya estás postulado')) {
           guardarParticipacion(item);
+          if (state.postulacionesMap) state.postulacionesMap[String(item.id)] = 'POSTULADO';
+          refresh(false);
+        } else if (data.message && data.message.includes('cancelada')) {
+          if (state.postulacionesMap) state.postulacionesMap[String(item.id)] = 'CANCELADO';
           refresh(false);
         }
         return;
@@ -699,7 +717,7 @@ function confirmarCancelacionModal(titulo, onConfirm) {
       <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#0f172a;">¿Cancelar postulación?</h3>
     </div>
     <p style="margin:0 0 20px 0; font-size:0.95rem; line-height:1.5; color:#475569;">
-      ¿Estás seguro de que querés cancelar tu postulación a <strong>"${safeTitulo}"</strong>? Tu lugar quedará disponible para otro voluntario.
+      ¿Estás seguro de que querés cancelar tu postulación a <strong>"${safeTitulo}"</strong>? Tu lugar quedará disponible para otro voluntario y no podrás volver a postularte a esta convocatoria.
     </p>
     <div style="display:flex; justify-content:flex-end; gap:10px;">
       <button id="modal-cancel-cerrar" type="button" style="padding:10px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; font-weight:600; cursor:pointer;">
@@ -754,6 +772,7 @@ function cancelConvocatoria(item) {
           item.cupos = data.lugares_libres != null ? data.lugares_libres : (item.cupos || 0) + 1;
           item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : Math.max(0, (item.inscriptos || 1) - 1);
           item.voluntarios = item.inscriptos;
+          if (state.postulacionesMap) state.postulacionesMap[String(item.id)] = 'CANCELADO';
           const rest = getMyParticipations().filter((p) => parteId(p) !== String(item.id));
           localStorage.setItem('va_parts_demo', JSON.stringify(rest));
           toast(data.message || 'Participación cancelada.', 'info');
