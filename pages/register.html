@@ -92,7 +92,7 @@
                     </button>
                 </div>
 
-                <form id="formulario-registro" class="auth-form" action="#" method="POST">
+                <form id="formulario-registro" class="auth-form" action="#" method="POST" novalidate>
                     <!-- ============ CAMPOS VOLUNTARIO ============ -->
                     <div id="campos-voluntario" class="form-fields-container">
                         <!-- Nombre y Apellido -->
@@ -223,6 +223,22 @@
                                 <label for="email-ong">Email institucional de la ONG *</label>
                                 <input type="email" id="email-ong" name="email-ong" placeholder="contacto@miong.org.ar"
                                     autocomplete="email">
+                            </div>
+
+                            <!-- Provincia y Localidad ONG -->
+                            <div class="form-row-double">
+                                <div class="form-group">
+                                    <label for="ong_provincia_id">Provincia *</label>
+                                    <select id="ong_provincia_id" name="provincia_id" required>
+                                        <option value="" disabled selected>Selecciona tu provincia</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ong_localidad_id">Localidad *</label>
+                                    <select id="ong_localidad_id" name="localidad_id" required disabled>
+                                        <option value="" disabled selected>Selecciona tu localidad</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="form-row-double">

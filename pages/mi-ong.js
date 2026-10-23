@@ -1,5 +1,7 @@
-// mi-ong.js - Panel de la ONG (modo demo local)
-document.addEventListener('DOMContentLoaded', () => {
+// mi-ong.js - Panel de la ONG conectado a Django API y Supabase
+const API_URL = window.API_URL || 'http://127.0.0.1:8000';
+
+document.addEventListener('DOMContentLoaded', async () => {
   const session = leerSesion();
   if (!session || session.rol !== 'ong') {
     window.location.href = 'login.html?next=mi-ong.html';
@@ -8,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   pintarUsuario(session);
   activarSalir();
-  cargarFicha(session);
+  await cargarFicha(session);
   activarAutocompletado();
   activarGuardado(session);
 });
@@ -19,6 +21,10 @@ function leerSesion() {
   } catch {
     return null;
   }
+}
+
+function leerToken() {
+  return sessionStorage.getItem('va_token') || '';
 }
 
 function pintarUsuario(session) {
@@ -69,6 +75,7 @@ function miFicha(session) {
       web: isCruzRoja ? 'https://cruzroja.org.ar' : '',
       linkPago: isCruzRoja ? 'https://mpago.la/cruzrojaargentina' : '',
       contacto: session.email,
+      telefono: isCruzRoja ? '+54 11 4304-9800' : '',
       cupos: 12,
       verificada: true,
       esDemo: true,
@@ -147,7 +154,54 @@ function activarAutocompletado() {
   }
 }
 
-function cargarFicha(session) {
+async function cargarFicha(session) {
+  const token = leerToken();
+  if (token) {
+    try {
+      const res = await fetch(`${API_URL}/api/ong/mi-perfil`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const ong = await res.json();
+        setVal('f-nombre', ong.nombre_organizacion);
+        setVal('f-descripcion', ong.descripcion_institucional);
+        setVal('f-barrio', ong.direccion);
+        setVal('f-web', ong.sitio_web);
+        setVal('f-pago', ong.link_donacion);
+        setVal('f-contacto', ong.contacto);
+        setVal('f-telefono', ong.telefono_contacto);
+
+        const badge = document.getElementById('ong-estado');
+        if (badge) {
+          badge.classList.remove('hidden');
+          if (ong.esta_verificada) {
+            badge.className = 'badge';
+            badge.textContent = 'Verificada';
+          } else {
+            badge.className = 'badge warn';
+            badge.textContent = 'En revisión';
+          }
+        }
+
+        const cuenta = document.getElementById('ong-cuenta');
+        if (cuenta) {
+          cuenta.innerHTML =
+            `Razón social: <strong>${esc(ong.nombre_organizacion)}</strong><br>` +
+            (ong.cuit ? `CUIT: <strong>${esc(ong.cuit)}</strong><br>` : '') +
+            `Email de contacto: <strong>${esc(ong.email_contacto || session.email)}</strong><br>` +
+            (ong.provincia_nombre ? `Ubicación: <strong>${esc(ong.localidad_nombre ? ong.localidad_nombre + ', ' : '')}${esc(ong.provincia_nombre)}</strong><br>` : '') +
+            `Estado: <strong>${ong.esta_verificada ? 'Verificada por VoluntariApp' : 'En revisión (pendiente de aprobación)'}</strong>`;
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn('Error cargando ficha desde API, usando respaldo:', err);
+    }
+  }
+
+  // Respaldo local/demo si no hay API disponible
   const ficha = miFicha(session);
   setVal('f-nombre', ficha.nombrePublico);
   setVal('f-categoria', ficha.categoria);
@@ -159,6 +213,7 @@ function cargarFicha(session) {
   setVal('f-web', ficha.web);
   setVal('f-pago', ficha.linkPago);
   setVal('f-contacto', ficha.contacto);
+  setVal('f-telefono', ficha.telefono || '');
   setVal('f-cupos', ficha.cupos ?? 5);
 
   const badge = document.getElementById('ong-estado');
@@ -177,26 +232,73 @@ function activarGuardado(session) {
   document.getElementById('ong-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nombre = document.getElementById('f-nombre').value.trim();
-    const categoria = document.getElementById('f-categoria').value;
     const barrio = document.getElementById('f-barrio').value.trim();
     const descripcion = document.getElementById('f-descripcion').value.trim();
-    const necesidades = document.getElementById('f-necesidades').value.trim();
-    const web = document.getElementById('f-web').value.trim();
-    const linkPago = document.getElementById('f-pago').value.trim();
+    const web = document.getElementById('f-web')?.value.trim() || '';
+    const linkPago = document.getElementById('f-pago')?.value.trim() || '';
     const contacto = document.getElementById('f-contacto').value.trim();
-    const cupos = Math.max(1, Math.min(500, Number(document.getElementById('f-cupos').value) || 5));
+    const telefono = document.getElementById('f-telefono')?.value.trim() || '';
 
-    if (nombre.length < 3) return showError('El nombre público debe tener al menos 3 caracteres.');
-    if (!barrio) return showError('Indicá el barrio o localidad.');
-    if (descripcion.length < 10) return showError('La descripción debe tener al menos 10 caracteres.');
+    if (nombre.length < 3) return showError('El nombre de la organización debe tener al menos 3 caracteres.');
+    if (!barrio) return showError('Indicá la dirección o localidad.');
+    if (descripcion.length < 10) return showError('La descripción institucional debe tener al menos 10 caracteres.');
     if (!validUrl(web)) return showError('El sitio web debe empezar con https://');
     if (!validUrl(linkPago)) return showError('El link de donación debe empezar con https://');
-    if (!contacto) return showError('Indicá un contacto.');
+    if (!contacto) return showError('Indicá un referente o persona de contacto.');
 
     const btnGuardar = document.getElementById('ong-guardar');
     if (btnGuardar) {
       btnGuardar.disabled = true;
-      btnGuardar.textContent = 'Guardando y geolocalizando...';
+      btnGuardar.textContent = 'Guardando cambios...';
+    }
+
+    const token = leerToken();
+    if (token) {
+      try {
+        const res = await fetch(`${API_URL}/api/ong/mi-perfil`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            nombre_organizacion: nombre,
+            descripcion_institucional: descripcion,
+            direccion: barrio,
+            sitio_web: web,
+            link_donacion: linkPago,
+            contacto: contacto,
+            telefono_contacto: telefono,
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || 'Error al guardar los cambios en la base de datos.');
+        }
+
+        // Actualizar datos de sesión si cambió el nombre
+        try {
+          const s = leerSesion();
+          s.nombre = nombre;
+          sessionStorage.setItem('va_session', JSON.stringify(s));
+          pintarUsuario(s);
+        } catch { /* noop */ }
+
+        if (btnGuardar) {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = 'Guardar cambios';
+        }
+
+        showOk('¡Ficha actualizada con éxito en la base de datos!');
+        return;
+      } catch (apiErr) {
+        if (btnGuardar) {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = 'Guardar cambios';
+        }
+        return showError(apiErr.message || 'Error al comunicarse con el servidor.');
+      }
     }
 
     let latVal = parseFloat(document.getElementById('f-lat')?.value);
@@ -235,16 +337,17 @@ function activarGuardado(session) {
       ...base,
       ownerEmail: session.email,
       nombrePublico: nombre,
-      categoria,
+      categoria: base.categoria || 'desarrollo-social',
       barrio,
       lat: latVal,
       lng: lngVal,
       descripcion,
-      necesidades,
+      necesidades: base.necesidades || '',
       web,
       linkPago,
       contacto,
-      cupos,
+      telefono,
+      cupos: base.cupos || 5,
     };
 
     if (i >= 0) ongs[i] = actualizada;
@@ -258,7 +361,7 @@ function activarGuardado(session) {
       barrio: barrio,
       lat: latVal,
       lng: lngVal,
-      categoria: categoria,
+      categoria: base.categoria || 'desarrollo-social',
       web: web,
       linkPago: linkPago,
       descripcion: descripcion,
