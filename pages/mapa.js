@@ -2,6 +2,7 @@
 // Conectado a la API de Django (Supabase)
 // Participar ("Quiero participar") exige sesión de voluntario.
 
+const API_URL = window.API_URL || 'http://127.0.0.1:8000';
 const CABA_CENTER = [-34.6037, -58.3816];
 const CATEGORIA_LABELS = {
   'desarrollo-social': 'Desarrollo social',
@@ -85,6 +86,35 @@ function guardarParticipacion(item) {
     fecha: new Date().toISOString(),
   });
   localStorage.setItem('va_parts_demo', JSON.stringify(parts));
+}
+
+function quitarParticipacion(id) {
+  const parts = getMyParticipations().filter((p) => parteId(p) !== String(id));
+  localStorage.setItem('va_parts_demo', JSON.stringify(parts));
+}
+
+async function sincronizarPostulacionesBackend() {
+  const token = sessionStorage.getItem('va_token');
+  const session = getSession();
+  if (!token || !session || session.rol !== 'voluntario') return;
+  try {
+    const res = await fetch(`${API_URL}/api/voluntario/mis-postulaciones`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const parts = data.map(p => ({
+          id: String(p.convocatoria_id),
+          nombre: p.titulo_convocatoria,
+          fecha: p.created_at,
+        }));
+        localStorage.setItem('va_parts_demo', JSON.stringify(parts));
+      }
+    }
+  } catch (err) {
+    console.warn('Error sincronizando postulaciones del backend:', err);
+  }
 }
 
 // ---- Toast no bloqueante (reemplazo de alert()) ----
@@ -204,6 +234,7 @@ async function loadItems() {
     if (Array.isArray(data)) {
       state.items = data.map(mapApiItem);
       aplicarOverridesDemo();
+      await sincronizarPostulacionesBackend();
       state.isLoading = false;
       return;
     }
@@ -462,10 +493,10 @@ function renderDetail() {
   const sinCupos = item.cupos <= 0;
 
   let btnHtml;
-  if (sinCupos) {
+  if (alreadyIn) {
+    btnHtml = `<button class="btn-secondary" id="detail-cancel-join" style="background:#fde8e8;color:#c0392b;border:1px solid #f8b4b4;">Cancelar mi participación</button>`;
+  } else if (sinCupos) {
     btnHtml = `<button class="btn-primary" disabled>Sin cupos por ahora</button>`;
-  } else if (alreadyIn) {
-    btnHtml = `<button class="btn-primary" disabled>Ya estás participando ✓</button>`;
   } else {
     btnHtml = `<button class="btn-primary" id="detail-join">Quiero participar</button>`;
   }
@@ -585,6 +616,7 @@ function renderDetail() {
   });
 
   document.getElementById("detail-join")?.addEventListener("click", () => joinConvocatoria(item));
+  document.getElementById("detail-cancel-join")?.addEventListener("click", () => leaveConvocatoria(item));
 
 
 
@@ -611,36 +643,48 @@ async function joinConvocatoria(item) {
     return;
   }
 
-  // Intento contra la API
   const token = sessionStorage.getItem('va_token');
   if (token) {
     try {
-      const res = await fetch(`/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
+      const btn = document.getElementById('detail-join');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Procesando...';
+      }
+      const res = await fetch(`${API_URL}/api/convocatorias/${encodeURIComponent(item.id)}/participar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        item.cupos = Math.max(0, item.cupos - 1);
+        item.cupos = data.lugares_libres != null ? data.lugares_libres : Math.max(0, item.cupos - 1);
+        item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : (item.inscriptos || 0) + 1;
+        item.voluntarios = item.inscriptos;
         guardarParticipacion(item);
-        toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
+        toast(data.message || '¡Listo! Ya estás participando en esta convocatoria.', 'success');
         refresh(false);
         return;
       }
-      if (res.status === 409) {
-        toast('Ya estás participando en esta convocatoria.', 'error');
+      if (res.status === 400 || res.status === 409) {
+        toast(data.message || 'No se pudo registrar tu participación.', 'error');
+        if (data.message && data.message.includes('Ya estás postulado')) {
+          guardarParticipacion(item);
+          refresh(false);
+        }
         return;
       }
       throw new Error(data.message || 'Error del servidor');
     } catch (err) {
-      if (!(err instanceof TypeError)) {
-        toast(err.message || 'No se pudo registrar tu participación.', 'error');
-        return;
-      }
+      toast(err.message || 'No pudimos conectar con el servidor.', 'error');
+      refresh(false);
+      return;
     }
   }
 
-  // Modo demo (sin backend)
+  // Fallback demo local si no hay token
   if (yaParticipa(item.id)) {
     toast('Ya estás participando en esta convocatoria.', 'error');
     return;
@@ -654,6 +698,46 @@ async function joinConvocatoria(item) {
   item.inscriptos = (item.inscriptos || 0) + 1;
   item.voluntarios = item.inscriptos;
   toast('¡Listo! Ya estás participando en esta convocatoria.', 'success');
+  refresh(false);
+}
+
+async function leaveConvocatoria(item) {
+  const token = sessionStorage.getItem('va_token');
+  if (token) {
+    try {
+      const btn = document.getElementById('detail-cancel-join');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Cancelando...';
+      }
+      const res = await fetch(`${API_URL}/api/convocatorias/${encodeURIComponent(item.id)}/cancelar-participacion`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        quitarParticipacion(item.id);
+        item.cupos = data.lugares_libres != null ? data.lugares_libres : item.cupos + 1;
+        item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : Math.max(0, (item.inscriptos || 1) - 1);
+        item.voluntarios = item.inscriptos;
+        toast(data.message || 'Has cancelado tu postulación.', 'info');
+        refresh(false);
+        return;
+      }
+      throw new Error(data.message || 'Error al cancelar');
+    } catch (err) {
+      toast(err.message || 'No pudimos cancelar la postulación.', 'error');
+      refresh(false);
+      return;
+    }
+  }
+
+  // Fallback local
+  quitarParticipacion(item.id);
+  item.cupos += 1;
+  item.inscriptos = Math.max(0, (item.inscriptos || 1) - 1);
+  item.voluntarios = item.inscriptos;
+  toast('Has cancelado tu postulación.', 'info');
   refresh(false);
 }
 

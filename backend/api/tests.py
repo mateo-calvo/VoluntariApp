@@ -13,7 +13,17 @@ from rest_framework.test import APIClient
 
 from config.exceptions import mensaje_throttled
 
-from .models import Localidad, Ong, Provincia, Usuario, VistaConvocatoriasCards, VistaConvocatoriasMapa
+from .models import (
+    Convocatoria,
+    Localidad,
+    Ong,
+    Postulacion,
+    Provincia,
+    Usuario,
+    VistaConvocatoriasCards,
+    VistaConvocatoriasMapa,
+    Voluntario,
+)
 
 
 class HealthCheckTests(TestCase):
@@ -760,6 +770,136 @@ class OngMiPerfilEndpointTests(TestCase):
         res = self.client.put(self.URL, payload, format="json", HTTP_AUTHORIZATION="Bearer token-ong-valido")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("éxito", res.json()["message"])
+
+
+class PostulacionEndpointTests(TestCase):
+    """Tests para los endpoints de postulación y cancelación de voluntarios."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.convocatoria_id = uuid.uuid4()
+        self.voluntario_id = uuid.uuid4()
+
+    @patch("api.views.obtener_usuario_desde_token")
+    @patch("api.views.Voluntario.objects.filter")
+    @patch("api.views.Convocatoria.objects.filter")
+    @patch("api.views.Postulacion.objects.filter")
+    @patch("api.views.Postulacion.objects.create")
+    def test_postular_exitoso(self, mock_create, mock_postulacion_filter, mock_conv_filter, mock_vol_filter, mock_auth):
+        mock_auth.return_value = ({
+            "id": str(self.voluntario_id),
+            "email": "voluntario@test.com",
+            "user_metadata": {"rol": "voluntario", "nombre": "Juan", "apellido": "Pérez"}
+        }, None)
+
+        mock_voluntario = MagicMock()
+        mock_voluntario.id = self.voluntario_id
+        mock_vol_filter.return_value.first.return_value = mock_voluntario
+
+        mock_convocatoria = MagicMock()
+        mock_convocatoria.id = self.convocatoria_id
+        mock_convocatoria.estado = "ABIERTA"
+        mock_convocatoria.cupos_totales = 10
+        mock_conv_filter.return_value.first.return_value = mock_convocatoria
+
+        # No existe postulación previa y hay 2 inscriptos
+        mock_postulacion_filter.return_value.first.return_value = None
+        mock_postulacion_filter.return_value.count.return_value = 2
+
+        mock_postulacion_creada = MagicMock()
+        mock_postulacion_creada.id = uuid.uuid4()
+        mock_postulacion_creada.convocatoria_id = self.convocatoria_id
+        mock_postulacion_creada.estado = "POSTULADO"
+        mock_postulacion_creada.convocatoria = mock_convocatoria
+        mock_create.return_value = mock_postulacion_creada
+
+        url = f"/api/convocatorias/{self.convocatoria_id}/participar"
+        res = self.client.post(url, HTTP_AUTHORIZATION="Bearer token-voluntario")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        data = res.json()
+        self.assertEqual(data["inscriptos_actuales"], 3)
+        self.assertEqual(data["lugares_libres"], 7)
+
+    @patch("api.views.obtener_usuario_desde_token")
+    @patch("api.views.Voluntario.objects.filter")
+    @patch("api.views.Convocatoria.objects.filter")
+    @patch("api.views.Postulacion.objects.filter")
+    def test_postular_sin_cupos(self, mock_postulacion_filter, mock_conv_filter, mock_vol_filter, mock_auth):
+        mock_auth.return_value = ({
+            "id": str(self.voluntario_id),
+            "email": "voluntario@test.com",
+            "user_metadata": {"rol": "voluntario"}
+        }, None)
+
+        mock_vol_filter.return_value.first.return_value = MagicMock()
+
+        mock_convocatoria = MagicMock()
+        mock_convocatoria.estado = "ABIERTA"
+        mock_convocatoria.cupos_totales = 5
+        mock_conv_filter.return_value.first.return_value = mock_convocatoria
+
+        mock_postulacion_filter.return_value.first.return_value = None
+        mock_postulacion_filter.return_value.count.return_value = 5  # Cupos agotados
+
+        url = f"/api/convocatorias/{self.convocatoria_id}/participar"
+        res = self.client.post(url, HTTP_AUTHORIZATION="Bearer token-voluntario")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cupos", res.json()["message"])
+
+    @patch("api.views.obtener_usuario_desde_token")
+    @patch("api.views.Voluntario.objects.filter")
+    @patch("api.views.Convocatoria.objects.filter")
+    @patch("api.views.Postulacion.objects.filter")
+    def test_postular_ya_inscripto(self, mock_postulacion_filter, mock_conv_filter, mock_vol_filter, mock_auth):
+        mock_auth.return_value = ({
+            "id": str(self.voluntario_id),
+            "email": "voluntario@test.com",
+            "user_metadata": {"rol": "voluntario"}
+        }, None)
+
+        mock_vol_filter.return_value.first.return_value = MagicMock()
+
+        mock_convocatoria = MagicMock()
+        mock_convocatoria.estado = "ABIERTA"
+        mock_conv_filter.return_value.first.return_value = mock_convocatoria
+
+        mock_existente = MagicMock()
+        mock_existente.estado = "POSTULADO"
+        mock_postulacion_filter.return_value.first.return_value = mock_existente
+
+        url = f"/api/convocatorias/{self.convocatoria_id}/participar"
+        res = self.client.post(url, HTTP_AUTHORIZATION="Bearer token-voluntario")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Ya estás postulado", res.json()["message"])
+
+    @patch("api.views.obtener_usuario_desde_token")
+    @patch("api.views.Voluntario.objects.filter")
+    @patch("api.views.Convocatoria.objects.filter")
+    @patch("api.views.Postulacion.objects.filter")
+    def test_cancelar_postulacion_exitosa(self, mock_postulacion_filter, mock_conv_filter, mock_vol_filter, mock_auth):
+        mock_auth.return_value = ({
+            "id": str(self.voluntario_id),
+            "email": "voluntario@test.com",
+            "user_metadata": {"rol": "voluntario"}
+        }, None)
+
+        mock_vol_filter.return_value.first.return_value = MagicMock()
+
+        mock_convocatoria = MagicMock()
+        mock_convocatoria.cupos_totales = 10
+        mock_conv_filter.return_value.first.return_value = mock_convocatoria
+
+        mock_postulacion = MagicMock()
+        mock_postulacion.estado = "POSTULADO"
+        mock_postulacion_filter.return_value.first.return_value = mock_postulacion
+        mock_postulacion_filter.return_value.count.return_value = 1  # Tras delete queda 1
+
+        url = f"/api/convocatorias/{self.convocatoria_id}/cancelar-participacion"
+        res = self.client.delete(url, HTTP_AUTHORIZATION="Bearer token-voluntario")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        mock_postulacion.delete.assert_called_once()
+        self.assertIn("cancelado", res.json()["message"])
+
 
 
 

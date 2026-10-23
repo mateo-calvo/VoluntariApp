@@ -8,10 +8,12 @@ from .models import (
     Convocatoria,
     Localidad,
     Ong,
+    Postulacion,
     Provincia,
     Usuario,
     VistaConvocatoriasCards,
     VistaConvocatoriasMapa,
+    Voluntario,
 )
 
 GENEROS_PERMITIDOS = [
@@ -399,3 +401,22 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
             if val in ["ABIERTA", "COMPLETA", "FINALIZADA", "CANCELADA"]:
                 return val
         return "ABIERTA"
+
+
+class PostulacionSerializer(serializers.ModelSerializer):
+    titulo_convocatoria = serializers.CharField(source="convocatoria.titulo", read_only=True)
+    nombre_organizacion = serializers.CharField(
+        source="convocatoria.ong.nombre_organizacion", default="", read_only=True
+    )
+
+    class Meta:
+        model = Postulacion
+        fields = [
+            "id",
+            "convocatoria_id",
+            "titulo_convocatoria",
+            "nombre_organizacion",
+            "estado",
+            "created_at",
+        ]
+        read_only_fields = ["id", "estado", "created_at"]

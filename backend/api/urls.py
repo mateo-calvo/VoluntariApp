@@ -18,6 +18,11 @@ urlpatterns = [
 
     # Convocatorias (mapa y listado)
     path("convocatorias/", views.listar_convocatorias, name="listar_convocatorias"),
+    path("convocatorias/<uuid:id>/participar", views.postular_convocatoria, name="postular_convocatoria"),
+    path("convocatorias/<uuid:id>/cancelar-participacion", views.cancelar_postulacion, name="cancelar_postulacion"),
+
+    # Voluntario Panel
+    path("voluntario/mis-postulaciones", views.voluntario_mis_postulaciones, name="voluntario_mis_postulaciones"),
 
     # Provincias
     path("provincias/", views.listar_provincias, name="listar_provincias"),

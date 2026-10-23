@@ -10,10 +10,12 @@ from .models import (
     Convocatoria,
     Localidad,
     Ong,
+    Postulacion,
     Provincia,
     Usuario,
     VistaConvocatoriasCards,
     VistaConvocatoriasMapa,
+    Voluntario,
 )
 from .serializers import (
     CausaSerializer,
@@ -21,6 +23,7 @@ from .serializers import (
     LocalidadSerializer,
     LoginSerializer,
     OngPerfilSerializer,
+    PostulacionSerializer,
     ProvinciaSerializer,
     RegistroOngSerializer,
     RegistroVoluntarioSerializer,
@@ -508,3 +511,143 @@ def ong_detalle_convocatoria(request, convocatoria_id):
         convocatoria.estado = "CANCELADA"
         convocatoria.save()
         return Response({"message": "Convocatoria cancelada/cerrada con éxito."}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def postular_convocatoria(request, id):
+    """Permite a un voluntario autenticado postularse a una convocatoria."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    rol = user_data.get("user_metadata", {}).get("rol")
+    if rol != "voluntario":
+        return Response({"message": "Acceso restringido a voluntarios."}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = user_data.get("id")
+    user_email = user_data.get("email")
+
+    voluntario = Voluntario.objects.filter(id=user_id).first()
+    if not voluntario and user_email:
+        voluntario = Voluntario.objects.filter(email__iexact=user_email).first()
+
+    if not voluntario:
+        voluntario = Voluntario.objects.create(
+            id=user_id,
+            nombre=user_data.get("user_metadata", {}).get("nombre", "Voluntario"),
+            apellido=user_data.get("user_metadata", {}).get("apellido", ""),
+            email=user_email,
+        )
+
+    convocatoria = Convocatoria.objects.filter(id=id).first()
+    if not convocatoria:
+        return Response({"message": "Convocatoria no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    if convocatoria.estado != "ABIERTA":
+        return Response({"message": "La convocatoria no está abierta para nuevas postulaciones."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validar si ya está postulado
+    postulacion_existente = Postulacion.objects.filter(convocatoria=convocatoria, voluntario=voluntario).first()
+    if postulacion_existente and postulacion_existente.estado in ["POSTULADO", "CONFIRMADO"]:
+        return Response({"message": "Ya estás postulado a esta convocatoria."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validar cupos
+    inscriptos = Postulacion.objects.filter(convocatoria=convocatoria, estado__in=["POSTULADO", "CONFIRMADO"]).count()
+    if inscriptos >= convocatoria.cupos_totales:
+        return Response({"message": "No quedan cupos disponibles para esta convocatoria."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if postulacion_existente:
+        postulacion_existente.estado = "POSTULADO"
+        postulacion_existente.save()
+        postulacion = postulacion_existente
+    else:
+        postulacion = Postulacion.objects.create(
+            convocatoria=convocatoria,
+            voluntario=voluntario,
+            estado="POSTULADO",
+        )
+
+    nuevo_inscriptos = inscriptos + 1
+    libres = max(0, convocatoria.cupos_totales - nuevo_inscriptos)
+
+    return Response({
+        "message": "¡Te postulaste con éxito a la convocatoria!",
+        "postulacion": PostulacionSerializer(postulacion).data,
+        "inscriptos_actuales": nuevo_inscriptos,
+        "lugares_libres": libres,
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["DELETE"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def cancelar_postulacion(request, id):
+    """Permite a un voluntario cancelar su postulación a una convocatoria."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    rol = user_data.get("user_metadata", {}).get("rol")
+    if rol != "voluntario":
+        return Response({"message": "Acceso restringido a voluntarios."}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = user_data.get("id")
+    user_email = user_data.get("email")
+
+    voluntario = Voluntario.objects.filter(id=user_id).first()
+    if not voluntario and user_email:
+        voluntario = Voluntario.objects.filter(email__iexact=user_email).first()
+
+    if not voluntario:
+        return Response({"message": "No se encontró el perfil de voluntario."}, status=status.HTTP_404_NOT_FOUND)
+
+    convocatoria = Convocatoria.objects.filter(id=id).first()
+    if not convocatoria:
+        return Response({"message": "Convocatoria no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    postulacion = Postulacion.objects.filter(convocatoria=convocatoria, voluntario=voluntario).first()
+    if not postulacion or postulacion.estado == "CANCELADO":
+        return Response({"message": "No tienes una postulación activa en esta convocatoria."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Eliminamos el registro para liberar el cupo en el conteo de la vista
+    postulacion.delete()
+
+    inscriptos = Postulacion.objects.filter(convocatoria=convocatoria, estado__in=["POSTULADO", "CONFIRMADO"]).count()
+    libres = max(0, convocatoria.cupos_totales - inscriptos)
+
+    return Response({
+        "message": "Has cancelado tu postulación a esta convocatoria.",
+        "inscriptos_actuales": inscriptos,
+        "lugares_libres": libres,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def voluntario_mis_postulaciones(request):
+    """Devuelve las postulaciones del voluntario autenticado."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    rol = user_data.get("user_metadata", {}).get("rol")
+    if rol != "voluntario":
+        return Response({"message": "Acceso restringido a voluntarios."}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = user_data.get("id")
+    user_email = user_data.get("email")
+
+    voluntario = Voluntario.objects.filter(id=user_id).first()
+    if not voluntario and user_email:
+        voluntario = Voluntario.objects.filter(email__iexact=user_email).first()
+
+    if not voluntario:
+        return Response([], status=status.HTTP_200_OK)
+
+    postulaciones = Postulacion.objects.filter(voluntario=voluntario).select_related("convocatoria", "convocatoria__ong")
+    serializer = PostulacionSerializer(postulaciones, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
