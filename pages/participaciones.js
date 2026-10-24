@@ -1,8 +1,13 @@
 // participaciones.js - Panel del voluntario con filtros por estado
 let todasLasParticipaciones = [];
+let causasCache = [];
 let filtroActual = 'participando';
+let filtroNombre = '';
+let filtroFecha = '';
+let filtroCausaActual = '';
+let ordenCronologico = 'fecha-asc';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const session = leerSesion();
   if (!session || session.rol !== 'voluntario') {
     window.location.href = 'login.html?next=participaciones.html';
@@ -12,7 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
   pintarUsuario(session);
   activarSalir();
   activarFiltros();
-  pintarParticipaciones();
+  activarFiltrosBusqueda();
+  await cargarCausas();
+  await pintarParticipaciones();
 });
 
 function leerSesion() {
@@ -49,6 +56,75 @@ function activarFiltros() {
       renderizarLista();
     });
   });
+}
+
+function activarFiltrosBusqueda() {
+  const inputNombre = document.getElementById('filtro-nombre');
+  const inputFecha = document.getElementById('filtro-fecha');
+  const btnLimpiarFecha = document.getElementById('btn-limpiar-fecha');
+  const selectOrden = document.getElementById('filtro-orden');
+
+  inputNombre?.addEventListener('input', (e) => {
+    filtroNombre = e.target.value;
+    renderizarLista();
+  });
+
+  inputFecha?.addEventListener('change', (e) => {
+    filtroFecha = e.target.value;
+    if (filtroFecha) {
+      btnLimpiarFecha?.classList.remove('hidden');
+    } else {
+      btnLimpiarFecha?.classList.add('hidden');
+    }
+    renderizarLista();
+  });
+
+  btnLimpiarFecha?.addEventListener('click', () => {
+    if (inputFecha) inputFecha.value = '';
+    filtroFecha = '';
+    btnLimpiarFecha.classList.add('hidden');
+    renderizarLista();
+  });
+
+  const selectCausa = document.getElementById('filtro-causa');
+  selectCausa?.addEventListener('change', (e) => {
+    filtroCausaActual = e.target.value;
+    renderizarLista();
+  });
+
+  selectOrden?.addEventListener('change', (e) => {
+    ordenCronologico = e.target.value;
+    renderizarLista();
+  });
+}
+
+async function cargarCausas() {
+  const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
+  try {
+    const res = await fetch(`${baseUrl}/api/causas/`);
+    if (res.ok) {
+      causasCache = await res.json();
+    }
+  } catch (e) {
+    console.warn('Error al cargar causas:', e);
+  }
+
+  if (!causasCache || causasCache.length === 0) {
+    causasCache = [
+      { id: 1, nombre: 'Desarrollo social' },
+      { id: 2, nombre: 'Salud' },
+      { id: 3, nombre: 'Educación' },
+      { id: 4, nombre: 'Medioambiente' },
+      { id: 5, nombre: 'Infancias y juventudes' },
+      { id: 6, nombre: 'Derechos humanos' },
+    ];
+  }
+
+  const selectCausa = document.getElementById('filtro-causa');
+  if (selectCausa) {
+    selectCausa.innerHTML = '<option value="">Todas las causas</option>' +
+      causasCache.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  }
 }
 
 function leerParticipaciones() {
@@ -144,6 +220,8 @@ async function pintarParticipaciones() {
               id: String(p.convocatoria_id),
               nombre: p.titulo_convocatoria,
               organizacion: p.nombre_organizacion,
+              causaNombre: p.causa_nombre || '',
+              causaId: p.causa_id || null,
               barrio: p.lugar || '',
               fechaEvento: p.fecha || '',
               horaEvento: p.hora || '',
@@ -199,15 +277,84 @@ function renderizarLista() {
   const list = document.getElementById('parts-list');
   const empty = document.getElementById('parts-empty');
 
-  const filtradas = todasLasParticipaciones.filter((p) => {
+  // 1. Filtrar por estado
+  let filtradas = todasLasParticipaciones.filter((p) => {
     if (filtroActual === 'todas') return true;
     return p.clasificacion.filtro === filtroActual;
+  });
+
+  // 2. Filtrar por nombre (título, organización o barrio)
+  if (filtroNombre && filtroNombre.trim() !== '') {
+    const term = filtroNombre.trim().toLowerCase();
+    filtradas = filtradas.filter((p) => {
+      const nom = (p.nombre || '').toLowerCase();
+      const org = (p.organizacion || '').toLowerCase();
+      const bar = (p.barrio || '').toLowerCase();
+      return nom.includes(term) || org.includes(term) || bar.includes(term);
+    });
+  }
+
+  // 3. Filtrar por fecha exacta del evento
+  if (filtroFecha && filtroFecha.trim() !== '') {
+    filtradas = filtradas.filter((p) => {
+      const fecha = p.fechaEvento || p.fecha;
+      if (!fecha) return false;
+      return String(fecha).startsWith(filtroFecha);
+    });
+  }
+
+  // 4. Filtrar por causa
+  if (filtroCausaActual) {
+    filtradas = filtradas.filter((p) => {
+      if (p.causaId && String(p.causaId) === String(filtroCausaActual)) return true;
+      const causaObj = causasCache.find(x => String(x.id) === String(filtroCausaActual));
+      const nombreCausaBuscada = causaObj ? causaObj.nombre.toLowerCase() : '';
+      if (p.causaNombre && nombreCausaBuscada && p.causaNombre.toLowerCase().includes(nombreCausaBuscada)) return true;
+      return false;
+    });
+  }
+
+  // 4. Ordenar cronológicamente o alfabéticamente
+  filtradas.sort((a, b) => {
+    if (ordenCronologico === 'alfabetico') {
+      return (a.nombre || '').localeCompare(b.nombre || '');
+    }
+
+    const fechaA = a.fechaEvento || a.fecha || (ordenCronologico === 'fecha-asc' ? '9999-12-31' : '0000-00-00');
+    const horaA = a.horaEvento || '00:00';
+    const fechaB = b.fechaEvento || b.fecha || (ordenCronologico === 'fecha-asc' ? '9999-12-31' : '0000-00-00');
+    const horaB = b.horaEvento || '00:00';
+
+    const dtA = `${fechaA}T${horaA}`;
+    const dtB = `${fechaB}T${horaB}`;
+
+    if (ordenCronologico === 'fecha-desc') {
+      return dtB.localeCompare(dtA);
+    }
+    // Por defecto 'fecha-asc' (más próximas primero)
+    return dtA.localeCompare(dtB);
   });
 
   if (!filtradas.length) {
     list.innerHTML = '';
     if (empty) {
-      if (filtroActual === 'finalizada') {
+      if (filtroNombre || filtroFecha || filtroCausaActual) {
+        empty.innerHTML = `No se encontraron participaciones con los filtros aplicados.<br><button type="button" class="btn btn-secondary btn-sm" id="btn-limpiar-busqueda" style="margin-top:12px; cursor:pointer;">Limpiar filtros de búsqueda</button>`;
+        empty.querySelector('#btn-limpiar-busqueda')?.addEventListener('click', () => {
+          const inNombre = document.getElementById('filtro-nombre');
+          const inFecha = document.getElementById('filtro-fecha');
+          const selCausa = document.getElementById('filtro-causa');
+          const btnClear = document.getElementById('btn-limpiar-fecha');
+          if (inNombre) inNombre.value = '';
+          if (inFecha) inFecha.value = '';
+          if (selCausa) selCausa.value = '';
+          btnClear?.classList.add('hidden');
+          filtroNombre = '';
+          filtroFecha = '';
+          filtroCausaActual = '';
+          renderizarLista();
+        });
+      } else if (filtroActual === 'finalizada') {
         empty.innerHTML = `No asististe a ninguna convocatoria.<br><a href="mapa.html" class="btn btn-primary" style="margin-top:12px; display:inline-block;">Explorar el mapa</a>`;
       } else {
         const etiquetas = {
@@ -236,6 +383,7 @@ function renderizarLista() {
         <h3>🤝 ${nombre}</h3>
         <p class="meta">
           ${p.organizacion ? '🏢 <strong>' + esc(p.organizacion) + '</strong> &nbsp;·&nbsp; ' : ''}
+          ${p.causaNombre ? '<span class="badge muted" style="font-size:11px; padding:2px 8px; vertical-align:middle;">' + esc(p.causaNombre) + '</span> &nbsp;·&nbsp; ' : ''}
           ${barrio ? '📍 ' + barrio + '<br>' : ''}
           📅 <strong>Fecha:</strong> ${esc(fechaEvento)}
           ${fechaAnotado ? ' &nbsp;·&nbsp; <small style="color:var(--color-muted);">Inscripto el ' + fechaAnotado + '</small>' : ''}
