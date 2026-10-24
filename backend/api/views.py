@@ -791,3 +791,337 @@ def mis_postulaciones(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+def es_usuario_admin(user_id):
+    """Verifica si el user_id corresponde a un Administrador en Supabase."""
+    if not user_id:
+        return False
+    return Administrador.objects.filter(id=user_id).exists()
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_dashboard(request):
+    """
+    Retorna datos consolidados para el panel de administración:
+    - Métricas globales (pendientes, verificadas, usuarios, participaciones)
+    - Listado de ONGs con datos y estado de verificación
+    - Listado de usuarios registrados con su rol
+    """
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    ongs_qs = Ong.objects.select_related("provincia", "localidad").order_by("-created_at")
+    ongs_data = []
+    pendientes_count = 0
+    verificadas_count = 0
+
+    for o in ongs_qs:
+        verificada = bool(o.esta_verificada)
+        if verificada:
+            verificadas_count += 1
+        else:
+            pendientes_count += 1
+
+        ubicacion = ""
+        if o.localidad and o.provincia:
+            ubicacion = f"{o.localidad.nombre}, {o.provincia.nombre}"
+        elif o.provincia:
+            ubicacion = o.provincia.nombre
+        elif o.direccion:
+            ubicacion = o.direccion
+
+        ongs_data.append({
+            "id": str(o.id),
+            "razonSocial": o.nombre_organizacion,
+            "nombrePublico": o.nombre_organizacion,
+            "cuit": o.cuit or "",
+            "email": o.email_contacto or "",
+            "barrio": ubicacion,
+            "direccion": o.direccion or "",
+            "descripcion": o.descripcion_institucional or "",
+            "web": o.sitio_web or "",
+            "contacto": o.contacto or o.telefono_contacto or "",
+            "verificada": verificada,
+            "estado": "verificada" if verificada else "pendiente",
+        })
+
+    try:
+        total_parts = Postulacion.objects.count()
+    except Exception:
+        total_parts = 0
+
+    # Convocatorias
+    convocatorias_qs = Convocatoria.objects.select_related("ong", "causa", "provincia", "localidad").order_by("-created_at")
+    convocatorias_data = []
+
+    for c in convocatorias_qs:
+        postulaciones_count = Postulacion.objects.filter(convocatoria=c).count()
+        confirmados_count = Postulacion.objects.filter(convocatoria=c, estado__in=["POSTULADO", "CONFIRMADO"]).count()
+        cupos_libres = max(0, c.cupos_totales - confirmados_count)
+
+        ubicacion = ""
+        if c.localidad and c.provincia:
+            ubicacion = f"{c.localidad.nombre}, {c.provincia.nombre}"
+        elif c.provincia:
+            ubicacion = c.provincia.nombre
+        elif c.direccion:
+            ubicacion = c.direccion
+
+        convocatorias_data.append({
+            "id": str(c.id),
+            "titulo": c.titulo,
+            "descripcion": c.descripcion or "",
+            "ong_nombre": c.ong.nombre_organizacion if c.ong else "Organización",
+            "ong_id": str(c.ong.id) if c.ong else "",
+            "causa": c.causa.nombre if c.causa else "General",
+            "estado": c.estado or "ABIERTA",
+            "fecha": str(c.fecha) if c.fecha else "",
+            "hora": str(c.hora) if c.hora else "",
+            "ubicacion": ubicacion,
+            "direccion": c.direccion or "",
+            "lugar": c.lugar or "",
+            "cupos_totales": c.cupos_totales,
+            "cupos_disponibles": cupos_libres,
+            "total_postulantes": postulaciones_count,
+            "horas_estimadas": c.horas_estimadas,
+        })
+
+    usuarios_data = []
+    try:
+        for v in Voluntario.objects.all():
+            usuarios_data.append({
+                "nombre": f"{v.nombre} {v.apellido}".strip(),
+                "email": v.email or "",
+                "rol": "voluntario",
+            })
+    except Exception:
+        pass
+
+    for o in ongs_qs:
+        usuarios_data.append({
+            "nombre": o.nombre_organizacion,
+            "email": o.email_contacto or "",
+            "rol": "ong",
+        })
+
+    try:
+        for a in Administrador.objects.all():
+            usuarios_data.append({
+                "nombre": f"{a.nombre} {a.apellido}".strip() or "Administrador",
+                "email": user_data.get("email") if str(a.id) == str(user_id) else "admin@voluntariapp.org",
+                "rol": "admin",
+            })
+    except Exception:
+        pass
+
+    metricas = {
+        "pendientes": pendientes_count,
+        "verificadas": verificadas_count,
+        "usuarios": len(usuarios_data),
+        "convocatorias": len(convocatorias_data),
+        "participaciones": total_parts,
+    }
+
+    return Response({
+        "metricas": metricas,
+        "ongs": ongs_data,
+        "convocatorias": convocatorias_data,
+        "usuarios": usuarios_data,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_verificar_ong(request, ong_id):
+    """
+    Permite al administrador cambiar el estado de verificación de una ONG.
+    Body: {"esta_verificada": true/false} o {"accion": "aceptar"|"revocar"}
+    """
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    ong = Ong.objects.filter(id=ong_id).first()
+    if not ong:
+        return Response({"message": "Organización no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    nuevo_estado = request.data.get("esta_verificada")
+    if nuevo_estado is None:
+        accion = request.data.get("accion", "").strip().lower()
+        if accion == "aceptar":
+            nuevo_estado = True
+        elif accion in ["revocar", "rechazar"]:
+            nuevo_estado = False
+
+    if nuevo_estado is None:
+        return Response(
+            {"message": "Debe especificar 'esta_verificada' (booleano) o 'accion'."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    ong.esta_verificada = bool(nuevo_estado)
+    ong.save(update_fields=["esta_verificada"])
+
+    msg = "ONG aceptada. Ya figura verificada en el mapa." if ong.esta_verificada else "Verificación de ONG revocada."
+    return Response({
+        "message": msg,
+        "id": str(ong.id),
+        "esta_verificada": ong.esta_verificada,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_convocatoria_postulaciones(request, convocatoria_id):
+    """Retorna todos los postulantes de una convocatoria para el panel de administración."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    convocatoria = Convocatoria.objects.filter(id=convocatoria_id).select_related("ong", "causa", "provincia", "localidad").first()
+    if not convocatoria:
+        return Response({"message": "Convocatoria no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    postulaciones = Postulacion.objects.filter(convocatoria=convocatoria).select_related("voluntario").order_by("-created_at")
+
+    postulantes_data = []
+    for p in postulaciones:
+        vol = p.voluntario
+        postulantes_data.append({
+            "id": str(p.id),
+            "nombre": f"{vol.nombre} {vol.apellido}".strip() if vol else "Voluntario",
+            "email": vol.email if vol else "",
+            "telefono": vol.telefono if vol else "",
+            "dni": vol.dni if vol else "",
+            "estado": p.estado,
+            "created_at": p.created_at.strftime("%d/%m/%Y %H:%M") if p.created_at else "",
+        })
+
+    ubicacion = ""
+    if convocatoria.localidad and convocatoria.provincia:
+        ubicacion = f"{convocatoria.localidad.nombre}, {convocatoria.provincia.nombre}"
+    elif convocatoria.provincia:
+        ubicacion = convocatoria.provincia.nombre
+    elif convocatoria.direccion:
+        ubicacion = convocatoria.direccion
+
+    return Response({
+        "convocatoria": {
+            "id": str(convocatoria.id),
+            "titulo": convocatoria.titulo,
+            "descripcion": convocatoria.descripcion or "",
+            "ong_nombre": convocatoria.ong.nombre_organizacion if convocatoria.ong else "",
+            "causa": convocatoria.causa.nombre if convocatoria.causa else "General",
+            "estado": convocatoria.estado,
+            "fecha": str(convocatoria.fecha) if convocatoria.fecha else "",
+            "hora": str(convocatoria.hora) if convocatoria.hora else "",
+            "ubicacion": ubicacion,
+            "cupos_totales": convocatoria.cupos_totales,
+        },
+        "postulantes": postulantes_data,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH", "PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_actualizar_convocatoria(request, convocatoria_id):
+    """Permite al administrador cambiar el estado o datos clave de una convocatoria."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    convocatoria = Convocatoria.objects.filter(id=convocatoria_id).first()
+    if not convocatoria:
+        return Response({"message": "Convocatoria no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    data = request.data
+    if "estado" in data:
+        convocatoria.estado = data["estado"].strip().upper()
+    if "titulo" in data:
+        convocatoria.titulo = data["titulo"].strip()
+    if "descripcion" in data:
+        convocatoria.descripcion = data["descripcion"].strip()
+    if "cupos_totales" in data:
+        try:
+            convocatoria.cupos_totales = int(data["cupos_totales"])
+        except (ValueError, TypeError):
+            pass
+    if "fecha" in data and data["fecha"]:
+        convocatoria.fecha = data["fecha"]
+    if "hora" in data and data["hora"]:
+        convocatoria.hora = data["hora"]
+
+    try:
+        convocatoria.save()
+    except Exception as e:
+        return Response({"message": f"Error al actualizar la convocatoria: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        "message": "Convocatoria actualizada con éxito.",
+        "id": str(convocatoria.id),
+        "estado": convocatoria.estado,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH", "PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_actualizar_postulacion(request, postulacion_id):
+    """Permite al administrador cambiar el estado de un postulante (POSTULADO, CONFIRMADO, ASISTIO, CANCELADO)."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    postulacion = Postulacion.objects.filter(id=postulacion_id).select_related("convocatoria", "voluntario").first()
+    if not postulacion:
+        return Response({"message": "Postulación no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    nuevo_estado = request.data.get("estado", "").strip().upper()
+    estados_validos = ["POSTULADO", "CONFIRMADO", "ASISTIO", "CANCELADO"]
+    if nuevo_estado not in estados_validos:
+        return Response(
+            {"message": f"Estado no válido. Las opciones permitidas son: {', '.join(estados_validos)}."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        postulacion.estado = nuevo_estado
+        postulacion.save()
+    except Exception as e:
+        return Response({"message": f"Error al actualizar la postulación: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        "message": f"Estado de postulación actualizado a {nuevo_estado}.",
+        "id": str(postulacion.id),
+        "estado": postulacion.estado,
+    }, status=status.HTTP_200_OK)
+
+
+
+
+

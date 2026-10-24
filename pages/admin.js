@@ -1,14 +1,43 @@
-// admin.js - Panel de administración (modo demo local)
+// admin.js - Panel de administración conectado a la API de Django
+const API_BASE = (typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000') + '/api';
+
+let dashboardData = {
+  metricas: { pendientes: 0, verificadas: 0, usuarios: 0, convocatorias: 0, participaciones: 0 },
+  ongs: [],
+  convocatorias: [],
+  usuarios: []
+};
+
+let filtroActivo = 'todas';
+let filtroEstadoConv = 'TODAS';
+let busquedaTextoConv = '';
+let busquedaOngsPendientes = '';
+let busquedaOngsVerificadas = '';
+let busquedaUsuarios = '';
+let convocatoriaSeleccionadaId = null;
+let accionOngPendiente = null;
+let accionConvPendiente = null;
+let accionPostulantePendiente = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   const session = leerSesion();
-  if (!session || session.rol !== 'admin') {
+  const token = sessionStorage.getItem('va_token');
+
+  if (!session || session.rol !== 'admin' || !token) {
     window.location.href = 'login.html?next=admin.html';
     return;
   }
 
   pintarUsuario(session);
   activarSalir();
-  pintarTodo();
+  activarFiltrosCards();
+  activarFiltrosConvocatorias();
+  activarFiltrosOngsYUsuarios();
+  activarModalConvocatoria();
+  activarModalConfirmarOng();
+  activarModalConfirmarConvocatoria();
+  activarModalConfirmarPostulante();
+  cargarDashboard();
 });
 
 function leerSesion() {
@@ -35,42 +64,8 @@ function activarSalir() {
   });
 }
 
-function leerOngs() {
-  try {
-    return JSON.parse(localStorage.getItem('va_ongs_demo') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function leerUsuarios() {
-  try {
-    return JSON.parse(localStorage.getItem('va_users_demo') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function leerParts() {
-  try {
-    return JSON.parse(localStorage.getItem('va_parts_demo') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function guardarOngs(ongs) {
-  localStorage.setItem('va_ongs_demo', JSON.stringify(ongs));
-}
-
 function esc(s) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function estadoDe(o) {
-  if (o.estado === 'rechazada') return 'rechazada';
-  if (o.verificada) return 'verificada';
-  return 'pendiente';
 }
 
 function showOk(msg) {
@@ -82,7 +77,126 @@ function showOk(msg) {
   err?.classList.add('hidden');
 }
 
-function tarjetaOng(o, idx, acciones) {
+function showError(msg) {
+  const box = document.getElementById('panel-error');
+  const ok = document.getElementById('panel-ok');
+  if (!box) return;
+  box.textContent = msg;
+  box.classList.remove('hidden');
+  ok?.classList.add('hidden');
+}
+
+function mostrarLoading(mostrar) {
+  const loadingEl = document.getElementById('panel-loading');
+  if (loadingEl) {
+    if (mostrar) {
+      loadingEl.classList.remove('hidden');
+    } else {
+      loadingEl.classList.add('hidden');
+    }
+  }
+}
+
+function activarFiltrosCards() {
+  document.querySelectorAll('.stat-card[data-filtro]').forEach((card) => {
+    card.addEventListener('click', () => {
+      aplicarFiltro(card.dataset.filtro);
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        aplicarFiltro(card.dataset.filtro);
+      }
+    });
+  });
+}
+
+function aplicarFiltro(nuevoFiltro) {
+  if (filtroActivo === nuevoFiltro) {
+    filtroActivo = 'todas';
+  } else {
+    filtroActivo = nuevoFiltro;
+  }
+  actualizarVistasPorFiltro();
+}
+
+function actualizarVistasPorFiltro() {
+  document.querySelectorAll('.stat-card').forEach((card) => {
+    card.classList.remove('active-filter');
+    if (card.dataset.filtro === filtroActivo && filtroActivo !== 'todas') {
+      card.classList.add('active-filter');
+    }
+  });
+
+  const secPendientes = document.getElementById('sec-pendientes');
+  const secVerificadas = document.getElementById('sec-verificadas');
+  const secConvocatorias = document.getElementById('sec-convocatorias');
+  const secUsuarios = document.getElementById('sec-usuarios');
+
+  if (!secPendientes || !secVerificadas || !secConvocatorias || !secUsuarios) return;
+
+  if (filtroActivo === 'todas') {
+    secPendientes.classList.remove('hidden');
+    secVerificadas.classList.remove('hidden');
+    secConvocatorias.classList.remove('hidden');
+    secUsuarios.classList.remove('hidden');
+  } else if (filtroActivo === 'pendientes') {
+    secPendientes.classList.remove('hidden');
+    secVerificadas.classList.add('hidden');
+    secConvocatorias.classList.add('hidden');
+    secUsuarios.classList.add('hidden');
+  } else if (filtroActivo === 'verificadas') {
+    secPendientes.classList.add('hidden');
+    secVerificadas.classList.remove('hidden');
+    secConvocatorias.classList.add('hidden');
+    secUsuarios.classList.add('hidden');
+  } else if (filtroActivo === 'convocatorias') {
+    secPendientes.classList.add('hidden');
+    secVerificadas.classList.add('hidden');
+    secConvocatorias.classList.remove('hidden');
+    secUsuarios.classList.add('hidden');
+  } else if (filtroActivo === 'usuarios') {
+    secPendientes.classList.add('hidden');
+    secVerificadas.classList.add('hidden');
+    secConvocatorias.classList.add('hidden');
+    secUsuarios.classList.remove('hidden');
+  }
+}
+
+async function cargarDashboard() {
+  const token = sessionStorage.getItem('va_token');
+  mostrarLoading(true);
+  try {
+    const res = await fetch(`${API_BASE}/admin/dashboard`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      sessionStorage.removeItem('va_token');
+      sessionStorage.removeItem('va_session');
+      window.location.href = 'login.html?next=admin.html';
+      return;
+    }
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      showError(errData.message || 'Error al cargar los datos del panel de administración.');
+      return;
+    }
+
+    dashboardData = await res.json();
+    pintarTodo();
+  } catch (error) {
+    console.error('Error al conectar con la API de administración:', error);
+    showError('No se pudo conectar con el servidor para obtener los datos del panel.');
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+function tarjetaOng(o, acciones) {
   const nombre = esc(o.nombrePublico || o.razonSocial || 'ONG sin nombre');
   return `
     <article class="panel-card">
@@ -100,56 +214,76 @@ function tarjetaOng(o, idx, acciones) {
     </article>`;
 }
 
+function obtenerClaseBadgeEstado(estado) {
+  const st = (estado || '').toUpperCase();
+  if (st === 'ABIERTA') return 'badge-abierta';
+  if (st === 'CANCELADA') return 'badge-cancelada';
+  if (st === 'FINALIZADA') return 'badge-finalizada';
+  return '';
+}
+
+function tarjetaConvocatoria(c) {
+  const badgeClass = obtenerClaseBadgeEstado(c.estado);
+
+  return `
+    <article class="panel-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
+        <h3 style="margin: 0; font-size: 18px;">🎯 ${esc(c.titulo)}</h3>
+        <span class="badge ${badgeClass}">${esc(c.estado)}</span>
+      </div>
+      <p class="meta">
+        🏢 ONG: <strong>${esc(c.ong_nombre)}</strong><br>
+        🏷️ Causa: <strong>${esc(c.causa)}</strong> &nbsp;|&nbsp; 📍 ${esc(c.ubicacion || 'Sin ubicación')}<br>
+        📅 Fecha: <strong>${esc(c.fecha || 'A coordinar')} ${esc(c.hora || '')}</strong> &nbsp;|&nbsp; 👥 Cupos: <strong>${c.cupos_disponibles}/${c.cupos_totales}</strong> libres<br>
+        👥 Inscriptos: <strong>${c.total_postulantes || 0} voluntario(s)</strong>
+        ${c.descripcion ? `<br><span style="color: var(--color-text); margin-top: 4px; display: inline-block;">${esc(c.descripcion)}</span>` : ''}
+      </p>
+      <div class="row" style="margin-top: 12px;">
+        <button class="btn btn-primary btn-sm" data-ver-conv="${esc(c.id)}" type="button">👥 Ver participantes y gestionar</button>
+      </div>
+    </article>`;
+}
+
 function pintarTodo() {
-  const ongs = leerOngs();
+  const { metricas, ongs, convocatorias, usuarios } = dashboardData;
+
   const pendientes = [];
   const verificadas = [];
-  const rechazadas = [];
-  ongs.forEach((o, i) => {
-    const e = estadoDe(o);
-    if (e === 'pendiente') pendientes.push([o, i]);
-    else if (e === 'verificada') verificadas.push([o, i]);
-    else rechazadas.push([o, i]);
+
+  (ongs || []).forEach((o) => {
+    if (o.verificada) {
+      verificadas.push(o);
+    } else {
+      pendientes.push(o);
+    }
   });
 
   const set = (id, v) => {
     const el = document.getElementById(id);
     if (el) el.textContent = v;
   };
-  set('st-pendientes', pendientes.length);
-  set('st-verificadas', verificadas.length);
-  set('st-usuarios', leerUsuarios().length);
-  set('st-parts', leerParts().length);
 
-  pintarLista('ongs-pendientes', 'ongs-pendientes-vacio', pendientes,
-    ([o, i]) => tarjetaOng(o, i,
-      `<button class="btn btn-primary btn-sm" data-aceptar="${i}" type="button">Aceptar ✓</button>
-       <button class="btn btn-danger btn-sm" data-rechazar="${i}" type="button">Rechazar</button>`));
-  pintarLista('ongs-verificadas', 'ongs-verificadas-vacio', verificadas,
-    ([o, i]) => tarjetaOng(o, i,
-      `<span class="badge">Verificada ✓</span>
-       <button class="btn btn-secondary btn-sm" data-revocar="${i}" type="button">Revocar</button>`));
-  pintarLista('ongs-rechazadas', 'ongs-rechazadas-vacio', rechazadas,
-    ([o, i]) => tarjetaOng(o, i,
-      `<span class="badge muted">Rechazada</span>
-       <button class="btn btn-secondary btn-sm" data-revertir="${i}" type="button">Revertir</button>`));
+  set('st-pendientes', metricas?.pendientes ?? pendientes.length);
+  set('st-verificadas', metricas?.verificadas ?? verificadas.length);
+  set('st-usuarios', metricas?.usuarios ?? (usuarios || []).length);
+  set('st-convocatorias', metricas?.convocatorias ?? (convocatorias || []).length);
 
-  document.querySelectorAll('[data-aceptar]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstado(Number(b.dataset.aceptar), { verificada: true, estado: 'verificada' }, 'ONG aceptada. Ya figura verificada en el mapa.')));
-  document.querySelectorAll('[data-rechazar]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstado(Number(b.dataset.rechazar), { verificada: false, estado: 'rechazada' }, 'ONG rechazada.')));
-  document.querySelectorAll('[data-revocar]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstado(Number(b.dataset.revocar), { verificada: false, estado: 'pendiente' }, 'Verificación revocada. Vuelve a pendientes.')));
-  document.querySelectorAll('[data-revertir]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstado(Number(b.dataset.revertir), { verificada: false, estado: 'pendiente' }, 'Rechazo revertido. Vuelve a pendientes.')));
+  // 1. ONGs pendientes (con filtro)
+  renderizarOngsPendientesFiltradas();
 
-  const body = document.getElementById('users-body');
-  if (body) {
-    const users = leerUsuarios();
-    body.innerHTML = users.length
-      ? users.map((u) => `<tr><td>${esc(u.nombre || '-')}</td><td>${esc(u.email)}</td><td><span class="badge ${u.rol === 'admin' ? '' : 'muted'}">${esc(u.rol || 'voluntario')}</span></td></tr>`).join('')
-      : '<tr><td colspan="3">Sin usuarios todavía.</td></tr>';
-  }
+  // 2. ONGs verificadas (con filtro)
+  renderizarOngsVerificadasFiltradas();
+
+  // 3. Convocatorias de la plataforma (con filtros)
+  renderizarConvocatoriasFiltradas();
+
+  // 4. ONGs rechazadas
+  pintarLista('ongs-rechazadas', 'ongs-rechazadas-vacio', [], () => '');
+
+  // 5. Tabla de usuarios (con filtro)
+  renderizarUsuariosFiltrados();
+
+  actualizarVistasPorFiltro();
 }
 
 function pintarLista(listId, emptyId, items, render) {
@@ -165,11 +299,792 @@ function pintarLista(listId, emptyId, items, render) {
   list.innerHTML = items.map(render).join('');
 }
 
-function cambiarEstado(i, patch, msg) {
-  const ongs = leerOngs();
-  if (!ongs[i]) return;
-  ongs[i] = { ...ongs[i], ...patch };
-  guardarOngs(ongs);
-  showOk(msg);
-  pintarTodo();
+function activarFiltrosConvocatorias() {
+  const selectEstado = document.getElementById('filtro-conv-estado');
+  const inputBusqueda = document.getElementById('filtro-conv-busqueda');
+
+  if (selectEstado) {
+    selectEstado.addEventListener('change', (e) => {
+      filtroEstadoConv = e.target.value;
+      renderizarConvocatoriasFiltradas();
+    });
+  }
+
+  if (inputBusqueda) {
+    inputBusqueda.addEventListener('input', (e) => {
+      busquedaTextoConv = (e.target.value || '').trim().toLowerCase();
+      renderizarConvocatoriasFiltradas();
+    });
+  }
 }
+
+function renderizarConvocatoriasFiltradas() {
+  const todas = dashboardData.convocatorias || [];
+  const filtradas = todas.filter((c) => {
+    // 1. Filtro por estado
+    if (filtroEstadoConv !== 'TODAS' && (c.estado || '').toUpperCase() !== filtroEstadoConv) {
+      return false;
+    }
+    // 2. Filtro por texto (título, ONG, causa)
+    if (busquedaTextoConv) {
+      const matchTitulo = (c.titulo || '').toLowerCase().includes(busquedaTextoConv);
+      const matchOng = (c.ong_nombre || '').toLowerCase().includes(busquedaTextoConv);
+      const matchCausa = (c.causa || '').toLowerCase().includes(busquedaTextoConv);
+      if (!matchTitulo && !matchOng && !matchCausa) return false;
+    }
+    return true;
+  });
+
+  const list = document.getElementById('convocatorias-lista');
+  const empty = document.getElementById('convocatorias-vacio');
+  if (!list) return;
+
+  if (!filtradas.length) {
+    list.innerHTML = '';
+    if (empty) {
+      empty.textContent = todas.length
+        ? 'No hay convocatorias que coincidan con los filtros seleccionados.'
+        : 'No hay convocatorias registradas todavía.';
+      empty.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (empty) empty.classList.add('hidden');
+  list.innerHTML = filtradas.map(tarjetaConvocatoria).join('');
+
+  // Reconectar listeners de abrir modal de convocatoria
+  list.querySelectorAll('[data-ver-conv]').forEach((b) =>
+    b.addEventListener('click', () => abrirModalConvocatoria(b.dataset.verConv))
+  );
+}
+
+function activarFiltrosOngsYUsuarios() {
+  const inPendientes = document.getElementById('filtro-ongs-pendientes');
+  const inVerificadas = document.getElementById('filtro-ongs-verificadas');
+  const inUsuarios = document.getElementById('filtro-usuarios');
+
+  if (inPendientes) {
+    inPendientes.addEventListener('input', (e) => {
+      busquedaOngsPendientes = (e.target.value || '').trim().toLowerCase();
+      renderizarOngsPendientesFiltradas();
+    });
+  }
+
+  if (inVerificadas) {
+    inVerificadas.addEventListener('input', (e) => {
+      busquedaOngsVerificadas = (e.target.value || '').trim().toLowerCase();
+      renderizarOngsVerificadasFiltradas();
+    });
+  }
+
+  if (inUsuarios) {
+    inUsuarios.addEventListener('input', (e) => {
+      busquedaUsuarios = (e.target.value || '').trim().toLowerCase();
+      renderizarUsuariosFiltrados();
+    });
+  }
+}
+
+function filtrarOngs(lista, termino) {
+  if (!termino) return lista;
+  return lista.filter((o) => {
+    const nom = (o.nombrePublico || '').toLowerCase();
+    const raz = (o.razonSocial || '').toLowerCase();
+    const mail = (o.email || '').toLowerCase();
+    const cuit = (o.cuit || '').toLowerCase();
+    return nom.includes(termino) || raz.includes(termino) || mail.includes(termino) || cuit.includes(termino);
+  });
+}
+
+function renderizarOngsPendientesFiltradas() {
+  const todasPendientes = [];
+  (dashboardData.ongs || []).forEach((o) => {
+    if (!o.verificada) todasPendientes.push(o);
+  });
+  const filtradas = filtrarOngs(todasPendientes, busquedaOngsPendientes);
+
+  pintarLista('ongs-pendientes', 'ongs-pendientes-vacio', filtradas, (o) =>
+    tarjetaOng(
+      o,
+      `<button class="btn btn-primary btn-sm" data-aceptar="${esc(o.id)}" type="button">Aceptar ✓</button>
+       <button class="btn btn-danger btn-sm" data-rechazar="${esc(o.id)}" type="button">Rechazar</button>`
+    )
+  );
+
+  const empty = document.getElementById('ongs-pendientes-vacio');
+  if (empty && !filtradas.length) {
+    empty.textContent = todasPendientes.length
+      ? 'No hay ONGs pendientes que coincidan con la búsqueda.'
+      : 'No hay ONGs pendientes. 🎉';
+  }
+
+  const list = document.getElementById('ongs-pendientes');
+  if (list) {
+    list.querySelectorAll('[data-aceptar]').forEach((b) =>
+      b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.aceptar, true, 'aceptar'))
+    );
+    list.querySelectorAll('[data-rechazar]').forEach((b) =>
+      b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.rechazar, false, 'rechazar'))
+    );
+  }
+}
+
+function renderizarOngsVerificadasFiltradas() {
+  const todasVerificadas = [];
+  (dashboardData.ongs || []).forEach((o) => {
+    if (o.verificada) todasVerificadas.push(o);
+  });
+  const filtradas = filtrarOngs(todasVerificadas, busquedaOngsVerificadas);
+
+  pintarLista('ongs-verificadas', 'ongs-verificadas-vacio', filtradas, (o) =>
+    tarjetaOng(
+      o,
+      `<span class="badge">Verificada ✓</span>
+       <button class="btn btn-danger btn-sm" data-revocar="${esc(o.id)}" type="button">Revocar</button>`
+    )
+  );
+
+  const empty = document.getElementById('ongs-verificadas-vacio');
+  if (empty && !filtradas.length) {
+    empty.textContent = todasVerificadas.length
+      ? 'No hay ONGs verificadas que coincidan con la búsqueda.'
+      : 'Todavía no hay ONGs verificadas.';
+  }
+
+  const list = document.getElementById('ongs-verificadas');
+  if (list) {
+    list.querySelectorAll('[data-revocar]').forEach((b) =>
+      b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.revocar, false, 'revocar'))
+    );
+  }
+}
+
+function renderizarUsuariosFiltrados() {
+  const todos = dashboardData.usuarios || [];
+  const filtrados = todos.filter((u) => {
+    if (!busquedaUsuarios) return true;
+    const nom = (u.nombre || '').toLowerCase();
+    const mail = (u.email || '').toLowerCase();
+    const rol = (u.rol || '').toLowerCase();
+    return nom.includes(busquedaUsuarios) || mail.includes(busquedaUsuarios) || rol.includes(busquedaUsuarios);
+  });
+
+  const body = document.getElementById('users-body');
+  if (body) {
+    body.innerHTML = (filtrados && filtrados.length)
+      ? filtrados.map((u) => {
+          let badgeClass = 'muted';
+          if (u.rol === 'admin') badgeClass = '';
+          else if (u.rol === 'ong') badgeClass = 'highlight';
+
+          return `<tr>
+            <td>${esc(u.nombre || '-')}</td>
+            <td>${esc(u.email || '-')}</td>
+            <td><span class="badge ${badgeClass}">${esc(u.rol || 'voluntario')}</span></td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="3" style="text-align: center; color: var(--color-muted); padding: 18px;">${todos.length ? 'No hay usuarios que coincidan con la búsqueda.' : 'Sin usuarios registrados.'}</td></tr>`;
+  }
+}
+
+async function cambiarEstadoOng(ongId, nuevoEstado, mensajeExito) {
+  const token = sessionStorage.getItem('va_token');
+  try {
+    const res = await fetch(`${API_BASE}/admin/ongs/${ongId}/verificar`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ esta_verificada: nuevoEstado })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showError(data.message || 'Error al actualizar el estado de la organización.');
+      return;
+    }
+
+    showOk(data.message || mensajeExito);
+    await cargarDashboard();
+  } catch (error) {
+    console.error('Error al cambiar estado de ONG:', error);
+    showError('Error de red al intentar actualizar la organización.');
+  }
+}
+
+// ==========================================
+// Modal Convocatoria y Participantes
+// ==========================================
+function activarModalConvocatoria() {
+  const modal = document.getElementById('modal-convocatoria-admin');
+  const btnCerrar = document.getElementById('btn-cerrar-modal-conv');
+  const btnGuardarEstado = document.getElementById('btn-guardar-estado-conv');
+  const tbodyPostulantes = document.getElementById('modal-conv-postulantes-body');
+
+  if (btnCerrar) {
+    btnCerrar.addEventListener('click', cerrarModalConvocatoria);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConvocatoria();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConvocatoria();
+    }
+  });
+
+  if (btnGuardarEstado) {
+    btnGuardarEstado.addEventListener('click', guardarEstadoConvocatoria);
+  }
+
+  if (tbodyPostulantes) {
+    tbodyPostulantes.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-btn-actualizar-post]');
+      if (!btn) return;
+      const postId = btn.getAttribute('data-btn-actualizar-post');
+      const row = btn.closest('tr');
+      const select = row?.querySelector('.select-estado-postulante');
+      if (!select) return;
+
+      const nuevoEstado = select.value;
+      const estadoActual = select.getAttribute('data-estado-actual');
+      const nombre = select.getAttribute('data-post-nombre');
+      const errBox = document.getElementById('modal-conv-error');
+      const okBox = document.getElementById('modal-conv-ok');
+
+      errBox?.classList.add('hidden');
+      okBox?.classList.add('hidden');
+
+      if (nuevoEstado === estadoActual) {
+        if (errBox) {
+          errBox.textContent = `El voluntario ya se encuentra en estado ${estadoActual}.`;
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      pedirConfirmacionPostulante(postId, nuevoEstado, nombre, estadoActual, select);
+    });
+  }
+}
+
+function cerrarModalConvocatoria() {
+  const modal = document.getElementById('modal-convocatoria-admin');
+  if (modal) modal.classList.add('hidden');
+  convocatoriaSeleccionadaId = null;
+}
+
+async function abrirModalConvocatoria(convId) {
+  convocatoriaSeleccionadaId = convId;
+  const modal = document.getElementById('modal-convocatoria-admin');
+  const errBox = document.getElementById('modal-conv-error');
+  const okBox = document.getElementById('modal-conv-ok');
+
+  errBox?.classList.add('hidden');
+  okBox?.classList.add('hidden');
+
+  // Buscar datos básicos de la convocatoria en memoria
+  const conv = (dashboardData.convocatorias || []).find((c) => c.id === convId);
+  if (conv) {
+    document.getElementById('modal-conv-titulo').textContent = conv.titulo;
+    document.getElementById('modal-conv-subtitulo').textContent = `${conv.ong_nombre} • ${conv.causa}`;
+    document.getElementById('modal-conv-descripcion').textContent = conv.descripcion || 'Sin descripción detallada.';
+    document.getElementById('modal-conv-ong').innerHTML = `🏢 <strong>ONG:</strong> ${esc(conv.ong_nombre)}`;
+    document.getElementById('modal-conv-causa').innerHTML = `🏷️ <strong>Causa:</strong> ${esc(conv.causa)}`;
+    document.getElementById('modal-conv-fecha').innerHTML = `📅 <strong>Fecha:</strong> ${esc(conv.fecha || 'A coordinar')} ${esc(conv.hora || '')}`;
+    document.getElementById('modal-conv-lugar').innerHTML = `📍 <strong>Lugar:</strong> ${esc(conv.ubicacion || 'Sin especificar')}`;
+    document.getElementById('modal-conv-cupos').innerHTML = `👥 <strong>Cupos:</strong> ${conv.cupos_disponibles}/${conv.cupos_totales} libres`;
+
+    const badge = document.getElementById('modal-conv-estado-badge');
+    if (badge) {
+      badge.textContent = conv.estado;
+      badge.className = `badge ${obtenerClaseBadgeEstado(conv.estado)}`;
+    }
+
+    const selectEstado = document.getElementById('select-estado-convocatoria');
+    if (selectEstado) {
+      selectEstado.value = conv.estado || 'ABIERTA';
+    }
+  }
+
+  modal?.classList.remove('hidden');
+  await cargarPostulantesModal(convId);
+}
+
+async function cargarPostulantesModal(convId) {
+  const loading = document.getElementById('modal-conv-loading');
+  const tableWrap = document.getElementById('modal-conv-table-wrap');
+  const vacio = document.getElementById('modal-conv-postulantes-vacio');
+  const tbody = document.getElementById('modal-conv-postulantes-body');
+  const errBox = document.getElementById('modal-conv-error');
+
+  tbody.innerHTML = '';
+  tableWrap?.classList.remove('hidden');
+  vacio?.classList.add('hidden');
+  loading?.classList.remove('hidden');
+
+  const token = sessionStorage.getItem('va_token');
+  try {
+    const res = await fetch(`${API_BASE}/admin/convocatorias/${convId}/postulaciones`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    loading?.classList.add('hidden');
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (errBox) {
+        errBox.textContent = err.message || 'Error al cargar los postulantes de esta convocatoria.';
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    const data = await res.json();
+    const postulantes = data.postulantes || [];
+
+    if (!postulantes.length) {
+      tableWrap?.classList.add('hidden');
+      vacio?.classList.remove('hidden');
+      return;
+    }
+
+    tbody.innerHTML = postulantes.map((p) => {
+      const st = (p.estado || '').toUpperCase();
+
+      return `<tr>
+        <td><strong>${esc(p.nombre)}</strong></td>
+        <td>${esc(p.email)}<br><small style="color:var(--color-muted);">${esc(p.telefono || p.dni || '')}</small></td>
+        <td>${esc(p.created_at || '-')}</td>
+        <td>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select class="select-estado-postulante" data-post-id="${esc(p.id)}" data-post-nombre="${esc(p.nombre)}" data-estado-actual="${esc(st)}" style="padding: 5px 8px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13px; font-weight: 700; color: var(--color-navy); background: #fff;">
+              <option value="POSTULADO" ${st === 'POSTULADO' ? 'selected' : ''}>POSTULADO</option>
+              <option value="CONFIRMADO" ${st === 'CONFIRMADO' ? 'selected' : ''}>CONFIRMADO</option>
+              <option value="ASISTIO" ${st === 'ASISTIO' ? 'selected' : ''}>ASISTIÓ</option>
+              <option value="CANCELADO" ${st === 'CANCELADO' ? 'selected' : ''}>CANCELADO</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" style="padding: 5px 10px; font-size: 12.5px;" data-btn-actualizar-post="${esc(p.id)}">Actualizar</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+  } catch (err) {
+    loading?.classList.add('hidden');
+    if (errBox) {
+      errBox.textContent = 'Error de red al obtener los postulantes.';
+      errBox.classList.remove('hidden');
+    }
+  }
+}
+
+function guardarEstadoConvocatoria() {
+  if (!convocatoriaSeleccionadaId) return;
+
+  const select = document.getElementById('select-estado-convocatoria');
+  const nuevoEstado = select?.value;
+  const conv = (dashboardData.convocatorias || []).find((c) => c.id === convocatoriaSeleccionadaId);
+  const errBox = document.getElementById('modal-conv-error');
+  const okBox = document.getElementById('modal-conv-ok');
+
+  errBox?.classList.add('hidden');
+  okBox?.classList.add('hidden');
+
+  if (conv && conv.estado === nuevoEstado) {
+    if (errBox) {
+      errBox.textContent = `La convocatoria ya se encuentra en estado ${nuevoEstado}.`;
+      errBox.classList.remove('hidden');
+    }
+    return;
+  }
+
+  pedirConfirmacionConvocatoria(convocatoriaSeleccionadaId, nuevoEstado);
+}
+
+async function ejecutarCambioEstadoConvocatoria(convId, nuevoEstado) {
+  const token = sessionStorage.getItem('va_token');
+  const errBox = document.getElementById('modal-conv-error');
+  const okBox = document.getElementById('modal-conv-ok');
+  const btn = document.getElementById('btn-guardar-estado-conv');
+
+  errBox?.classList.add('hidden');
+  okBox?.classList.add('hidden');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/convocatorias/${convId}/estado`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (btn) btn.disabled = false;
+
+    if (!res.ok) {
+      if (errBox) {
+        errBox.textContent = data.message || 'Error al actualizar el estado de la convocatoria.';
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (okBox) {
+      okBox.textContent = data.message || 'Estado actualizado con éxito.';
+      okBox.classList.remove('hidden');
+    }
+
+    const badge = document.getElementById('modal-conv-estado-badge');
+    if (badge) {
+      badge.textContent = nuevoEstado;
+      badge.className = `badge ${obtenerClaseBadgeEstado(nuevoEstado)}`;
+    }
+
+    // Refrescar datos generales del dashboard
+    await cargarDashboard();
+  } catch (err) {
+    if (btn) btn.disabled = false;
+    if (errBox) {
+      errBox.textContent = 'Error de conexión con el servidor.';
+      errBox.classList.remove('hidden');
+    }
+  }
+}
+
+// ==========================================
+// Modal Confirmar Estado de Convocatoria (Warning)
+// ==========================================
+function activarModalConfirmarConvocatoria() {
+  const modal = document.getElementById('modal-confirmar-convocatoria');
+  const btnCancelar = document.getElementById('btn-cancelar-confirmar-conv');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-conv');
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModalConfirmarConvocatoria);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConfirmarConvocatoria();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConfirmarConvocatoria();
+    }
+  });
+
+  if (btnAceptar) {
+    btnAceptar.addEventListener('click', () => {
+      if (!accionConvPendiente) return;
+      const { convId, nuevoEstado } = accionConvPendiente;
+      cerrarModalConfirmarConvocatoria();
+      ejecutarCambioEstadoConvocatoria(convId, nuevoEstado);
+    });
+  }
+}
+
+function cerrarModalConfirmarConvocatoria() {
+  const modal = document.getElementById('modal-confirmar-convocatoria');
+  if (modal) modal.classList.add('hidden');
+  accionConvPendiente = null;
+}
+
+function pedirConfirmacionConvocatoria(convId, nuevoEstado) {
+  const conv = (dashboardData.convocatorias || []).find((c) => c.id === convId);
+  const titulo = conv ? conv.titulo : 'la convocatoria';
+
+  const modal = document.getElementById('modal-confirmar-convocatoria');
+  const tituloEl = document.getElementById('confirmar-conv-titulo');
+  const mensajeEl = document.getElementById('confirmar-conv-mensaje');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-conv');
+
+  if (btnAceptar) {
+    btnAceptar.className = 'btn';
+  }
+
+  let advertencia = '';
+  if (nuevoEstado === 'CANCELADA') {
+    advertencia = '<br><br><span style="color:var(--color-danger); font-weight:700;">⚠️ Advertencia:</span> La convocatoria se cancelará y no admitirá más voluntarios.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, cancelar convocatoria';
+    }
+  } else if (nuevoEstado === 'PAUSADA') {
+    advertencia = '<br><br>La convocatoria no estará visible para nuevos postulantes temporalmente.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, pausar';
+    }
+  } else if (nuevoEstado === 'FINALIZADA') {
+    advertencia = '<br><br>La convocatoria se marcará como concluida.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, finalizar';
+    }
+  } else {
+    advertencia = '<br><br>La convocatoria volverá a estar disponible públicamente en el mapa.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, abrir convocatoria';
+    }
+  }
+
+  if (tituloEl) tituloEl.textContent = '¿Confirmar cambio de estado?';
+  if (mensajeEl) {
+    mensajeEl.innerHTML = `¿Estás seguro de que deseas cambiar el estado de <strong>"${esc(titulo)}"</strong> a <strong>${esc(nuevoEstado)}</strong>?${advertencia}`;
+  }
+
+  accionConvPendiente = {
+    convId,
+    nuevoEstado
+  };
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+// ==========================================
+// Modal Confirmar Acción de ONG (Warning)
+// ==========================================
+function activarModalConfirmarOng() {
+  const modal = document.getElementById('modal-confirmar-ong');
+  const btnCancelar = document.getElementById('btn-cancelar-confirmar-ong');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-ong');
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModalConfirmarOng);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConfirmarOng();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConfirmarOng();
+    }
+  });
+
+  if (btnAceptar) {
+    btnAceptar.addEventListener('click', () => {
+      if (!accionOngPendiente) return;
+      const { id, nuevoEstado, mensajeExito } = accionOngPendiente;
+      cerrarModalConfirmarOng();
+      cambiarEstadoOng(id, nuevoEstado, mensajeExito);
+    });
+  }
+}
+
+function cerrarModalConfirmarOng() {
+  const modal = document.getElementById('modal-confirmar-ong');
+  if (modal) modal.classList.add('hidden');
+  accionOngPendiente = null;
+}
+
+function pedirConfirmacionOng(ongId, nuevoEstado, accionTexto) {
+  const ong = (dashboardData.ongs || []).find((o) => o.id === ongId);
+  const nombre = ong ? (ong.nombrePublico || ong.razonSocial) : 'la organización';
+
+  const modal = document.getElementById('modal-confirmar-ong');
+  const tituloEl = document.getElementById('confirmar-ong-titulo');
+  const mensajeEl = document.getElementById('confirmar-ong-mensaje');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-ong');
+
+  let titulo = 'Confirmar acción';
+  let mensaje = `¿Estás seguro de que deseas realizar esta acción para <strong>${esc(nombre)}</strong>?`;
+  let mensajeExito = 'Estado actualizado.';
+
+  if (btnAceptar) {
+    btnAceptar.className = 'btn';
+  }
+
+  if (nuevoEstado === true) {
+    titulo = '¿Aceptar y verificar organización?';
+    mensaje = `¿Estás seguro de que deseas verificar a <strong>${esc(nombre)}</strong>?<br><br>Comenzará a figurar como verificada en el mapa público.`;
+    mensajeExito = 'ONG aceptada. Ya figura verificada en el mapa.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, aceptar ✓';
+    }
+  } else if (accionTexto === 'rechazar') {
+    titulo = '¿Rechazar solicitud de ONG?';
+    mensaje = `¿Estás seguro de que deseas rechazar la solicitud de <strong>${esc(nombre)}</strong>?`;
+    mensajeExito = 'Solicitud de ONG rechazada.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, rechazar';
+    }
+  } else {
+    titulo = '¿Revocar verificación de ONG?';
+    mensaje = `¿Estás seguro de que deseas revocar la verificación de <strong>${esc(nombre)}</strong>?<br><br>Dejará de figurar como verificada en la plataforma.`;
+    mensajeExito = 'Verificación revocada. Vuelve a pendientes.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, revocar';
+    }
+  }
+
+  if (tituloEl) tituloEl.textContent = titulo;
+  if (mensajeEl) mensajeEl.innerHTML = mensaje;
+
+  accionOngPendiente = {
+    id: ongId,
+    nuevoEstado,
+    mensajeExito
+  };
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+// ==========================================
+// Modal Confirmar Postulante (Warning)
+// ==========================================
+function activarModalConfirmarPostulante() {
+  const modal = document.getElementById('modal-confirmar-postulante');
+  const btnCancelar = document.getElementById('btn-cancelar-confirmar-postulante');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-postulante');
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModalConfirmarPostulante);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConfirmarPostulante();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConfirmarPostulante();
+    }
+  });
+
+  if (btnAceptar) {
+    btnAceptar.addEventListener('click', () => {
+      if (!accionPostulantePendiente) return;
+      const { postId, nuevoEstado } = accionPostulantePendiente;
+      accionPostulantePendiente.selectEl = null;
+      cerrarModalConfirmarPostulante();
+      ejecutarCambioEstadoPostulante(postId, nuevoEstado);
+    });
+  }
+}
+
+function cerrarModalConfirmarPostulante() {
+  const modal = document.getElementById('modal-confirmar-postulante');
+  if (modal) modal.classList.add('hidden');
+  if (accionPostulantePendiente && accionPostulantePendiente.selectEl && accionPostulantePendiente.estadoActual) {
+    accionPostulantePendiente.selectEl.value = accionPostulantePendiente.estadoActual;
+  }
+  accionPostulantePendiente = null;
+}
+
+function pedirConfirmacionPostulante(postId, nuevoEstado, nombre, estadoActual, selectEl) {
+  const modal = document.getElementById('modal-confirmar-postulante');
+  const tituloEl = document.getElementById('confirmar-postulante-titulo');
+  const mensajeEl = document.getElementById('confirmar-postulante-mensaje');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-postulante');
+
+  if (btnAceptar) btnAceptar.className = 'btn';
+
+  let titulo = '¿Confirmar cambio de estado?';
+  let advertencia = '';
+
+  if (nuevoEstado === 'CONFIRMADO') {
+    advertencia = '<br><br>El voluntario quedará confirmado para participar.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, confirmar voluntario';
+    }
+  } else if (nuevoEstado === 'CANCELADO') {
+    advertencia = '<br><br><span style="color:var(--color-danger); font-weight:700;">⚠️ Advertencia:</span> La postulación quedará cancelada.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, cancelar postulación';
+    }
+  } else if (nuevoEstado === 'ASISTIO') {
+    advertencia = '<br><br>Se registrará la asistencia efectiva del voluntario.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, marcar asistencia ✓';
+    }
+  } else if (nuevoEstado === 'POSTULADO') {
+    advertencia = '<br><br>El voluntario volverá a figurar como postulante pendiente de confirmación.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, volver a postulado';
+    }
+  }
+
+  if (tituloEl) tituloEl.textContent = titulo;
+  if (mensajeEl) {
+    mensajeEl.innerHTML = `¿Estás seguro de que deseas cambiar el estado de <strong>${esc(nombre || 'este voluntario')}</strong> de <strong>${esc(estadoActual)}</strong> a <strong>${esc(nuevoEstado)}</strong>?${advertencia}`;
+  }
+
+  accionPostulantePendiente = { postId, nuevoEstado, estadoActual, selectEl };
+  if (modal) modal.classList.remove('hidden');
+}
+
+async function ejecutarCambioEstadoPostulante(postId, nuevoEstado) {
+  const token = sessionStorage.getItem('va_token');
+  const errBox = document.getElementById('modal-conv-error');
+  const okBox = document.getElementById('modal-conv-ok');
+
+  errBox?.classList.add('hidden');
+  okBox?.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/postulaciones/${postId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (errBox) {
+        errBox.textContent = data.message || 'Error al actualizar el estado del postulante.';
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (okBox) {
+      okBox.textContent = data.message || `Postulación actualizada a ${nuevoEstado}.`;
+      okBox.classList.remove('hidden');
+    }
+
+    // Recargar los postulantes de la convocatoria actual
+    if (convocatoriaSeleccionadaId) {
+      await cargarPostulantesModal(convocatoriaSeleccionadaId);
+    }
+    // Refrescar datos generales del dashboard
+    await cargarDashboard();
+  } catch (err) {
+    if (errBox) {
+      errBox.textContent = 'Error de conexión con el servidor.';
+      errBox.classList.remove('hidden');
+    }
+  }
+}
+
+
