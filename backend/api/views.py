@@ -791,3 +791,156 @@ def mis_postulaciones(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+def es_usuario_admin(user_id):
+    """Verifica si el user_id corresponde a un Administrador en Supabase."""
+    if not user_id:
+        return False
+    return Administrador.objects.filter(id=user_id).exists()
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_dashboard(request):
+    """
+    Retorna datos consolidados para el panel de administración:
+    - Métricas globales (pendientes, verificadas, usuarios, participaciones)
+    - Listado de ONGs con datos y estado de verificación
+    - Listado de usuarios registrados con su rol
+    """
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    ongs_qs = Ong.objects.select_related("provincia", "localidad").order_by("-created_at")
+    ongs_data = []
+    pendientes_count = 0
+    verificadas_count = 0
+
+    for o in ongs_qs:
+        verificada = bool(o.esta_verificada)
+        if verificada:
+            verificadas_count += 1
+        else:
+            pendientes_count += 1
+
+        ubicacion = ""
+        if o.localidad and o.provincia:
+            ubicacion = f"{o.localidad.nombre}, {o.provincia.nombre}"
+        elif o.provincia:
+            ubicacion = o.provincia.nombre
+        elif o.direccion:
+            ubicacion = o.direccion
+
+        ongs_data.append({
+            "id": str(o.id),
+            "razonSocial": o.nombre_organizacion,
+            "nombrePublico": o.nombre_organizacion,
+            "cuit": o.cuit or "",
+            "email": o.email_contacto or "",
+            "barrio": ubicacion,
+            "direccion": o.direccion or "",
+            "descripcion": o.descripcion_institucional or "",
+            "web": o.sitio_web or "",
+            "contacto": o.contacto or o.telefono_contacto or "",
+            "verificada": verificada,
+            "estado": "verificada" if verificada else "pendiente",
+        })
+
+    try:
+        total_parts = Postulacion.objects.count()
+    except Exception:
+        total_parts = 0
+
+    usuarios_data = []
+    try:
+        for v in Voluntario.objects.all():
+            usuarios_data.append({
+                "nombre": f"{v.nombre} {v.apellido}".strip(),
+                "email": v.email or "",
+                "rol": "voluntario",
+            })
+    except Exception:
+        pass
+
+    for o in ongs_qs:
+        usuarios_data.append({
+            "nombre": o.nombre_organizacion,
+            "email": o.email_contacto or "",
+            "rol": "ong",
+        })
+
+    try:
+        for a in Administrador.objects.all():
+            usuarios_data.append({
+                "nombre": f"{a.nombre} {a.apellido}".strip() or "Administrador",
+                "email": user_data.get("email") if str(a.id) == str(user_id) else "admin@voluntariapp.org",
+                "rol": "admin",
+            })
+    except Exception:
+        pass
+
+    metricas = {
+        "pendientes": pendientes_count,
+        "verificadas": verificadas_count,
+        "usuarios": len(usuarios_data),
+        "participaciones": total_parts,
+    }
+
+    return Response({
+        "metricas": metricas,
+        "ongs": ongs_data,
+        "usuarios": usuarios_data,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_verificar_ong(request, ong_id):
+    """
+    Permite al administrador cambiar el estado de verificación de una ONG.
+    Body: {"esta_verificada": true/false} o {"accion": "aceptar"|"revocar"}
+    """
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    ong = Ong.objects.filter(id=ong_id).first()
+    if not ong:
+        return Response({"message": "Organización no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    nuevo_estado = request.data.get("esta_verificada")
+    if nuevo_estado is None:
+        accion = request.data.get("accion", "").strip().lower()
+        if accion == "aceptar":
+            nuevo_estado = True
+        elif accion in ["revocar", "rechazar"]:
+            nuevo_estado = False
+
+    if nuevo_estado is None:
+        return Response(
+            {"message": "Debe especificar 'esta_verificada' (booleano) o 'accion'."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    ong.esta_verificada = bool(nuevo_estado)
+    ong.save(update_fields=["esta_verificada"])
+
+    msg = "ONG aceptada. Ya figura verificada en el mapa." if ong.esta_verificada else "Verificación de ONG revocada."
+    return Response({
+        "message": msg,
+        "id": str(ong.id),
+        "esta_verificada": ong.esta_verificada,
+    }, status=status.HTTP_200_OK)
+
+
+

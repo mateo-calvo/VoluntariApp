@@ -28,4 +28,8 @@ urlpatterns = [
     # Localidades
     path("localidades/", views.listar_localidades, name="listar_localidades"),
 
+    # Admin Panel
+    path("admin/dashboard", views.admin_dashboard, name="admin_dashboard"),
+    path("admin/ongs/<uuid:ong_id>/verificar", views.admin_verificar_ong, name="admin_verificar_ong"),
 ]
+
