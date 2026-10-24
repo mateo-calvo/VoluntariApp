@@ -418,6 +418,7 @@ class PostulacionSerializer(serializers.ModelSerializer):
     )
     lugar = serializers.CharField(source="convocatoria.lugar", default="", read_only=True)
     fecha = serializers.CharField(source="convocatoria.fecha", default="", read_only=True)
+    hora = serializers.CharField(source="convocatoria.hora", default="", read_only=True)
     estado_convocatoria = serializers.CharField(
         source="convocatoria.estado", default="ABIERTA", read_only=True
     )
@@ -431,6 +432,7 @@ class PostulacionSerializer(serializers.ModelSerializer):
             "nombre_organizacion",
             "lugar",
             "fecha",
+            "hora",
             "estado",
             "estado_convocatoria",
             "created_at",

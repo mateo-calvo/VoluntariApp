@@ -70,6 +70,20 @@ function fechaCorta(iso) {
   return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function formatearFechaHora(fecha, hora) {
+  if (!fecha) return 'A coordinar';
+  let strFecha = fecha;
+  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+    const [y, m, d] = fecha.slice(0, 10).split('-');
+    strFecha = `${d}/${m}/${y}`;
+  }
+  let strHora = '';
+  if (hora) {
+    strHora = ` · ${String(hora).slice(0, 5)} hs`;
+  }
+  return `${strFecha}${strHora}`;
+}
+
 function clasificarParticipacion(p) {
   const estPost = (p.estado || 'POSTULADO').toUpperCase();
   const estConv = (p.estadoConvocatoria || 'ABIERTA').toUpperCase();
@@ -131,7 +145,9 @@ async function pintarParticipaciones() {
               nombre: p.titulo_convocatoria,
               organizacion: p.nombre_organizacion,
               barrio: p.lugar || '',
-              fecha: p.created_at || p.fecha,
+              fechaEvento: p.fecha || '',
+              horaEvento: p.hora || '',
+              fechaPostulacion: p.created_at || '',
               estado: p.estado,
               estadoConvocatoria: p.estado_convocatoria || 'ABIERTA',
             };
@@ -211,7 +227,8 @@ function renderizarLista() {
     const id = p.id;
     const nombre = esc(p.nombre);
     const barrio = esc(p.barrio || '');
-    const fecha = fechaCorta(p.fecha);
+    const fechaAnotado = fechaCorta(p.fechaPostulacion || p.fecha);
+    const fechaEvento = formatearFechaHora(p.fechaEvento, p.horaEvento);
     const info = p.clasificacion;
 
     return `
@@ -219,8 +236,9 @@ function renderizarLista() {
         <h3>🤝 ${nombre}</h3>
         <p class="meta">
           ${p.organizacion ? '🏢 <strong>' + esc(p.organizacion) + '</strong> &nbsp;·&nbsp; ' : ''}
-          ${barrio ? '📍 ' + barrio + ' &nbsp;·&nbsp; ' : ''}
-          ${fecha ? 'Anotado el ' + fecha : ''}
+          ${barrio ? '📍 ' + barrio + '<br>' : ''}
+          📅 <strong>Fecha:</strong> ${esc(fechaEvento)}
+          ${fechaAnotado ? ' &nbsp;·&nbsp; <small style="color:var(--color-muted);">Inscripto el ' + fechaAnotado + '</small>' : ''}
         </p>
         <div class="row">
           <span class="badge" ${info.badgeStyle}>${info.badgeText}</span>

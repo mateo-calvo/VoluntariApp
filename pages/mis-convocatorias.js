@@ -40,6 +40,20 @@ function leerToken() {
   return sessionStorage.getItem('va_token') || '';
 }
 
+function formatearFechaHora(fecha, hora) {
+  if (!fecha) return 'A coordinar';
+  let strFecha = fecha;
+  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+    const [y, m, d] = fecha.slice(0, 10).split('-');
+    strFecha = `${d}/${m}/${y}`;
+  }
+  let strHora = '';
+  if (hora) {
+    strHora = ` · ${String(hora).slice(0, 5)} hs`;
+  }
+  return `${strFecha}${strHora}`;
+}
+
 function pintarUsuario(session) {
   const nameEl = document.getElementById('user-name');
   const avatarEl = document.getElementById('user-avatar');
@@ -285,7 +299,7 @@ function renderizarConvocatorias(lista) {
         </div>
 
         <div class="convocatoria-meta">
-          ${c.fecha ? `<span>📅 ${esc(c.fecha)}${c.hora ? ' - ' + esc(c.hora).slice(0,5) + ' hs' : ''}</span>` : ''}
+          <span>📅 ${esc(formatearFechaHora(c.fecha, c.hora))}</span>
           ${c.lugar || c.direccion ? `<span>📍 ${esc(c.lugar || c.direccion)}${c.localidad_nombre ? ' (' + esc(c.localidad_nombre) + ')' : ''}</span>` : ''}
           <span>👥 ${esc(c.cupos_totales ?? 10)} cupos</span>
           ${c.horas_estimadas ? `<span>⏱️ ${esc(c.horas_estimadas)} hs</span>` : ''}
