@@ -10,6 +10,8 @@ let dashboardData = {
 
 let filtroActivo = 'todas';
 let convocatoriaSeleccionadaId = null;
+let accionOngPendiente = null;
+let accionConvPendiente = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const session = leerSesion();
@@ -24,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
   activarSalir();
   activarFiltrosCards();
   activarModalConvocatoria();
+  activarModalConfirmarOng();
+  activarModalConfirmarConvocatoria();
   cargarDashboard();
 });
 
@@ -273,17 +277,17 @@ function pintarTodo() {
   // 4. ONGs rechazadas
   pintarLista('ongs-rechazadas', 'ongs-rechazadas-vacio', [], () => '');
 
-  // Botones de acción ONGs
+  // Botones de acción ONGs (con modal de confirmación)
   document.querySelectorAll('[data-aceptar]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstadoOng(b.dataset.aceptar, true, 'ONG aceptada. Ya figura verificada en el mapa.'))
+    b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.aceptar, true, 'aceptar'))
   );
 
   document.querySelectorAll('[data-rechazar]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstadoOng(b.dataset.rechazar, false, 'Solicitud de ONG rechazada.'))
+    b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.rechazar, false, 'rechazar'))
   );
 
   document.querySelectorAll('[data-revocar]').forEach((b) =>
-    b.addEventListener('click', () => cambiarEstadoOng(b.dataset.revocar, false, 'Verificación revocada. Vuelve a pendientes.'))
+    b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.revocar, false, 'revocar'))
   );
 
   // Botones de convocatoria
@@ -407,7 +411,7 @@ async function abrirModalConvocatoria(convId) {
   const conv = (dashboardData.convocatorias || []).find((c) => c.id === convId);
   if (conv) {
     document.getElementById('modal-conv-titulo').textContent = conv.titulo;
-    document.getElementById('modal-conv-subtitulo').textContent = `ID: ${conv.id}`;
+    document.getElementById('modal-conv-subtitulo').textContent = `${conv.ong_nombre} • ${conv.causa}`;
     document.getElementById('modal-conv-descripcion').textContent = conv.descripcion || 'Sin descripción detallada.';
     document.getElementById('modal-conv-ong').innerHTML = `🏢 <strong>ONG:</strong> ${esc(conv.ong_nombre)}`;
     document.getElementById('modal-conv-causa').innerHTML = `🏷️ <strong>Causa:</strong> ${esc(conv.causa)}`;
@@ -481,11 +485,30 @@ async function abrirModalConvocatoria(convId) {
   }
 }
 
-async function guardarEstadoConvocatoria() {
+function guardarEstadoConvocatoria() {
   if (!convocatoriaSeleccionadaId) return;
 
   const select = document.getElementById('select-estado-convocatoria');
   const nuevoEstado = select?.value;
+  const conv = (dashboardData.convocatorias || []).find((c) => c.id === convocatoriaSeleccionadaId);
+  const errBox = document.getElementById('modal-conv-error');
+  const okBox = document.getElementById('modal-conv-ok');
+
+  errBox?.classList.add('hidden');
+  okBox?.classList.add('hidden');
+
+  if (conv && conv.estado === nuevoEstado) {
+    if (errBox) {
+      errBox.textContent = `La convocatoria ya se encuentra en estado ${nuevoEstado}.`;
+      errBox.classList.remove('hidden');
+    }
+    return;
+  }
+
+  pedirConfirmacionConvocatoria(convocatoriaSeleccionadaId, nuevoEstado);
+}
+
+async function ejecutarCambioEstadoConvocatoria(convId, nuevoEstado) {
   const token = sessionStorage.getItem('va_token');
   const errBox = document.getElementById('modal-conv-error');
   const okBox = document.getElementById('modal-conv-ok');
@@ -496,7 +519,7 @@ async function guardarEstadoConvocatoria() {
   if (btn) btn.disabled = true;
 
   try {
-    const res = await fetch(`${API_BASE}/admin/convocatorias/${convocatoriaSeleccionadaId}/estado`, {
+    const res = await fetch(`${API_BASE}/admin/convocatorias/${convId}/estado`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -537,3 +560,192 @@ async function guardarEstadoConvocatoria() {
     }
   }
 }
+
+// ==========================================
+// Modal Confirmar Estado de Convocatoria (Warning)
+// ==========================================
+function activarModalConfirmarConvocatoria() {
+  const modal = document.getElementById('modal-confirmar-convocatoria');
+  const btnCancelar = document.getElementById('btn-cancelar-confirmar-conv');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-conv');
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModalConfirmarConvocatoria);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConfirmarConvocatoria();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConfirmarConvocatoria();
+    }
+  });
+
+  if (btnAceptar) {
+    btnAceptar.addEventListener('click', () => {
+      if (!accionConvPendiente) return;
+      const { convId, nuevoEstado } = accionConvPendiente;
+      cerrarModalConfirmarConvocatoria();
+      ejecutarCambioEstadoConvocatoria(convId, nuevoEstado);
+    });
+  }
+}
+
+function cerrarModalConfirmarConvocatoria() {
+  const modal = document.getElementById('modal-confirmar-convocatoria');
+  if (modal) modal.classList.add('hidden');
+  accionConvPendiente = null;
+}
+
+function pedirConfirmacionConvocatoria(convId, nuevoEstado) {
+  const conv = (dashboardData.convocatorias || []).find((c) => c.id === convId);
+  const titulo = conv ? conv.titulo : 'la convocatoria';
+
+  const modal = document.getElementById('modal-confirmar-convocatoria');
+  const tituloEl = document.getElementById('confirmar-conv-titulo');
+  const mensajeEl = document.getElementById('confirmar-conv-mensaje');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-conv');
+
+  if (btnAceptar) {
+    btnAceptar.className = 'btn';
+  }
+
+  let advertencia = '';
+  if (nuevoEstado === 'CANCELADA') {
+    advertencia = '<br><br><span style="color:var(--color-danger); font-weight:700;">⚠️ Advertencia:</span> La convocatoria se cancelará y no admitirá más voluntarios.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, cancelar convocatoria';
+    }
+  } else if (nuevoEstado === 'PAUSADA') {
+    advertencia = '<br><br>La convocatoria no estará visible para nuevos postulantes temporalmente.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, pausar';
+    }
+  } else if (nuevoEstado === 'FINALIZADA') {
+    advertencia = '<br><br>La convocatoria se marcará como concluida.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, finalizar';
+    }
+  } else {
+    advertencia = '<br><br>La convocatoria volverá a estar disponible públicamente en el mapa.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, abrir convocatoria';
+    }
+  }
+
+  if (tituloEl) tituloEl.textContent = '¿Confirmar cambio de estado?';
+  if (mensajeEl) {
+    mensajeEl.innerHTML = `¿Estás seguro de que deseas cambiar el estado de <strong>"${esc(titulo)}"</strong> a <strong>${esc(nuevoEstado)}</strong>?${advertencia}`;
+  }
+
+  accionConvPendiente = {
+    convId,
+    nuevoEstado
+  };
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+// ==========================================
+// Modal Confirmar Acción de ONG (Warning)
+// ==========================================
+function activarModalConfirmarOng() {
+  const modal = document.getElementById('modal-confirmar-ong');
+  const btnCancelar = document.getElementById('btn-cancelar-confirmar-ong');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-ong');
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModalConfirmarOng);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConfirmarOng();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConfirmarOng();
+    }
+  });
+
+  if (btnAceptar) {
+    btnAceptar.addEventListener('click', () => {
+      if (!accionOngPendiente) return;
+      const { id, nuevoEstado, mensajeExito } = accionOngPendiente;
+      cerrarModalConfirmarOng();
+      cambiarEstadoOng(id, nuevoEstado, mensajeExito);
+    });
+  }
+}
+
+function cerrarModalConfirmarOng() {
+  const modal = document.getElementById('modal-confirmar-ong');
+  if (modal) modal.classList.add('hidden');
+  accionOngPendiente = null;
+}
+
+function pedirConfirmacionOng(ongId, nuevoEstado, accionTexto) {
+  const ong = (dashboardData.ongs || []).find((o) => o.id === ongId);
+  const nombre = ong ? (ong.nombrePublico || ong.razonSocial) : 'la organización';
+
+  const modal = document.getElementById('modal-confirmar-ong');
+  const tituloEl = document.getElementById('confirmar-ong-titulo');
+  const mensajeEl = document.getElementById('confirmar-ong-mensaje');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-ong');
+
+  let titulo = 'Confirmar acción';
+  let mensaje = `¿Estás seguro de que deseas realizar esta acción para <strong>${esc(nombre)}</strong>?`;
+  let mensajeExito = 'Estado actualizado.';
+
+  if (btnAceptar) {
+    btnAceptar.className = 'btn';
+  }
+
+  if (nuevoEstado === true) {
+    titulo = '¿Aceptar y verificar organización?';
+    mensaje = `¿Estás seguro de que deseas verificar a <strong>${esc(nombre)}</strong>?<br><br>Comenzará a figurar como verificada en el mapa público.`;
+    mensajeExito = 'ONG aceptada. Ya figura verificada en el mapa.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, aceptar ✓';
+    }
+  } else if (accionTexto === 'rechazar') {
+    titulo = '¿Rechazar solicitud de ONG?';
+    mensaje = `¿Estás seguro de que deseas rechazar la solicitud de <strong>${esc(nombre)}</strong>?`;
+    mensajeExito = 'Solicitud de ONG rechazada.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, rechazar';
+    }
+  } else {
+    titulo = '¿Revocar verificación de ONG?';
+    mensaje = `¿Estás seguro de que deseas revocar la verificación de <strong>${esc(nombre)}</strong>?<br><br>Dejará de figurar como verificada en la plataforma.`;
+    mensajeExito = 'Verificación revocada. Vuelve a pendientes.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, revocar';
+    }
+  }
+
+  if (tituloEl) tituloEl.textContent = titulo;
+  if (mensajeEl) mensajeEl.innerHTML = mensaje;
+
+  accionOngPendiente = {
+    id: ongId,
+    nuevoEstado,
+    mensajeExito
+  };
+
+  if (modal) modal.classList.remove('hidden');
+}
+

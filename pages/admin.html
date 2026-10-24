@@ -139,6 +139,36 @@
     </div>
   </div>
 
+  <!-- Modal Confirmar Acción de ONG (Warning) -->
+  <div class="modal-overlay hidden" id="modal-confirmar-ong">
+    <div class="modal-card" style="max-width: 460px; text-align: center;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;" id="confirmar-ong-titulo">Confirmar acción</h3>
+      <p id="confirmar-ong-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas realizar esta acción?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-ong">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-ong">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Cambio de Estado de Convocatoria (Warning) -->
+  <div class="modal-overlay hidden" id="modal-confirmar-convocatoria" style="z-index: 1100;">
+    <div class="modal-card" style="max-width: 460px; text-align: center;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;" id="confirmar-conv-titulo">Confirmar cambio de estado</h3>
+      <p id="confirmar-conv-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas cambiar el estado de esta convocatoria?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-conv">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-conv">Confirmar cambio</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../js/config.js"></script>
   <script src="admin.js"></script>
 </body>
