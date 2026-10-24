@@ -1072,13 +1072,55 @@ def admin_actualizar_convocatoria(request, convocatoria_id):
     if "hora" in data and data["hora"]:
         convocatoria.hora = data["hora"]
 
-    convocatoria.save()
+    try:
+        convocatoria.save()
+    except Exception as e:
+        return Response({"message": f"Error al actualizar la convocatoria: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({
         "message": "Convocatoria actualizada con éxito.",
         "id": str(convocatoria.id),
         "estado": convocatoria.estado,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH", "PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def admin_actualizar_postulacion(request, postulacion_id):
+    """Permite al administrador cambiar el estado de un postulante (POSTULADO, CONFIRMADO, ASISTIO, CANCELADO)."""
+    user_data, error = obtener_usuario_desde_token(request)
+    if error or not user_data:
+        return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user_id = user_data.get("id")
+    if not es_usuario_admin(user_id):
+        return Response({"message": "Acceso restringido a administradores."}, status=status.HTTP_403_FORBIDDEN)
+
+    postulacion = Postulacion.objects.filter(id=postulacion_id).select_related("convocatoria", "voluntario").first()
+    if not postulacion:
+        return Response({"message": "Postulación no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+    nuevo_estado = request.data.get("estado", "").strip().upper()
+    estados_validos = ["POSTULADO", "CONFIRMADO", "ASISTIO", "CANCELADO"]
+    if nuevo_estado not in estados_validos:
+        return Response(
+            {"message": f"Estado no válido. Las opciones permitidas son: {', '.join(estados_validos)}."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        postulacion.estado = nuevo_estado
+        postulacion.save()
+    except Exception as e:
+        return Response({"message": f"Error al actualizar la postulación: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        "message": f"Estado de postulación actualizado a {nuevo_estado}.",
+        "id": str(postulacion.id),
+        "estado": postulacion.estado,
+    }, status=status.HTTP_200_OK)
+
 
 
 

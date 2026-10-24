@@ -12,6 +12,7 @@ let filtroActivo = 'todas';
 let convocatoriaSeleccionadaId = null;
 let accionOngPendiente = null;
 let accionConvPendiente = null;
+let accionPostulantePendiente = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const session = leerSesion();
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   activarModalConvocatoria();
   activarModalConfirmarOng();
   activarModalConfirmarConvocatoria();
+  activarModalConfirmarPostulante();
   cargarDashboard();
 });
 
@@ -362,6 +364,7 @@ function activarModalConvocatoria() {
   const modal = document.getElementById('modal-convocatoria-admin');
   const btnCerrar = document.getElementById('btn-cerrar-modal-conv');
   const btnGuardarEstado = document.getElementById('btn-guardar-estado-conv');
+  const tbodyPostulantes = document.getElementById('modal-conv-postulantes-body');
 
   if (btnCerrar) {
     btnCerrar.addEventListener('click', cerrarModalConvocatoria);
@@ -382,6 +385,36 @@ function activarModalConvocatoria() {
   if (btnGuardarEstado) {
     btnGuardarEstado.addEventListener('click', guardarEstadoConvocatoria);
   }
+
+  if (tbodyPostulantes) {
+    tbodyPostulantes.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-btn-actualizar-post]');
+      if (!btn) return;
+      const postId = btn.getAttribute('data-btn-actualizar-post');
+      const row = btn.closest('tr');
+      const select = row?.querySelector('.select-estado-postulante');
+      if (!select) return;
+
+      const nuevoEstado = select.value;
+      const estadoActual = select.getAttribute('data-estado-actual');
+      const nombre = select.getAttribute('data-post-nombre');
+      const errBox = document.getElementById('modal-conv-error');
+      const okBox = document.getElementById('modal-conv-ok');
+
+      errBox?.classList.add('hidden');
+      okBox?.classList.add('hidden');
+
+      if (nuevoEstado === estadoActual) {
+        if (errBox) {
+          errBox.textContent = `El voluntario ya se encuentra en estado ${estadoActual}.`;
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      pedirConfirmacionPostulante(postId, nuevoEstado, nombre, estadoActual, select);
+    });
+  }
 }
 
 function cerrarModalConvocatoria() {
@@ -393,19 +426,11 @@ function cerrarModalConvocatoria() {
 async function abrirModalConvocatoria(convId) {
   convocatoriaSeleccionadaId = convId;
   const modal = document.getElementById('modal-convocatoria-admin');
-  const loading = document.getElementById('modal-conv-loading');
-  const tableWrap = document.getElementById('modal-conv-table-wrap');
-  const vacio = document.getElementById('modal-conv-postulantes-vacio');
-  const tbody = document.getElementById('modal-conv-postulantes-body');
   const errBox = document.getElementById('modal-conv-error');
   const okBox = document.getElementById('modal-conv-ok');
 
   errBox?.classList.add('hidden');
   okBox?.classList.add('hidden');
-  tbody.innerHTML = '';
-  tableWrap?.classList.remove('hidden');
-  vacio?.classList.add('hidden');
-  loading?.classList.remove('hidden');
 
   // Buscar datos básicos de la convocatoria en memoria
   const conv = (dashboardData.convocatorias || []).find((c) => c.id === convId);
@@ -432,8 +457,21 @@ async function abrirModalConvocatoria(convId) {
   }
 
   modal?.classList.remove('hidden');
+  await cargarPostulantesModal(convId);
+}
 
-  // Cargar postulantes desde el endpoint de administración
+async function cargarPostulantesModal(convId) {
+  const loading = document.getElementById('modal-conv-loading');
+  const tableWrap = document.getElementById('modal-conv-table-wrap');
+  const vacio = document.getElementById('modal-conv-postulantes-vacio');
+  const tbody = document.getElementById('modal-conv-postulantes-body');
+  const errBox = document.getElementById('modal-conv-error');
+
+  tbody.innerHTML = '';
+  tableWrap?.classList.remove('hidden');
+  vacio?.classList.add('hidden');
+  loading?.classList.remove('hidden');
+
   const token = sessionStorage.getItem('va_token');
   try {
     const res = await fetch(`${API_BASE}/admin/convocatorias/${convId}/postulaciones`, {
@@ -463,16 +501,23 @@ async function abrirModalConvocatoria(convId) {
     }
 
     tbody.innerHTML = postulantes.map((p) => {
-      let bClass = 'highlight';
       const st = (p.estado || '').toUpperCase();
-      if (st === 'CONFIRMADO' || st === 'ASISTIO') bClass = '';
-      else if (st === 'CANCELADO' || st === 'RECHAZADO') bClass = 'muted';
 
       return `<tr>
         <td><strong>${esc(p.nombre)}</strong></td>
         <td>${esc(p.email)}<br><small style="color:var(--color-muted);">${esc(p.telefono || p.dni || '')}</small></td>
         <td>${esc(p.created_at || '-')}</td>
-        <td><span class="badge ${bClass}">${esc(p.estado)}</span></td>
+        <td>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select class="select-estado-postulante" data-post-id="${esc(p.id)}" data-post-nombre="${esc(p.nombre)}" data-estado-actual="${esc(st)}" style="padding: 5px 8px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13px; font-weight: 700; color: var(--color-navy); background: #fff;">
+              <option value="POSTULADO" ${st === 'POSTULADO' ? 'selected' : ''}>POSTULADO</option>
+              <option value="CONFIRMADO" ${st === 'CONFIRMADO' ? 'selected' : ''}>CONFIRMADO</option>
+              <option value="ASISTIO" ${st === 'ASISTIO' ? 'selected' : ''}>ASISTIÓ</option>
+              <option value="CANCELADO" ${st === 'CANCELADO' ? 'selected' : ''}>CANCELADO</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" style="padding: 5px 10px; font-size: 12.5px;" data-btn-actualizar-post="${esc(p.id)}">Actualizar</button>
+          </div>
+        </td>
       </tr>`;
     }).join('');
 
@@ -748,4 +793,141 @@ function pedirConfirmacionOng(ongId, nuevoEstado, accionTexto) {
 
   if (modal) modal.classList.remove('hidden');
 }
+
+// ==========================================
+// Modal Confirmar Postulante (Warning)
+// ==========================================
+function activarModalConfirmarPostulante() {
+  const modal = document.getElementById('modal-confirmar-postulante');
+  const btnCancelar = document.getElementById('btn-cancelar-confirmar-postulante');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-postulante');
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', cerrarModalConfirmarPostulante);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) cerrarModalConfirmarPostulante();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      cerrarModalConfirmarPostulante();
+    }
+  });
+
+  if (btnAceptar) {
+    btnAceptar.addEventListener('click', () => {
+      if (!accionPostulantePendiente) return;
+      const { postId, nuevoEstado } = accionPostulantePendiente;
+      accionPostulantePendiente.selectEl = null;
+      cerrarModalConfirmarPostulante();
+      ejecutarCambioEstadoPostulante(postId, nuevoEstado);
+    });
+  }
+}
+
+function cerrarModalConfirmarPostulante() {
+  const modal = document.getElementById('modal-confirmar-postulante');
+  if (modal) modal.classList.add('hidden');
+  if (accionPostulantePendiente && accionPostulantePendiente.selectEl && accionPostulantePendiente.estadoActual) {
+    accionPostulantePendiente.selectEl.value = accionPostulantePendiente.estadoActual;
+  }
+  accionPostulantePendiente = null;
+}
+
+function pedirConfirmacionPostulante(postId, nuevoEstado, nombre, estadoActual, selectEl) {
+  const modal = document.getElementById('modal-confirmar-postulante');
+  const tituloEl = document.getElementById('confirmar-postulante-titulo');
+  const mensajeEl = document.getElementById('confirmar-postulante-mensaje');
+  const btnAceptar = document.getElementById('btn-aceptar-confirmar-postulante');
+
+  if (btnAceptar) btnAceptar.className = 'btn';
+
+  let titulo = '¿Confirmar cambio de estado?';
+  let advertencia = '';
+
+  if (nuevoEstado === 'CONFIRMADO') {
+    advertencia = '<br><br>El voluntario quedará confirmado para participar.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, confirmar voluntario';
+    }
+  } else if (nuevoEstado === 'CANCELADO') {
+    advertencia = '<br><br><span style="color:var(--color-danger); font-weight:700;">⚠️ Advertencia:</span> La postulación quedará cancelada.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-danger');
+      btnAceptar.textContent = 'Sí, cancelar postulación';
+    }
+  } else if (nuevoEstado === 'ASISTIO') {
+    advertencia = '<br><br>Se registrará la asistencia efectiva del voluntario.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, marcar asistencia ✓';
+    }
+  } else if (nuevoEstado === 'POSTULADO') {
+    advertencia = '<br><br>El voluntario volverá a figurar como postulante pendiente de confirmación.';
+    if (btnAceptar) {
+      btnAceptar.classList.add('btn-primary');
+      btnAceptar.textContent = 'Sí, volver a postulado';
+    }
+  }
+
+  if (tituloEl) tituloEl.textContent = titulo;
+  if (mensajeEl) {
+    mensajeEl.innerHTML = `¿Estás seguro de que deseas cambiar el estado de <strong>${esc(nombre || 'este voluntario')}</strong> de <strong>${esc(estadoActual)}</strong> a <strong>${esc(nuevoEstado)}</strong>?${advertencia}`;
+  }
+
+  accionPostulantePendiente = { postId, nuevoEstado, estadoActual, selectEl };
+  if (modal) modal.classList.remove('hidden');
+}
+
+async function ejecutarCambioEstadoPostulante(postId, nuevoEstado) {
+  const token = sessionStorage.getItem('va_token');
+  const errBox = document.getElementById('modal-conv-error');
+  const okBox = document.getElementById('modal-conv-ok');
+
+  errBox?.classList.add('hidden');
+  okBox?.classList.add('hidden');
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/postulaciones/${postId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (errBox) {
+        errBox.textContent = data.message || 'Error al actualizar el estado del postulante.';
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (okBox) {
+      okBox.textContent = data.message || `Postulación actualizada a ${nuevoEstado}.`;
+      okBox.classList.remove('hidden');
+    }
+
+    // Recargar los postulantes de la convocatoria actual
+    if (convocatoriaSeleccionadaId) {
+      await cargarPostulantesModal(convocatoriaSeleccionadaId);
+    }
+    // Refrescar datos generales del dashboard
+    await cargarDashboard();
+  } catch (err) {
+    if (errBox) {
+      errBox.textContent = 'Error de conexión con el servidor.';
+      errBox.classList.remove('hidden');
+    }
+  }
+}
+
 

@@ -114,7 +114,6 @@
         <div style="display: flex; gap: 8px; align-items: center;">
           <select id="select-estado-convocatoria" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; font-weight: 700; color: var(--color-navy);">
             <option value="ABIERTA">ABIERTA</option>
-            <option value="PAUSADA">PAUSADA</option>
             <option value="FINALIZADA">FINALIZADA</option>
             <option value="CANCELADA">CANCELADA</option>
           </select>
@@ -165,6 +164,21 @@
       <div style="display: flex; gap: 12px; justify-content: center;">
         <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-conv">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-conv">Confirmar cambio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Cambio de Estado de Postulante (Warning) -->
+  <div class="modal-overlay hidden" id="modal-confirmar-postulante" style="z-index: 1100;">
+    <div class="modal-card" style="max-width: 460px; text-align: center;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;" id="confirmar-postulante-titulo">Confirmar acción</h3>
+      <p id="confirmar-postulante-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas cambiar el estado de este voluntario?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-postulante">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-postulante">Confirmar</button>
       </div>
     </div>
   </div>
