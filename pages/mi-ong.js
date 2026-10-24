@@ -27,6 +27,12 @@ function leerToken() {
   return sessionStorage.getItem('va_token') || '';
 }
 
+function manejarSesionExpirada() {
+  sessionStorage.removeItem('va_token');
+  sessionStorage.removeItem('va_session');
+  window.location.href = 'login.html?expired=1&next=mi-ong.html';
+}
+
 function pintarUsuario(session) {
   const nameEl = document.getElementById('user-name');
   const avatarEl = document.getElementById('user-avatar');
@@ -163,6 +169,10 @@ async function cargarFicha(session) {
           'Authorization': `Bearer ${token}`,
         },
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (res.ok) {
         const ong = await res.json();
         setVal('f-nombre', ong.nombre_organizacion);
@@ -271,6 +281,11 @@ function activarGuardado(session) {
             telefono_contacto: telefono,
           }),
         });
+
+        if (res.status === 401) {
+          manejarSesionExpirada();
+          return;
+        }
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

@@ -30,6 +30,12 @@ function leerSesion() {
   }
 }
 
+function manejarSesionExpirada() {
+  sessionStorage.removeItem('va_token');
+  sessionStorage.removeItem('va_session');
+  window.location.href = 'login.html?expired=1&next=participaciones.html';
+}
+
 function pintarUsuario(session) {
   const nameEl = document.getElementById('user-name');
   const avatarEl = document.getElementById('user-avatar');
@@ -212,6 +218,10 @@ async function pintarParticipaciones() {
       const res = await fetch(`${baseUrl}/api/voluntario/mis-postulaciones`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -422,6 +432,10 @@ function renderizarLista() {
                 Authorization: `Bearer ${token}`
               }
             });
+            if (res.status === 401) {
+              manejarSesionExpirada();
+              return;
+            }
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
               throw new Error(data.message || 'No se pudo cancelar la participación.');

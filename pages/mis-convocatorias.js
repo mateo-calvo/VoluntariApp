@@ -45,6 +45,12 @@ function leerToken() {
   return sessionStorage.getItem('va_token') || '';
 }
 
+function manejarSesionExpirada() {
+  sessionStorage.removeItem('va_token');
+  sessionStorage.removeItem('va_session');
+  window.location.href = 'login.html?expired=1&next=mis-convocatorias.html';
+}
+
 function formatearFechaHora(fecha, hora) {
   if (!fecha) return 'A coordinar';
   let strFecha = fecha;
@@ -201,6 +207,10 @@ async function cargarConvocatorias(session) {
       const res = await fetch(`${API_URL}/api/ong/mis-convocatorias`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (res.ok) {
         convocatoriasCache = await res.json();
         renderizarConvocatorias(convocatoriasCache);
@@ -823,6 +833,11 @@ async function guardarConvocatoria(e) {
         body: JSON.stringify(payload)
       });
 
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
+
       const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(resData.message || 'Error al procesar la convocatoria en el servidor.');
@@ -890,6 +905,10 @@ async function toggleEstadoConvocatoria(id, nuevoEstado) {
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || 'No se pudo cambiar el estado de la convocatoria.');
@@ -989,6 +1008,10 @@ async function cargarPostulantesModal(convocatoriaId) {
       const res = await fetch(`${API_URL}/api/ong/convocatorias/${encodeURIComponent(convocatoriaId)}/postulaciones`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         postulantesModalCache = data.postulaciones || [];
@@ -1182,6 +1205,10 @@ async function ejecutarCambioEstadoPostulante(postulacionId, nuevoEstado) {
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         p.estado = nuevoEstado;

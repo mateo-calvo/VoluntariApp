@@ -176,7 +176,7 @@ async function cargarDashboard() {
     if (res.status === 401 || res.status === 403) {
       sessionStorage.removeItem('va_token');
       sessionStorage.removeItem('va_session');
-      window.location.href = 'login.html?next=admin.html';
+      window.location.href = 'login.html?expired=1&next=admin.html';
       return;
     }
 
