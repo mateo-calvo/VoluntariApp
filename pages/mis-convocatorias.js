@@ -1,5 +1,5 @@
 // mis-convocatorias.js - Gestión de convocatorias de la ONG
-const API_URL = window.API_URL || 'http://127.0.0.1:8000';
+const API_URL = (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8000' : 'https://voluntariapp-1.onrender.com');
 
 let convocatoriasCache = [];
 let causasCache = [];
