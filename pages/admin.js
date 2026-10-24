@@ -9,6 +9,11 @@ let dashboardData = {
 };
 
 let filtroActivo = 'todas';
+let filtroEstadoConv = 'TODAS';
+let busquedaTextoConv = '';
+let busquedaOngsPendientes = '';
+let busquedaOngsVerificadas = '';
+let busquedaUsuarios = '';
 let convocatoriaSeleccionadaId = null;
 let accionOngPendiente = null;
 let accionConvPendiente = null;
@@ -26,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
   pintarUsuario(session);
   activarSalir();
   activarFiltrosCards();
+  activarFiltrosConvocatorias();
+  activarFiltrosOngsYUsuarios();
   activarModalConvocatoria();
   activarModalConfirmarOng();
   activarModalConfirmarConvocatoria();
@@ -207,10 +214,16 @@ function tarjetaOng(o, acciones) {
     </article>`;
 }
 
+function obtenerClaseBadgeEstado(estado) {
+  const st = (estado || '').toUpperCase();
+  if (st === 'ABIERTA') return 'badge-abierta';
+  if (st === 'CANCELADA') return 'badge-cancelada';
+  if (st === 'FINALIZADA') return 'badge-finalizada';
+  return '';
+}
+
 function tarjetaConvocatoria(c) {
-  let badgeClass = 'highlight';
-  if (c.estado === 'ABIERTA') badgeClass = '';
-  else if (c.estado === 'CANCELADA') badgeClass = 'muted';
+  const badgeClass = obtenerClaseBadgeEstado(c.estado);
 
   return `
     <article class="panel-card">
@@ -255,65 +268,20 @@ function pintarTodo() {
   set('st-usuarios', metricas?.usuarios ?? (usuarios || []).length);
   set('st-convocatorias', metricas?.convocatorias ?? (convocatorias || []).length);
 
-  // 1. ONGs pendientes
-  pintarLista('ongs-pendientes', 'ongs-pendientes-vacio', pendientes, (o) =>
-    tarjetaOng(
-      o,
-      `<button class="btn btn-primary btn-sm" data-aceptar="${esc(o.id)}" type="button">Aceptar ✓</button>
-       <button class="btn btn-danger btn-sm" data-rechazar="${esc(o.id)}" type="button">Rechazar</button>`
-    )
-  );
+  // 1. ONGs pendientes (con filtro)
+  renderizarOngsPendientesFiltradas();
 
-  // 2. ONGs verificadas
-  pintarLista('ongs-verificadas', 'ongs-verificadas-vacio', verificadas, (o) =>
-    tarjetaOng(
-      o,
-      `<span class="badge">Verificada ✓</span>
-       <button class="btn btn-secondary btn-sm" data-revocar="${esc(o.id)}" type="button">Revocar</button>`
-    )
-  );
+  // 2. ONGs verificadas (con filtro)
+  renderizarOngsVerificadasFiltradas();
 
-  // 3. Convocatorias de la plataforma
-  pintarLista('convocatorias-lista', 'convocatorias-vacio', convocatorias || [], tarjetaConvocatoria);
+  // 3. Convocatorias de la plataforma (con filtros)
+  renderizarConvocatoriasFiltradas();
 
   // 4. ONGs rechazadas
   pintarLista('ongs-rechazadas', 'ongs-rechazadas-vacio', [], () => '');
 
-  // Botones de acción ONGs (con modal de confirmación)
-  document.querySelectorAll('[data-aceptar]').forEach((b) =>
-    b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.aceptar, true, 'aceptar'))
-  );
-
-  document.querySelectorAll('[data-rechazar]').forEach((b) =>
-    b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.rechazar, false, 'rechazar'))
-  );
-
-  document.querySelectorAll('[data-revocar]').forEach((b) =>
-    b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.revocar, false, 'revocar'))
-  );
-
-  // Botones de convocatoria
-  document.querySelectorAll('[data-ver-conv]').forEach((b) =>
-    b.addEventListener('click', () => abrirModalConvocatoria(b.dataset.verConv))
-  );
-
-  // Tabla de usuarios
-  const body = document.getElementById('users-body');
-  if (body) {
-    body.innerHTML = (usuarios && usuarios.length)
-      ? usuarios.map((u) => {
-          let badgeClass = 'muted';
-          if (u.rol === 'admin') badgeClass = '';
-          else if (u.rol === 'ong') badgeClass = 'highlight';
-
-          return `<tr>
-            <td>${esc(u.nombre || '-')}</td>
-            <td>${esc(u.email || '-')}</td>
-            <td><span class="badge ${badgeClass}">${esc(u.rol || 'voluntario')}</span></td>
-          </tr>`;
-        }).join('')
-      : '<tr><td colspan="3">Sin usuarios registrados.</td></tr>';
-  }
+  // 5. Tabla de usuarios (con filtro)
+  renderizarUsuariosFiltrados();
 
   actualizarVistasPorFiltro();
 }
@@ -329,6 +297,195 @@ function pintarLista(listId, emptyId, items, render) {
   }
   empty?.classList.add('hidden');
   list.innerHTML = items.map(render).join('');
+}
+
+function activarFiltrosConvocatorias() {
+  const selectEstado = document.getElementById('filtro-conv-estado');
+  const inputBusqueda = document.getElementById('filtro-conv-busqueda');
+
+  if (selectEstado) {
+    selectEstado.addEventListener('change', (e) => {
+      filtroEstadoConv = e.target.value;
+      renderizarConvocatoriasFiltradas();
+    });
+  }
+
+  if (inputBusqueda) {
+    inputBusqueda.addEventListener('input', (e) => {
+      busquedaTextoConv = (e.target.value || '').trim().toLowerCase();
+      renderizarConvocatoriasFiltradas();
+    });
+  }
+}
+
+function renderizarConvocatoriasFiltradas() {
+  const todas = dashboardData.convocatorias || [];
+  const filtradas = todas.filter((c) => {
+    // 1. Filtro por estado
+    if (filtroEstadoConv !== 'TODAS' && (c.estado || '').toUpperCase() !== filtroEstadoConv) {
+      return false;
+    }
+    // 2. Filtro por texto (título, ONG, causa)
+    if (busquedaTextoConv) {
+      const matchTitulo = (c.titulo || '').toLowerCase().includes(busquedaTextoConv);
+      const matchOng = (c.ong_nombre || '').toLowerCase().includes(busquedaTextoConv);
+      const matchCausa = (c.causa || '').toLowerCase().includes(busquedaTextoConv);
+      if (!matchTitulo && !matchOng && !matchCausa) return false;
+    }
+    return true;
+  });
+
+  const list = document.getElementById('convocatorias-lista');
+  const empty = document.getElementById('convocatorias-vacio');
+  if (!list) return;
+
+  if (!filtradas.length) {
+    list.innerHTML = '';
+    if (empty) {
+      empty.textContent = todas.length
+        ? 'No hay convocatorias que coincidan con los filtros seleccionados.'
+        : 'No hay convocatorias registradas todavía.';
+      empty.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (empty) empty.classList.add('hidden');
+  list.innerHTML = filtradas.map(tarjetaConvocatoria).join('');
+
+  // Reconectar listeners de abrir modal de convocatoria
+  list.querySelectorAll('[data-ver-conv]').forEach((b) =>
+    b.addEventListener('click', () => abrirModalConvocatoria(b.dataset.verConv))
+  );
+}
+
+function activarFiltrosOngsYUsuarios() {
+  const inPendientes = document.getElementById('filtro-ongs-pendientes');
+  const inVerificadas = document.getElementById('filtro-ongs-verificadas');
+  const inUsuarios = document.getElementById('filtro-usuarios');
+
+  if (inPendientes) {
+    inPendientes.addEventListener('input', (e) => {
+      busquedaOngsPendientes = (e.target.value || '').trim().toLowerCase();
+      renderizarOngsPendientesFiltradas();
+    });
+  }
+
+  if (inVerificadas) {
+    inVerificadas.addEventListener('input', (e) => {
+      busquedaOngsVerificadas = (e.target.value || '').trim().toLowerCase();
+      renderizarOngsVerificadasFiltradas();
+    });
+  }
+
+  if (inUsuarios) {
+    inUsuarios.addEventListener('input', (e) => {
+      busquedaUsuarios = (e.target.value || '').trim().toLowerCase();
+      renderizarUsuariosFiltrados();
+    });
+  }
+}
+
+function filtrarOngs(lista, termino) {
+  if (!termino) return lista;
+  return lista.filter((o) => {
+    const nom = (o.nombrePublico || '').toLowerCase();
+    const raz = (o.razonSocial || '').toLowerCase();
+    const mail = (o.email || '').toLowerCase();
+    const cuit = (o.cuit || '').toLowerCase();
+    return nom.includes(termino) || raz.includes(termino) || mail.includes(termino) || cuit.includes(termino);
+  });
+}
+
+function renderizarOngsPendientesFiltradas() {
+  const todasPendientes = [];
+  (dashboardData.ongs || []).forEach((o) => {
+    if (!o.verificada) todasPendientes.push(o);
+  });
+  const filtradas = filtrarOngs(todasPendientes, busquedaOngsPendientes);
+
+  pintarLista('ongs-pendientes', 'ongs-pendientes-vacio', filtradas, (o) =>
+    tarjetaOng(
+      o,
+      `<button class="btn btn-primary btn-sm" data-aceptar="${esc(o.id)}" type="button">Aceptar ✓</button>
+       <button class="btn btn-danger btn-sm" data-rechazar="${esc(o.id)}" type="button">Rechazar</button>`
+    )
+  );
+
+  const empty = document.getElementById('ongs-pendientes-vacio');
+  if (empty && !filtradas.length) {
+    empty.textContent = todasPendientes.length
+      ? 'No hay ONGs pendientes que coincidan con la búsqueda.'
+      : 'No hay ONGs pendientes. 🎉';
+  }
+
+  const list = document.getElementById('ongs-pendientes');
+  if (list) {
+    list.querySelectorAll('[data-aceptar]').forEach((b) =>
+      b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.aceptar, true, 'aceptar'))
+    );
+    list.querySelectorAll('[data-rechazar]').forEach((b) =>
+      b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.rechazar, false, 'rechazar'))
+    );
+  }
+}
+
+function renderizarOngsVerificadasFiltradas() {
+  const todasVerificadas = [];
+  (dashboardData.ongs || []).forEach((o) => {
+    if (o.verificada) todasVerificadas.push(o);
+  });
+  const filtradas = filtrarOngs(todasVerificadas, busquedaOngsVerificadas);
+
+  pintarLista('ongs-verificadas', 'ongs-verificadas-vacio', filtradas, (o) =>
+    tarjetaOng(
+      o,
+      `<span class="badge">Verificada ✓</span>
+       <button class="btn btn-danger btn-sm" data-revocar="${esc(o.id)}" type="button">Revocar</button>`
+    )
+  );
+
+  const empty = document.getElementById('ongs-verificadas-vacio');
+  if (empty && !filtradas.length) {
+    empty.textContent = todasVerificadas.length
+      ? 'No hay ONGs verificadas que coincidan con la búsqueda.'
+      : 'Todavía no hay ONGs verificadas.';
+  }
+
+  const list = document.getElementById('ongs-verificadas');
+  if (list) {
+    list.querySelectorAll('[data-revocar]').forEach((b) =>
+      b.addEventListener('click', () => pedirConfirmacionOng(b.dataset.revocar, false, 'revocar'))
+    );
+  }
+}
+
+function renderizarUsuariosFiltrados() {
+  const todos = dashboardData.usuarios || [];
+  const filtrados = todos.filter((u) => {
+    if (!busquedaUsuarios) return true;
+    const nom = (u.nombre || '').toLowerCase();
+    const mail = (u.email || '').toLowerCase();
+    const rol = (u.rol || '').toLowerCase();
+    return nom.includes(busquedaUsuarios) || mail.includes(busquedaUsuarios) || rol.includes(busquedaUsuarios);
+  });
+
+  const body = document.getElementById('users-body');
+  if (body) {
+    body.innerHTML = (filtrados && filtrados.length)
+      ? filtrados.map((u) => {
+          let badgeClass = 'muted';
+          if (u.rol === 'admin') badgeClass = '';
+          else if (u.rol === 'ong') badgeClass = 'highlight';
+
+          return `<tr>
+            <td>${esc(u.nombre || '-')}</td>
+            <td>${esc(u.email || '-')}</td>
+            <td><span class="badge ${badgeClass}">${esc(u.rol || 'voluntario')}</span></td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="3" style="text-align: center; color: var(--color-muted); padding: 18px;">${todos.length ? 'No hay usuarios que coincidan con la búsqueda.' : 'Sin usuarios registrados.'}</td></tr>`;
+  }
 }
 
 async function cambiarEstadoOng(ongId, nuevoEstado, mensajeExito) {
@@ -447,7 +604,7 @@ async function abrirModalConvocatoria(convId) {
     const badge = document.getElementById('modal-conv-estado-badge');
     if (badge) {
       badge.textContent = conv.estado;
-      badge.className = `badge ${conv.estado === 'ABIERTA' ? '' : (conv.estado === 'CANCELADA' ? 'muted' : 'highlight')}`;
+      badge.className = `badge ${obtenerClaseBadgeEstado(conv.estado)}`;
     }
 
     const selectEstado = document.getElementById('select-estado-convocatoria');
@@ -592,7 +749,7 @@ async function ejecutarCambioEstadoConvocatoria(convId, nuevoEstado) {
     const badge = document.getElementById('modal-conv-estado-badge');
     if (badge) {
       badge.textContent = nuevoEstado;
-      badge.className = `badge ${nuevoEstado === 'ABIERTA' ? '' : (nuevoEstado === 'CANCELADA' ? 'muted' : 'highlight')}`;
+      badge.className = `badge ${obtenerClaseBadgeEstado(nuevoEstado)}`;
     }
 
     // Refrescar datos generales del dashboard

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/panel.css">
+  <link rel="stylesheet" href="../css/panel.css?v=2">
 </head>
 <body>
   <header class="navbar-background">
@@ -48,18 +48,43 @@
 
     <section class="panel-section" id="sec-pendientes">
       <h2>ONGs pendientes de revisión</h2>
+      <div style="margin: 10px 0 16px 0; background: var(--color-white); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
+        <label for="filtro-ongs-pendientes" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+        <input type="text" id="filtro-ongs-pendientes" placeholder="Por nombre, razón social o email..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+      </div>
       <div class="card-list" id="ongs-pendientes"></div>
       <div class="empty hidden" id="ongs-pendientes-vacio">No hay ONGs pendientes. 🎉</div>
     </section>
 
     <section class="panel-section" id="sec-verificadas">
       <h2>ONGs verificadas</h2>
+      <div style="margin: 10px 0 16px 0; background: var(--color-white); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
+        <label for="filtro-ongs-verificadas" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+        <input type="text" id="filtro-ongs-verificadas" placeholder="Por nombre, razón social o email..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+      </div>
       <div class="card-list" id="ongs-verificadas"></div>
       <div class="empty hidden" id="ongs-verificadas-vacio">Todavía no hay ONGs verificadas.</div>
     </section>
 
     <section class="panel-section" id="sec-convocatorias">
       <h2>Convocatorias de la plataforma</h2>
+
+      <div class="filtros-convocatorias-bar" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 12px 0 20px 0; background: var(--color-white); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+          <label for="filtro-conv-busqueda" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+          <input type="text" id="filtro-conv-busqueda" placeholder="Por título o nombre de ONG..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="filtro-conv-estado" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">Filtrar por estado:</label>
+          <select id="filtro-conv-estado" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; font-weight: 700; color: var(--color-navy); background: #fff; cursor: pointer;">
+            <option value="TODAS">Todas las convocatorias</option>
+            <option value="ABIERTA">Abiertas</option>
+            <option value="FINALIZADA">Finalizadas</option>
+            <option value="CANCELADA">Canceladas</option>
+          </select>
+        </div>
+      </div>
+
       <div class="card-list" id="convocatorias-lista"></div>
       <div class="empty hidden" id="convocatorias-vacio">No hay convocatorias registradas todavía.</div>
     </section>
@@ -72,6 +97,10 @@
 
     <section class="panel-section" id="sec-usuarios">
       <h2>Usuarios registrados</h2>
+      <div style="margin: 10px 0 16px 0; background: var(--color-white); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
+        <label for="filtro-usuarios" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+        <input type="text" id="filtro-usuarios" placeholder="Por nombre o email de usuario..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+      </div>
       <div class="table-wrap">
         <table class="data-table">
           <thead>
