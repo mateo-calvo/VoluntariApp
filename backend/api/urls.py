@@ -31,5 +31,7 @@ urlpatterns = [
     # Admin Panel
     path("admin/dashboard", views.admin_dashboard, name="admin_dashboard"),
     path("admin/ongs/<uuid:ong_id>/verificar", views.admin_verificar_ong, name="admin_verificar_ong"),
+    path("admin/convocatorias/<uuid:convocatoria_id>/postulaciones", views.admin_convocatoria_postulaciones, name="admin_convocatoria_postulaciones"),
+    path("admin/convocatorias/<uuid:convocatoria_id>/estado", views.admin_actualizar_convocatoria, name="admin_actualizar_convocatoria"),
 ]
 
