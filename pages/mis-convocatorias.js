@@ -5,6 +5,10 @@ let convocatoriasCache = [];
 let causasCache = [];
 let provinciasCache = [];
 let filtroEstadoActual = 'TODAS';
+let filtroNombre = '';
+let filtroFecha = '';
+let filtroCausaActual = '';
+let ordenCronologico = 'fecha-asc';
 let postulantesModalCache = [];
 let convocatoriaActivaModal = null;
 let subfiltroPostulanteActual = 'TODOS';
@@ -19,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   pintarUsuario(session);
   activarSalir();
   activarFiltrosEstado();
+  activarFiltrosBusqueda();
   activarEventosModalPostulantes();
   activarAutocompletadoModal();
   activarEventosModal();
@@ -38,6 +43,26 @@ function leerSesion() {
 
 function leerToken() {
   return sessionStorage.getItem('va_token') || '';
+}
+
+function manejarSesionExpirada() {
+  sessionStorage.removeItem('va_token');
+  sessionStorage.removeItem('va_session');
+  window.location.href = 'login.html?expired=1&next=mis-convocatorias.html';
+}
+
+function formatearFechaHora(fecha, hora) {
+  if (!fecha) return 'A coordinar';
+  let strFecha = fecha;
+  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+    const [y, m, d] = fecha.slice(0, 10).split('-');
+    strFecha = `${d}/${m}/${y}`;
+  }
+  let strHora = '';
+  if (hora) {
+    strHora = ` · ${String(hora).slice(0, 5)} hs`;
+  }
+  return `${strFecha}${strHora}`;
 }
 
 function pintarUsuario(session) {
@@ -118,6 +143,12 @@ async function cargarCausas() {
     selectCausa.innerHTML = '<option value="">Seleccioná una causa...</option>' +
       causasCache.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
   }
+
+  const filtroCausa = document.getElementById('filtro-causa');
+  if (filtroCausa) {
+    filtroCausa.innerHTML = '<option value="">Todas las causas</option>' +
+      causasCache.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  }
 }
 
 async function cargarProvincias() {
@@ -176,6 +207,10 @@ async function cargarConvocatorias(session) {
       const res = await fetch(`${API_URL}/api/ong/mis-convocatorias`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (res.ok) {
         convocatoriasCache = await res.json();
         renderizarConvocatorias(convocatoriasCache);
@@ -224,10 +259,55 @@ function renderizarConvocatorias(lista) {
   const fuente = lista || convocatoriasCache || [];
   actualizarStats(convocatoriasCache);
 
-  // Filtrar según filtroEstadoActual
-  const filtradas = filtroEstadoActual === 'TODAS'
+  // 1. Filtrar según filtroEstadoActual
+  let filtradas = filtroEstadoActual === 'TODAS'
     ? fuente
     : fuente.filter(c => (c.estado || 'ABIERTA').toUpperCase() === filtroEstadoActual);
+
+  // 2. Filtrar por nombre (título o descripción)
+  if (filtroNombre && filtroNombre.trim() !== '') {
+    const term = filtroNombre.trim().toLowerCase();
+    filtradas = filtradas.filter(c => {
+      const tit = (c.titulo || '').toLowerCase();
+      const desc = (c.descripcion || '').toLowerCase();
+      const causa = (c.causa_nombre || '').toLowerCase();
+      return tit.includes(term) || desc.includes(term) || causa.includes(term);
+    });
+  }
+
+  // 3. Filtrar por fecha exacta del voluntariado
+  if (filtroFecha && filtroFecha.trim() !== '') {
+    filtradas = filtradas.filter(c => {
+      if (!c.fecha) return false;
+      return String(c.fecha).startsWith(filtroFecha);
+    });
+  }
+
+  // 4. Filtrar por causa
+  if (filtroCausaActual) {
+    filtradas = filtradas.filter(c => String(c.causa_id) === String(filtroCausaActual));
+  }
+
+  // 4. Ordenar cronológicamente o alfabéticamente
+  filtradas.sort((a, b) => {
+    if (ordenCronologico === 'alfabetico') {
+      return (a.titulo || '').localeCompare(b.titulo || '');
+    }
+
+    const fechaA = a.fecha || (ordenCronologico === 'fecha-asc' ? '9999-12-31' : '0000-00-00');
+    const horaA = a.hora || '00:00';
+    const fechaB = b.fecha || (ordenCronologico === 'fecha-asc' ? '9999-12-31' : '0000-00-00');
+    const horaB = b.hora || '00:00';
+
+    const dtA = `${fechaA}T${horaA}`;
+    const dtB = `${fechaB}T${horaB}`;
+
+    if (ordenCronologico === 'fecha-desc') {
+      return dtB.localeCompare(dtA);
+    }
+    // Por defecto 'fecha-asc' (más próximas primero)
+    return dtA.localeCompare(dtB);
+  });
 
   if (!filtradas || filtradas.length === 0) {
     if (convocatoriasCache.length === 0) {
@@ -235,6 +315,13 @@ function renderizarConvocatorias(lista) {
         <div class="empty-state">
           <h3>Aún no tenés convocatorias publicadas</h3>
           <p>Hacé clic en el botón superior para crear tu primera oportunidad de voluntariado.</p>
+        </div>
+      `;
+    } else if (filtroNombre || filtroFecha || filtroCausaActual) {
+      contenedor.innerHTML = `
+        <div class="empty-state">
+          <h3>No se encontraron convocatorias</h3>
+          <p>Ninguna convocatoria coincide con los filtros aplicados.</p>
         </div>
       `;
     } else {
@@ -285,7 +372,7 @@ function renderizarConvocatorias(lista) {
         </div>
 
         <div class="convocatoria-meta">
-          ${c.fecha ? `<span>📅 ${esc(c.fecha)}${c.hora ? ' - ' + esc(c.hora).slice(0,5) + ' hs' : ''}</span>` : ''}
+          <span>📅 ${esc(formatearFechaHora(c.fecha, c.hora))}</span>
           ${c.lugar || c.direccion ? `<span>📍 ${esc(c.lugar || c.direccion)}${c.localidad_nombre ? ' (' + esc(c.localidad_nombre) + ')' : ''}</span>` : ''}
           <span>👥 ${esc(c.cupos_totales ?? 10)} cupos</span>
           ${c.horas_estimadas ? `<span>⏱️ ${esc(c.horas_estimadas)} hs</span>` : ''}
@@ -405,17 +492,15 @@ function actualizarStats(lista) {
   const finalizadas = arr.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'FINALIZADA').length;
   const canceladas = arr.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'CANCELADA').length;
   const total = arr.length;
-  const cupos = arr
-    .filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'ABIERTA')
-    .reduce((acc, c) => acc + (Number(c.cupos_totales) || 0), 0);
+  const asistencias = arr.reduce((acc, c) => acc + (Number(c.asistencias_pendientes ?? c.postulantes_count) || 0), 0);
 
   const elActivas = document.getElementById('stat-activas');
   const elTotal = document.getElementById('stat-total');
-  const elCupos = document.getElementById('stat-cupos');
+  const elAsistencias = document.getElementById('stat-asistencias');
 
   if (elActivas) elActivas.textContent = abiertas;
   if (elTotal) elTotal.textContent = total;
-  if (elCupos) elCupos.textContent = cupos;
+  if (elAsistencias) elAsistencias.textContent = asistencias;
 
   // Actualizar badges numéricos de filtros
   const cTodas = document.getElementById('count-todas');
@@ -431,21 +516,84 @@ function actualizarStats(lista) {
   if (cCanceladas) cCanceladas.textContent = canceladas;
 }
 
+function aplicarFiltroEstado(nuevoFiltro) {
+  filtroEstadoActual = nuevoFiltro;
+
+  const contenedorFiltros = document.getElementById('filtros-estado');
+  if (contenedorFiltros) {
+    contenedorFiltros.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.filtro === nuevoFiltro);
+    });
+  }
+
+  document.querySelectorAll('.stat-card[data-filtro]').forEach(card => {
+    card.classList.toggle('active-filter', card.dataset.filtro === nuevoFiltro);
+  });
+
+  renderizarConvocatorias(convocatoriasCache);
+}
+
 function activarFiltrosEstado() {
   const contenedorFiltros = document.getElementById('filtros-estado');
-  if (!contenedorFiltros) return;
-
-  contenedorFiltros.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const nuevoFiltro = btn.dataset.filtro;
-      if (filtroEstadoActual === nuevoFiltro) return;
-
-      filtroEstadoActual = nuevoFiltro;
-      contenedorFiltros.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      renderizarConvocatorias(convocatoriasCache);
+  if (contenedorFiltros) {
+    contenedorFiltros.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        aplicarFiltroEstado(btn.dataset.filtro);
+      });
     });
+  }
+
+  document.querySelectorAll('.stat-card[data-filtro]').forEach(card => {
+    const disparar = () => {
+      aplicarFiltroEstado(card.dataset.filtro);
+    };
+    card.addEventListener('click', disparar);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        disparar();
+      }
+    });
+  });
+}
+
+function activarFiltrosBusqueda() {
+  const inputNombre = document.getElementById('filtro-nombre');
+  const inputFecha = document.getElementById('filtro-fecha');
+  const btnLimpiarFecha = document.getElementById('btn-limpiar-fecha');
+  const selectOrden = document.getElementById('filtro-orden');
+
+  inputNombre?.addEventListener('input', (e) => {
+    filtroNombre = e.target.value;
+    renderizarConvocatorias(convocatoriasCache);
+  });
+
+  inputFecha?.addEventListener('change', (e) => {
+    filtroFecha = e.target.value;
+    if (filtroFecha) {
+      btnLimpiarFecha?.classList.remove('hidden');
+    } else {
+      btnLimpiarFecha?.classList.add('hidden');
+    }
+    renderizarConvocatorias(convocatoriasCache);
+  });
+
+  btnLimpiarFecha?.addEventListener('click', () => {
+    if (inputFecha) inputFecha.value = '';
+    filtroFecha = '';
+    btnLimpiarFecha.classList.add('hidden');
+    renderizarConvocatorias(convocatoriasCache);
+  });
+
+  const selectCausa = document.getElementById('filtro-causa');
+  selectCausa?.addEventListener('change', (e) => {
+    filtroCausaActual = e.target.value;
+    renderizarConvocatorias(convocatoriasCache);
+  });
+
+  selectOrden?.addEventListener('change', (e) => {
+    ordenCronologico = e.target.value;
+    renderizarConvocatorias(convocatoriasCache);
   });
 }
 
@@ -685,6 +833,11 @@ async function guardarConvocatoria(e) {
         body: JSON.stringify(payload)
       });
 
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
+
       const resData = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(resData.message || 'Error al procesar la convocatoria en el servidor.');
@@ -752,6 +905,10 @@ async function toggleEstadoConvocatoria(id, nuevoEstado) {
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || 'No se pudo cambiar el estado de la convocatoria.');
@@ -851,6 +1008,10 @@ async function cargarPostulantesModal(convocatoriaId) {
       const res = await fetch(`${API_URL}/api/ong/convocatorias/${encodeURIComponent(convocatoriaId)}/postulaciones`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         postulantesModalCache = data.postulaciones || [];
@@ -917,8 +1078,10 @@ function renderizarPostulantesModal() {
   // Sincronizar el contador en la convocatoria activa
   if (convocatoriaActivaModal) {
     convocatoriaActivaModal.postulantes_count = postulados + confirmados;
+    convocatoriaActivaModal.asistencias_pendientes = confirmados;
     const cardBadge = document.querySelector(`.convocatoria-card[data-id="${convocatoriaActivaModal.id}"] .btn-postulantes .count-badge`);
     if (cardBadge) cardBadge.textContent = postulados + confirmados;
+    actualizarStats(convocatoriasCache);
   }
 
   const filtrados = subfiltroPostulanteActual === 'TODOS'
@@ -1042,6 +1205,10 @@ async function ejecutarCambioEstadoPostulante(postulacionId, nuevoEstado) {
         },
         body: JSON.stringify({ estado: nuevoEstado })
       });
+      if (res.status === 401) {
+        manejarSesionExpirada();
+        return;
+      }
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         p.estado = nuevoEstado;
