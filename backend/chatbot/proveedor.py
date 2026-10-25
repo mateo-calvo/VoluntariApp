@@ -40,19 +40,18 @@ def obtener_respuesta_gemini(historial_mensajes, prompt_sistema):
                 if ultimo_punto != -1:
                     texto_limpio = texto_limpio[:ultimo_punto + 1]
 
-            # Si todo salió bien, devolvemos el texto limpio
             return texto_limpio
 
         except APIError as e:
             print(f"ERROR DE API DETALLADO (Intento {intento + 1}/{max_intentos}): {e}")
             error_str = str(e)
 
-            # Si es un error 503 (Servicio no disponible/Alta demanda) y nos quedan intentos, reintentamos
-            if ("503" in error_str or "UNAVAILABLE" in error_str or "high demand" in error_str) and intento < max_intentos - 1:
-                time.sleep(1.5)  # Espera 1.5 segundos antes de volver a probar
+            # Si es un error 503 o 429 y nos quedan intentos, reintentamos
+            if ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "503" in error_str or "UNAVAILABLE" in error_str) and intento < max_intentos - 1:
+                time.sleep(1.5)
                 continue
 
-            # Si se agotaron los intentos o es otro tipo de error de API:
+            # Si se agotaron los intentos:
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                 return "Has alcanzado el límite diario de consultas permitidas por la inteligencia artificial. Por favor, inténtalo mañana."
             elif "503" in error_str or "UNAVAILABLE" in error_str or "high demand" in error_str:
