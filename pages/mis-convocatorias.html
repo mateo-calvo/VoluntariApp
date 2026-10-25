@@ -140,6 +140,49 @@
       color: var(--color-navy);
       margin-bottom: 8px;
     }
+    .panel-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 20px 0 16px 0;
+    }
+    .filter-btn {
+      padding: 7px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-btn:hover {
+      background: #f1f5f9;
+      color: var(--color-navy, #0F2942);
+    }
+    .filter-btn.active {
+      background: var(--color-green, #1A7A5E);
+      color: #ffffff;
+      border-color: var(--color-green, #1A7A5E);
+      box-shadow: 0 2px 6px rgba(26, 122, 94, 0.25);
+    }
+    .filter-btn .count-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.08);
+      color: inherit;
+    }
+    .filter-btn.active .count-badge {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -188,6 +231,25 @@
         <strong id="stat-cupos">0</strong>
         <span>Cupos disponibles</span>
       </div>
+    </div>
+
+    <!-- Filtros por estado -->
+    <div class="panel-filters" id="filtros-estado" role="group" aria-label="Filtrar por estado">
+      <button class="filter-btn active" data-filtro="TODAS" type="button">
+        Todas <span class="count-badge" id="count-todas">0</span>
+      </button>
+      <button class="filter-btn" data-filtro="ABIERTA" type="button">
+        Abiertas <span class="count-badge" id="count-abierta">0</span>
+      </button>
+      <button class="filter-btn" data-filtro="COMPLETA" type="button">
+        Cerradas <span class="count-badge" id="count-completa">0</span>
+      </button>
+      <button class="filter-btn" data-filtro="FINALIZADA" type="button">
+        Finalizadas <span class="count-badge" id="count-finalizada">0</span>
+      </button>
+      <button class="filter-btn" data-filtro="CANCELADA" type="button">
+        Canceladas <span class="count-badge" id="count-cancelada">0</span>
+      </button>
     </div>
 
     <!-- Listado de Convocatorias -->
@@ -289,11 +351,65 @@
           </div>
         </div>
 
+        <div class="form-group" style="margin-top: 4px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; color: var(--color-navy); font-size: 13.5px;">
+            <input type="checkbox" id="c-requiere-aprobacion" style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--color-green);">
+            <span>Requiere aprobación previa de la organización</span>
+          </label>
+          <small style="color: var(--color-muted); display: block; margin-top: 3px; font-size: 12px;">
+            Si se activa, los voluntarios quedarán en estado "Pendiente" hasta que los confirmes. Si no, su inscripción será directa.
+          </small>
+        </div>
+
         <div class="row" style="margin-top:16px;">
           <button type="submit" class="btn btn-primary" id="btn-guardar-convocatoria">Guardar convocatoria</button>
           <button type="button" class="btn btn-secondary" id="btn-cancelar-modal">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Gestión de Postulantes -->
+  <div class="modal-overlay hidden" id="modal-postulantes">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header" style="align-items: flex-start;">
+        <div>
+          <h2 class="modal-title" id="postulantes-modal-titulo">Postulantes de la convocatoria</h2>
+          <p id="postulantes-modal-subtitulo" style="font-size: 13.5px; color: var(--color-muted); margin: 4px 0 0 0;">
+            Administrá los voluntarios postulados y su asistencia.
+          </p>
+        </div>
+        <button type="button" class="btn-close" id="btn-cerrar-postulantes" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <p class="form-error hidden" id="postulantes-modal-error" role="alert" style="margin-bottom:12px;"></p>
+      <p class="form-success hidden" id="postulantes-modal-ok" role="status" style="margin-bottom:12px;"></p>
+
+      <!-- Subfiltros de estado de postulantes -->
+      <div class="panel-filters" id="postulantes-tabs" style="margin: 0 0 16px 0;">
+        <button type="button" class="filter-btn active" data-subfiltro="TODOS">
+          Todos <span class="count-badge" id="subcount-todos">0</span>
+        </button>
+        <button type="button" class="filter-btn" data-subfiltro="POSTULADO">
+          Pendientes <span class="count-badge" id="subcount-postulado">0</span>
+        </button>
+        <button type="button" class="filter-btn" data-subfiltro="CONFIRMADO">
+          Confirmados <span class="count-badge" id="subcount-confirmado">0</span>
+        </button>
+        <button type="button" class="filter-btn" data-subfiltro="ASISTIO">
+          Asistieron <span class="count-badge" id="subcount-asistio">0</span>
+        </button>
+        <button type="button" class="filter-btn" data-subfiltro="CANCELADO">
+          Cancelados <span class="count-badge" id="subcount-cancelado">0</span>
+        </button>
+      </div>
+
+      <!-- Lista de postulantes -->
+      <div id="postulantes-lista-contenedor" style="display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; padding-right: 4px;">
+        <div class="empty-state" style="padding: 24px;">
+          <p>Cargando postulantes...</p>
+        </div>
+      </div>
     </div>
   </div>
 

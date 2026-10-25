@@ -1,9 +1,13 @@
 // mis-convocatorias.js - Gestión de convocatorias de la ONG
-const API_URL = window.API_URL || 'http://127.0.0.1:8000';
+const API_URL = (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8000' : 'https://voluntariapp-1.onrender.com');
 
 let convocatoriasCache = [];
 let causasCache = [];
 let provinciasCache = [];
+let filtroEstadoActual = 'TODAS';
+let postulantesModalCache = [];
+let convocatoriaActivaModal = null;
+let subfiltroPostulanteActual = 'TODOS';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const session = leerSesion();
@@ -14,6 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   pintarUsuario(session);
   activarSalir();
+  activarFiltrosEstado();
+  activarEventosModalPostulantes();
   activarAutocompletadoModal();
   activarEventosModal();
 
@@ -215,19 +221,36 @@ function renderizarConvocatorias(lista) {
   const contenedor = document.getElementById('convocatorias-lista');
   if (!contenedor) return;
 
-  actualizarStats(lista);
+  const fuente = lista || convocatoriasCache || [];
+  actualizarStats(convocatoriasCache);
 
-  if (!lista || lista.length === 0) {
-    contenedor.innerHTML = `
-      <div class="empty-state">
-        <h3>Aún no tenés convocatorias publicadas</h3>
-        <p>Hacé clic en el botón superior para crear tu primera oportunidad de voluntariado.</p>
-      </div>
-    `;
+  // Filtrar según filtroEstadoActual
+  const filtradas = filtroEstadoActual === 'TODAS'
+    ? fuente
+    : fuente.filter(c => (c.estado || 'ABIERTA').toUpperCase() === filtroEstadoActual);
+
+  if (!filtradas || filtradas.length === 0) {
+    if (convocatoriasCache.length === 0) {
+      contenedor.innerHTML = `
+        <div class="empty-state">
+          <h3>Aún no tenés convocatorias publicadas</h3>
+          <p>Hacé clic en el botón superior para crear tu primera oportunidad de voluntariado.</p>
+        </div>
+      `;
+    } else {
+      const NOMBRES = { ABIERTA: 'abiertas', COMPLETA: 'cerradas', FINALIZADA: 'finalizadas', CANCELADA: 'canceladas' };
+      const txt = NOMBRES[filtroEstadoActual] || filtroEstadoActual.toLowerCase();
+      contenedor.innerHTML = `
+        <div class="empty-state">
+          <h3>No hay convocatorias ${txt}</h3>
+          <p>Podés seleccionar otro filtro para ver el resto de tus convocatorias.</p>
+        </div>
+      `;
+    }
     return;
   }
 
-  contenedor.innerHTML = lista.map((c) => {
+  contenedor.innerHTML = filtradas.map((c) => {
     const rawEstado = (c.estado || 'ABIERTA').toUpperCase();
     let estadoLabel = 'Abierta';
     let badgeClass = '';
@@ -243,15 +266,20 @@ function renderizarConvocatorias(lista) {
     }
 
     const causaTxt = c.causa_nombre || (causasCache.find(x => x.id === c.causa_id)?.nombre) || 'General';
+    const esTerminal = ['CANCELADA', 'FINALIZADA'].includes(rawEstado);
 
     return `
-      <article class="convocatoria-card" data-id="${esc(c.id)}">
+      <article class="convocatoria-card ${esTerminal ? 'convocatoria-cerrada' : ''}" data-id="${esc(c.id)}">
         <div class="convocatoria-top">
           <div>
             <h3 class="convocatoria-title">${esc(c.titulo)}</h3>
-            <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+            <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <span class="badge ${badgeClass}">${estadoLabel}</span>
               <span class="badge muted">${esc(causaTxt)}</span>
+              ${c.requiere_aprobacion
+                ? `<span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;">Requiere aprobación</span>`
+                : `<span class="badge" style="background:#f0fdf4;color:#166534;font-size:11px;">Inscripción directa</span>`
+              }
             </div>
           </div>
         </div>
@@ -265,19 +293,29 @@ function renderizarConvocatorias(lista) {
 
         ${c.descripcion ? `<p class="convocatoria-desc">${esc(c.descripcion)}</p>` : ''}
 
-        <div class="convocatoria-actions">
-          <button type="button" class="btn btn-secondary btn-sm btn-editar" data-id="${esc(c.id)}">
-            ✏️ Editar
+        <div class="convocatoria-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-sm btn-postulantes" data-id="${esc(c.id)}" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
+            👥 Postulantes <span class="count-badge" style="background:#e2e8f0;color:#0f172a;padding:1px 6px;border-radius:999px;font-size:11px;">${c.postulantes_count ?? 0}</span>
           </button>
+
+          ${esTerminal
+            ? `<button type="button" class="btn btn-secondary btn-sm" disabled style="opacity:0.55; cursor:not-allowed;" title="Esta convocatoria está ${rawEstado === 'CANCELADA' ? 'cancelada' : 'finalizada'} y no se puede editar">✏️ Editar</button>`
+            : `<button type="button" class="btn btn-secondary btn-sm btn-editar" data-id="${esc(c.id)}">✏️ Editar</button>`
+          }
 
           <label style="font-size:13px;font-weight:700;color:var(--color-muted);margin-left:auto;display:flex;align-items:center;gap:6px;">
             Estado:
-            <select class="select-estado-rapido" data-id="${esc(c.id)}" style="padding:5px 10px;border-radius:6px;border:1px solid #cbd5e1;font-family:inherit;font-size:13px;font-weight:600;background:#fff;cursor:pointer;">
-              <option value="ABIERTA" ${rawEstado === 'ABIERTA' ? 'selected' : ''}>Abierta</option>
-              <option value="COMPLETA" ${rawEstado === 'COMPLETA' ? 'selected' : ''}>Cerrada</option>
-              <option value="FINALIZADA" ${rawEstado === 'FINALIZADA' ? 'selected' : ''}>Finalizada</option>
-              <option value="CANCELADA" ${rawEstado === 'CANCELADA' ? 'selected' : ''}>Cancelada</option>
-            </select>
+            ${esTerminal
+              ? `<select class="select-estado-rapido" disabled style="padding:5px 10px;border-radius:6px;border:1px solid #cbd5e1;font-family:inherit;font-size:13px;font-weight:600;background:#f1f5f9;color:#64748b;cursor:not-allowed;" title="Una convocatoria cancelada o finalizada no puede volver a cambiar de estado">
+                  <option value="${rawEstado}" selected>${rawEstado === 'CANCELADA' ? 'Cancelada' : 'Finalizada'}</option>
+                </select>`
+              : `<select class="select-estado-rapido" data-id="${esc(c.id)}" style="padding:5px 10px;border-radius:6px;border:1px solid #cbd5e1;font-family:inherit;font-size:13px;font-weight:600;background:#fff;cursor:pointer;">
+                  <option value="ABIERTA" ${rawEstado === 'ABIERTA' ? 'selected' : ''}>Abierta</option>
+                  <option value="COMPLETA" ${rawEstado === 'COMPLETA' ? 'selected' : ''}>Cerrada</option>
+                  <option value="FINALIZADA" ${rawEstado === 'FINALIZADA' ? 'selected' : ''}>Finalizada</option>
+                  <option value="CANCELADA" ${rawEstado === 'CANCELADA' ? 'selected' : ''}>Cancelada</option>
+                </select>`
+            }
           </label>
         </div>
       </article>
@@ -285,11 +323,16 @@ function renderizarConvocatorias(lista) {
   }).join('');
 
   // Eventos de botones en tarjetas
+  contenedor.querySelectorAll('.btn-postulantes').forEach(btn => {
+    btn.addEventListener('click', () => abrirModalPostulantes(btn.dataset.id));
+  });
+
   contenedor.querySelectorAll('.btn-editar').forEach(btn => {
     btn.addEventListener('click', () => abrirModalEditar(btn.dataset.id));
   });
 
   contenedor.querySelectorAll('.select-estado-rapido').forEach(sel => {
+    if (sel.disabled) return;
     sel.dataset.prev = sel.value;
     sel.addEventListener('focus', () => {
       sel.dataset.prev = sel.value;
@@ -300,7 +343,10 @@ function renderizarConvocatorias(lista) {
       const NOMBRES_ESTADO = { ABIERTA: 'Abierta', COMPLETA: 'Cerrada', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada' };
       const nombreVisible = NOMBRES_ESTADO[nuevoEstado.toUpperCase()] || nuevoEstado;
 
-      const confirmar = await solicitarConfirmacion(`¿Estás seguro de que deseas cambiar el estado de esta convocatoria a "${nombreVisible}"?`);
+      const advertencia = ['CANCELADA', 'FINALIZADA'].includes(nuevoEstado.toUpperCase())
+        ? ' Atención: una vez cancelada o finalizada, la convocatoria no podrá volver a cambiar de estado.'
+        : '';
+      const confirmar = await solicitarConfirmacion(`¿Estás seguro de que deseas cambiar el estado de esta convocatoria a "${nombreVisible}"?${advertencia}`);
       if (!confirmar) {
         sel.value = prevEstado;
         return;
@@ -353,9 +399,13 @@ function solicitarConfirmacion(mensaje) {
 }
 
 function actualizarStats(lista) {
-  const abiertas = lista.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'ABIERTA').length;
-  const total = lista.length;
-  const cupos = lista
+  const arr = lista || [];
+  const abiertas = arr.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'ABIERTA').length;
+  const completas = arr.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'COMPLETA').length;
+  const finalizadas = arr.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'FINALIZADA').length;
+  const canceladas = arr.filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'CANCELADA').length;
+  const total = arr.length;
+  const cupos = arr
     .filter(c => (c.estado || 'ABIERTA').toUpperCase() === 'ABIERTA')
     .reduce((acc, c) => acc + (Number(c.cupos_totales) || 0), 0);
 
@@ -366,6 +416,37 @@ function actualizarStats(lista) {
   if (elActivas) elActivas.textContent = abiertas;
   if (elTotal) elTotal.textContent = total;
   if (elCupos) elCupos.textContent = cupos;
+
+  // Actualizar badges numéricos de filtros
+  const cTodas = document.getElementById('count-todas');
+  const cAbiertas = document.getElementById('count-abierta');
+  const cCompletas = document.getElementById('count-completa');
+  const cFinalizadas = document.getElementById('count-finalizada');
+  const cCanceladas = document.getElementById('count-cancelada');
+
+  if (cTodas) cTodas.textContent = total;
+  if (cAbiertas) cAbiertas.textContent = abiertas;
+  if (cCompletas) cCompletas.textContent = completas;
+  if (cFinalizadas) cFinalizadas.textContent = finalizadas;
+  if (cCanceladas) cCanceladas.textContent = canceladas;
+}
+
+function activarFiltrosEstado() {
+  const contenedorFiltros = document.getElementById('filtros-estado');
+  if (!contenedorFiltros) return;
+
+  contenedorFiltros.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nuevoFiltro = btn.dataset.filtro;
+      if (filtroEstadoActual === nuevoFiltro) return;
+
+      filtroEstadoActual = nuevoFiltro;
+      contenedorFiltros.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      renderizarConvocatorias(convocatoriasCache);
+    });
+  });
 }
 
 function activarEventosModal() {
@@ -393,6 +474,8 @@ function abrirModalNuevo() {
   document.getElementById('c-id').value = '';
   document.getElementById('c-estado').value = 'ABIERTA';
   document.getElementById('grupo-c-estado')?.classList.add('hidden');
+  const reqApr = document.getElementById('c-requiere-aprobacion');
+  if (reqApr) reqApr.checked = false;
 
   const selectLoc = document.getElementById('c-localidad');
   if (selectLoc) {
@@ -408,6 +491,12 @@ async function abrirModalEditar(id) {
   hideModalError();
   const c = convocatoriasCache.find(x => String(x.id) === String(id));
   if (!c) return;
+
+  const rawEstado = (c.estado || 'ABIERTA').toUpperCase();
+  if (['CANCELADA', 'FINALIZADA'].includes(rawEstado)) {
+    showError(`Esta convocatoria está ${rawEstado === 'CANCELADA' ? 'cancelada' : 'finalizada'} y no se puede editar.`);
+    return;
+  }
 
   document.getElementById('modal-titulo').textContent = 'Editar convocatoria';
   document.getElementById('c-id').value = c.id;
@@ -438,6 +527,8 @@ async function abrirModalEditar(id) {
   document.getElementById('c-horas').value = c.horas_estimadas ?? 4;
   document.getElementById('c-estado').value = (c.estado || 'ABIERTA').toUpperCase();
   document.getElementById('grupo-c-estado')?.classList.remove('hidden');
+  const reqApr = document.getElementById('c-requiere-aprobacion');
+  if (reqApr) reqApr.checked = Boolean(c.requiere_aprobacion);
 
   document.getElementById('modal-convocatoria')?.classList.remove('hidden');
   document.getElementById('c-titulo')?.focus();
@@ -490,10 +581,16 @@ async function guardarConvocatoria(e) {
   if (id) {
     const previa = convocatoriasCache.find(x => String(x.id) === String(id));
     const estadoPrevio = (previa?.estado || 'ABIERTA').toUpperCase();
+    if (['CANCELADA', 'FINALIZADA'].includes(estadoPrevio)) {
+      return showModalError(`Esta convocatoria ya se encuentra ${estadoPrevio.toLowerCase()} y no puede ser modificada.`);
+    }
     if (estado !== estadoPrevio) {
       const NOMBRES_ESTADO = { ABIERTA: 'Abierta', COMPLETA: 'Cerrada', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada' };
       const nombreVisible = NOMBRES_ESTADO[estado] || estado;
-      const confirmar = await solicitarConfirmacion(`¿Estás seguro de que deseas cambiar el estado de esta convocatoria a "${nombreVisible}"?`);
+      const advertencia = ['CANCELADA', 'FINALIZADA'].includes(estado)
+        ? ' Atención: una vez cancelada o finalizada, la convocatoria no podrá volver a cambiar de estado.'
+        : '';
+      const confirmar = await solicitarConfirmacion(`¿Estás seguro de que deseas cambiar el estado de esta convocatoria a "${nombreVisible}"?${advertencia}`);
       if (!confirmar) return;
     }
   }
@@ -543,6 +640,8 @@ async function guardarConvocatoria(e) {
   lat = parseFloat(Number(lat).toFixed(6));
   lng = parseFloat(Number(lng).toFixed(6));
 
+  const requiereAprobacion = Boolean(document.getElementById('c-requiere-aprobacion')?.checked);
+
   const payload = {
     titulo,
     causa_id: causaId,
@@ -558,7 +657,7 @@ async function guardarConvocatoria(e) {
     descripcion,
     horas_estimadas: horasEstimadas,
     estado,
-    requiere_aprobacion: false,
+    requiere_aprobacion: requiereAprobacion,
   };
 
   const btnSubmit = document.getElementById('btn-guardar-convocatoria');
@@ -636,6 +735,11 @@ async function guardarConvocatoria(e) {
 }
 
 async function toggleEstadoConvocatoria(id, nuevoEstado) {
+  const previa = convocatoriasCache.find(x => String(x.id) === String(id));
+  if (previa && ['CANCELADA', 'FINALIZADA'].includes((previa.estado || '').toUpperCase())) {
+    return showError(`Esta convocatoria ya está ${previa.estado.toLowerCase()} y no puede volver a cambiar de estado.`);
+  }
+
   const token = leerToken();
 
   if (token) {
@@ -672,4 +776,310 @@ async function toggleEstadoConvocatoria(id, nuevoEstado) {
     const NOMBRES_ESTADO = { ABIERTA: 'Abierta', COMPLETA: 'Cerrada', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada' };
     showOk(`Estado actualizado a <strong>${NOMBRES_ESTADO[nuevoEstado.toUpperCase()] || nuevoEstado}</strong>.`);
   }
+}
+
+// ==========================================
+// Gestión de Postulantes de la ONG
+// ==========================================
+
+function formatFecha(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return String(isoStr).slice(0, 10);
+  }
+}
+
+function showModalPostulantesMsg(msg, isError = false) {
+  const errEl = document.getElementById('postulantes-modal-error');
+  const okEl = document.getElementById('postulantes-modal-ok');
+  if (errEl) {
+    errEl.textContent = isError ? msg : '';
+    errEl.classList.toggle('hidden', !isError || !msg);
+  }
+  if (okEl) {
+    okEl.textContent = !isError ? msg : '';
+    okEl.classList.toggle('hidden', isError || !msg);
+  }
+}
+
+async function abrirModalPostulantes(convocatoriaId) {
+  const c = convocatoriasCache.find(x => String(x.id) === String(convocatoriaId));
+  if (!c) return;
+
+  convocatoriaActivaModal = c;
+  subfiltroPostulanteActual = 'TODOS';
+  showModalPostulantesMsg('');
+
+  const modal = document.getElementById('modal-postulantes');
+  const tituloEl = document.getElementById('postulantes-modal-titulo');
+  const subtituloEl = document.getElementById('postulantes-modal-subtitulo');
+  const tabs = document.getElementById('postulantes-tabs');
+
+  if (tituloEl) tituloEl.textContent = `Postulantes: ${c.titulo}`;
+  if (subtituloEl) {
+    subtituloEl.textContent = `${c.cupos_totales ?? 10} cupos totales · Convocatoria: ${(c.estado || 'ABIERTA').toUpperCase()}`;
+  }
+
+  if (tabs) {
+    tabs.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.subfiltro === 'TODOS');
+    });
+  }
+
+  modal?.classList.remove('hidden');
+  await cargarPostulantesModal(convocatoriaId);
+}
+
+function cerrarModalPostulantes() {
+  document.getElementById('modal-postulantes')?.classList.add('hidden');
+  showModalPostulantesMsg('');
+  convocatoriaActivaModal = null;
+}
+
+async function cargarPostulantesModal(convocatoriaId) {
+  const cont = document.getElementById('postulantes-lista-contenedor');
+  if (cont) {
+    cont.innerHTML = '<div class="empty-state" style="padding:24px;"><p>Cargando postulantes...</p></div>';
+  }
+
+  const token = leerToken();
+  if (token) {
+    try {
+      const res = await fetch(`${API_URL}/api/ong/convocatorias/${encodeURIComponent(convocatoriaId)}/postulaciones`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        postulantesModalCache = data.postulaciones || [];
+        renderizarPostulantesModal();
+        return;
+      }
+    } catch (err) {
+      console.warn('Error cargando postulantes desde API:', err);
+    }
+  }
+
+  // Fallback demo
+  try {
+    const demoPosts = JSON.parse(localStorage.getItem('va_demo_postulaciones') || 'null') || [
+      {
+        id: 'post-1',
+        voluntario_id: 'vol-1',
+        nombre: 'Martín Gómez',
+        email: 'martin.gomez@gmail.com',
+        telefono: '11 4455-6677',
+        estado: 'POSTULADO',
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 'post-2',
+        voluntario_id: 'vol-2',
+        nombre: 'Lucía Fernández',
+        email: 'lucia.f@hotmail.com',
+        telefono: '11 9988-7766',
+        estado: 'CONFIRMADO',
+        created_at: new Date().toISOString()
+      }
+    ];
+    postulantesModalCache = demoPosts;
+  } catch {
+    postulantesModalCache = [];
+  }
+  renderizarPostulantesModal();
+}
+
+function renderizarPostulantesModal() {
+  const cont = document.getElementById('postulantes-lista-contenedor');
+  if (!cont) return;
+
+  const total = postulantesModalCache.length;
+  const postulados = postulantesModalCache.filter(p => p.estado === 'POSTULADO').length;
+  const confirmados = postulantesModalCache.filter(p => p.estado === 'CONFIRMADO').length;
+  const asistieron = postulantesModalCache.filter(p => p.estado === 'ASISTIO').length;
+  const cancelados = postulantesModalCache.filter(p => p.estado === 'CANCELADO').length;
+
+  // Actualizar badges
+  const bTodos = document.getElementById('subcount-todos');
+  const bPostulado = document.getElementById('subcount-postulado');
+  const bConfirmado = document.getElementById('subcount-confirmado');
+  const bAsistio = document.getElementById('subcount-asistio');
+  const bCancelado = document.getElementById('subcount-cancelado');
+
+  if (bTodos) bTodos.textContent = total;
+  if (bPostulado) bPostulado.textContent = postulados;
+  if (bConfirmado) bConfirmado.textContent = confirmados;
+  if (bAsistio) bAsistio.textContent = asistieron;
+  if (bCancelado) bCancelado.textContent = cancelados;
+
+  // Sincronizar el contador en la convocatoria activa
+  if (convocatoriaActivaModal) {
+    convocatoriaActivaModal.postulantes_count = postulados + confirmados;
+    const cardBadge = document.querySelector(`.convocatoria-card[data-id="${convocatoriaActivaModal.id}"] .btn-postulantes .count-badge`);
+    if (cardBadge) cardBadge.textContent = postulados + confirmados;
+  }
+
+  const filtrados = subfiltroPostulanteActual === 'TODOS'
+    ? postulantesModalCache
+    : postulantesModalCache.filter(p => p.estado === subfiltroPostulanteActual);
+
+  if (!filtrados || filtrados.length === 0) {
+    const NOMBRES = {
+      POSTULADO: 'pendientes',
+      CONFIRMADO: 'confirmados',
+      ASISTIO: 'que hayan asistido',
+      CANCELADO: 'cancelados'
+    };
+    const estadoTxt = NOMBRES[subfiltroPostulanteActual] || '';
+    cont.innerHTML = `
+      <div class="empty-state" style="padding:28px 16px;">
+        <div style="font-size:28px;margin-bottom:6px;">👥</div>
+        <p style="margin:0;font-weight:600;color:var(--color-navy);">
+          ${subfiltroPostulanteActual === 'TODOS' ? 'Aún no hay voluntarios postulados a esta convocatoria.' : `No hay voluntarios ${estadoTxt}.`}
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  cont.innerHTML = filtrados.map(p => {
+    const rawEstado = (p.estado || 'POSTULADO').toUpperCase();
+    let badgeClass = 'warn';
+    let estadoLabel = 'Pendiente';
+
+    if (rawEstado === 'CONFIRMADO') {
+      badgeClass = 'success';
+      estadoLabel = 'Confirmado';
+    } else if (rawEstado === 'ASISTIO') {
+      badgeClass = 'info';
+      estadoLabel = 'Asistió';
+    } else if (rawEstado === 'CANCELADO') {
+      badgeClass = 'muted';
+      estadoLabel = 'Cancelado';
+    }
+
+    let accionesHtml = '';
+    if (rawEstado === 'POSTULADO') {
+      accionesHtml = `
+        <button type="button" class="btn-sm btn-cambiar-postulante" data-id="${esc(p.id)}" data-estado="CONFIRMADO" style="background:#1A7A5E;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;">
+          Confirmar
+        </button>
+        <button type="button" class="btn-sm btn-cambiar-postulante" data-id="${esc(p.id)}" data-estado="CANCELADO" style="background:#fff;color:#dc2626;border:1px solid #fca5a5;padding:6px 10px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;">
+          Rechazar
+        </button>
+      `;
+    } else if (rawEstado === 'CONFIRMADO') {
+      accionesHtml = `
+        <button type="button" class="btn-sm btn-cambiar-postulante" data-id="${esc(p.id)}" data-estado="ASISTIO" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;">
+          Marcar Asistió
+        </button>
+        <button type="button" class="btn-sm btn-cambiar-postulante" data-id="${esc(p.id)}" data-estado="CANCELADO" style="background:#fff;color:#dc2626;border:1px solid #fca5a5;padding:6px 10px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;">
+          Cancelar
+        </button>
+      `;
+    } else if (rawEstado === 'ASISTIO') {
+      accionesHtml = `<span style="font-size:12px;font-weight:700;color:#0284c7;display:flex;align-items:center;gap:4px;">✓ Asistencia registrada</span>`;
+    } else if (rawEstado === 'CANCELADO') {
+      accionesHtml = `<span style="font-size:12px;font-weight:700;color:#94a3b8;display:flex;align-items:center;gap:4px;">✕ Cancelado</span>`;
+    }
+
+    return `
+      <div class="postulante-item" style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;background:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;min-width:240px;">
+          <div style="width:38px;height:38px;border-radius:50%;background:#e0f2fe;color:#0369a1;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">
+            ${(p.nombre || 'V')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong style="font-size:14.5px;color:#0f172a;">${esc(p.nombre)}</strong>
+              <span class="badge ${badgeClass}" style="font-size:11px;">${estadoLabel}</span>
+            </div>
+            <div style="font-size:12.5px;color:#64748b;margin-top:2px;">
+              ✉️ ${esc(p.email || 'Sin email')}${p.telefono ? ` · 📞 ${esc(p.telefono)}` : ''} · 📅 ${formatFecha(p.created_at)}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+          ${accionesHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Eventos de botones de acción
+  cont.querySelectorAll('.btn-cambiar-postulante').forEach(btn => {
+    btn.addEventListener('click', () => {
+      ejecutarCambioEstadoPostulante(btn.dataset.id, btn.dataset.estado);
+    });
+  });
+}
+
+async function ejecutarCambioEstadoPostulante(postulacionId, nuevoEstado) {
+  showModalPostulantesMsg('');
+  const p = postulantesModalCache.find(x => String(x.id) === String(postulacionId));
+  if (!p) return;
+
+  const nombreVoluntario = p.nombre || 'el voluntario';
+
+  if (nuevoEstado === 'CANCELADO') {
+    const confirmar = await solicitarConfirmacion(`¿Estás seguro de que deseas cancelar/rechazar la postulación de "${nombreVoluntario}"? Una vez cancelada, no podrá volver a abrirse.`);
+    if (!confirmar) return;
+  } else if (nuevoEstado === 'ASISTIO') {
+    const confirmar = await solicitarConfirmacion(`¿Confirmás que "${nombreVoluntario}" asistió a la convocatoria? Una vez registrado, el estado quedará finalizado.`);
+    if (!confirmar) return;
+  }
+
+  const token = leerToken();
+  if (token) {
+    try {
+      const res = await fetch(`${API_URL}/api/ong/postulaciones/${encodeURIComponent(postulacionId)}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        p.estado = nuevoEstado;
+        showModalPostulantesMsg(data.message || `Postulación actualizada a ${nuevoEstado}.`, false);
+        renderizarPostulantesModal();
+        return;
+      }
+      return showModalPostulantesMsg(data.message || 'Error al actualizar la postulación.', true);
+    } catch (err) {
+      return showModalPostulantesMsg(err.message || 'Error al conectar con el servidor.', true);
+    }
+  }
+
+  // Fallback demo
+  p.estado = nuevoEstado;
+  localStorage.setItem('va_demo_postulaciones', JSON.stringify(postulantesModalCache));
+  showModalPostulantesMsg(`Postulación actualizada a ${nuevoEstado}.`, false);
+  renderizarPostulantesModal();
+}
+
+function activarEventosModalPostulantes() {
+  const modal = document.getElementById('modal-postulantes');
+  const btnCerrar = document.getElementById('btn-cerrar-postulantes');
+  const tabs = document.getElementById('postulantes-tabs');
+
+  btnCerrar?.addEventListener('click', cerrarModalPostulantes);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) cerrarModalPostulantes();
+  });
+
+  tabs?.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nuevoSubfiltro = btn.dataset.subfiltro;
+      if (subfiltroPostulanteActual === nuevoSubfiltro) return;
+      subfiltroPostulanteActual = nuevoSubfiltro;
+      tabs.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderizarPostulantesModal();
+    });
+  });
 }

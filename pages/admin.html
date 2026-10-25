@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/panel.css">
+  <link rel="stylesheet" href="../css/panel.css?v=2">
 </head>
 <body>
   <header class="navbar-background">
@@ -33,35 +33,74 @@
     <p class="form-error hidden" id="panel-error" role="alert"></p>
     <p class="form-success hidden" id="panel-ok" role="status"></p>
 
+    <div id="panel-loading" style="text-align: center; padding: 28px; font-size: 16px; font-weight: 700; color: var(--color-navy); background: var(--color-white); border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--color-border);">
+      ⏳ Cargando información...
+    </div>
+
     <section class="panel-section">
       <div class="stats-row">
-        <div class="stat-card highlight"><strong id="st-pendientes">0</strong><span>Pendientes</span></div>
-        <div class="stat-card"><strong id="st-verificadas">0</strong><span>Verificadas</span></div>
-        <div class="stat-card"><strong id="st-usuarios">0</strong><span>Usuarios</span></div>
-        <div class="stat-card"><strong id="st-parts">0</strong><span>Participaciones</span></div>
+        <div class="stat-card" id="card-pendientes" data-filtro="pendientes" role="button" tabindex="0" title="Filtrar ONGs pendientes"><strong id="st-pendientes">0</strong><span>Pendientes</span></div>
+        <div class="stat-card" id="card-verificadas" data-filtro="verificadas" role="button" tabindex="0" title="Filtrar ONGs verificadas"><strong id="st-verificadas">0</strong><span>Verificadas</span></div>
+        <div class="stat-card" id="card-usuarios" data-filtro="usuarios" role="button" tabindex="0" title="Filtrar Usuarios"><strong id="st-usuarios">0</strong><span>Usuarios</span></div>
+        <div class="stat-card" id="card-convocatorias" data-filtro="convocatorias" role="button" tabindex="0" title="Filtrar Convocatorias"><strong id="st-convocatorias">0</strong><span>Convocatorias</span></div>
       </div>
     </section>
 
-    <section class="panel-section">
+    <section class="panel-section" id="sec-pendientes">
       <h2>ONGs pendientes de revisión</h2>
+      <div style="margin: 10px 0 16px 0; background: var(--color-white); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
+        <label for="filtro-ongs-pendientes" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+        <input type="text" id="filtro-ongs-pendientes" placeholder="Por nombre, razón social o email..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+      </div>
       <div class="card-list" id="ongs-pendientes"></div>
       <div class="empty hidden" id="ongs-pendientes-vacio">No hay ONGs pendientes. 🎉</div>
     </section>
 
-    <section class="panel-section">
+    <section class="panel-section" id="sec-verificadas">
       <h2>ONGs verificadas</h2>
+      <div style="margin: 10px 0 16px 0; background: var(--color-white); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
+        <label for="filtro-ongs-verificadas" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+        <input type="text" id="filtro-ongs-verificadas" placeholder="Por nombre, razón social o email..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+      </div>
       <div class="card-list" id="ongs-verificadas"></div>
-      <div class="empty hidden" id="ongs-verificadas-vacio">Todavía no hay ONGs verificadas en la demo.</div>
+      <div class="empty hidden" id="ongs-verificadas-vacio">Todavía no hay ONGs verificadas.</div>
     </section>
 
-    <section class="panel-section">
+    <section class="panel-section" id="sec-convocatorias">
+      <h2>Convocatorias de la plataforma</h2>
+
+      <div class="filtros-convocatorias-bar" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 12px 0 20px 0; background: var(--color-white); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+          <label for="filtro-conv-busqueda" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+          <input type="text" id="filtro-conv-busqueda" placeholder="Por título o nombre de ONG..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="filtro-conv-estado" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">Filtrar por estado:</label>
+          <select id="filtro-conv-estado" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; font-weight: 700; color: var(--color-navy); background: #fff; cursor: pointer;">
+            <option value="TODAS">Todas las convocatorias</option>
+            <option value="ABIERTA">Abiertas</option>
+            <option value="FINALIZADA">Finalizadas</option>
+            <option value="CANCELADA">Canceladas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card-list" id="convocatorias-lista"></div>
+      <div class="empty hidden" id="convocatorias-vacio">No hay convocatorias registradas todavía.</div>
+    </section>
+
+    <section class="panel-section hidden" id="sec-rechazadas">
       <h2>ONGs rechazadas</h2>
       <div class="card-list" id="ongs-rechazadas"></div>
       <div class="empty hidden" id="ongs-rechazadas-vacio">Ninguna rechazada.</div>
     </section>
 
-    <section class="panel-section">
+    <section class="panel-section" id="sec-usuarios">
       <h2>Usuarios registrados</h2>
+      <div style="margin: 10px 0 16px 0; background: var(--color-white); padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px;">
+        <label for="filtro-usuarios" style="font-size: 13.5px; font-weight: 700; color: var(--color-navy); white-space: nowrap;">🔍 Buscar:</label>
+        <input type="text" id="filtro-usuarios" placeholder="Por nombre o email de usuario..." style="flex: 1; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; outline: none;">
+      </div>
       <div class="table-wrap">
         <table class="data-table">
           <thead>
@@ -73,6 +112,107 @@
     </section>
   </main>
 
+  <!-- Modal Convocatoria y Participantes (Admin) -->
+  <div class="modal-overlay hidden" id="modal-convocatoria-admin">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="modal-conv-titulo">Detalle de convocatoria</h2>
+          <p id="modal-conv-subtitulo" style="font-size: 13.5px; color: var(--color-muted); margin: 4px 0 0 0;"></p>
+        </div>
+        <button type="button" class="btn-close" id="btn-cerrar-modal-conv" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <div style="background: var(--color-bg); padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+        <p id="modal-conv-descripcion" style="margin: 0 0 10px 0; color: var(--color-text);"></p>
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--color-muted);">
+          <span id="modal-conv-ong">🏢 <strong>ONG:</strong> -</span>
+          <span id="modal-conv-causa">🏷️ <strong>Causa:</strong> -</span>
+          <span id="modal-conv-fecha">📅 <strong>Fecha:</strong> -</span>
+          <span id="modal-conv-lugar">📍 <strong>Lugar:</strong> -</span>
+          <span id="modal-conv-cupos">👥 <strong>Cupos:</strong> -</span>
+        </div>
+      </div>
+
+      <!-- Moderar Estado de Convocatoria -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border: 1px solid var(--color-border); padding: 12px 16px; border-radius: 8px; margin-bottom: 18px;">
+        <div>
+          <strong style="font-size: 14px; color: var(--color-navy);">Estado:</strong>
+          <span id="modal-conv-estado-badge" class="badge" style="margin-left: 6px;">ABIERTA</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="select-estado-convocatoria" style="padding: 6px 10px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 13.5px; font-weight: 700; color: var(--color-navy);">
+            <option value="ABIERTA">ABIERTA</option>
+            <option value="FINALIZADA">FINALIZADA</option>
+            <option value="CANCELADA">CANCELADA</option>
+          </select>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-estado-conv">Actualizar</button>
+        </div>
+      </div>
+
+      <p class="form-error hidden" id="modal-conv-error" role="alert" style="margin-bottom: 12px;"></p>
+      <p class="form-success hidden" id="modal-conv-ok" role="status" style="margin-bottom: 12px;"></p>
+
+      <h3 style="font-size: 16px; font-weight: 800; color: var(--color-navy); margin-bottom: 10px;">Voluntarios inscriptos</h3>
+      <div id="modal-conv-loading" class="empty hidden" style="padding: 20px; text-align: center;">⏳ Cargando postulantes...</div>
+      <div class="table-wrap" id="modal-conv-table-wrap">
+        <table class="data-table" style="font-size: 13.5px;">
+          <thead>
+            <tr><th>Voluntario</th><th>Contacto</th><th>Fecha</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="modal-conv-postulantes-body"></tbody>
+        </table>
+      </div>
+      <div class="empty hidden" id="modal-conv-postulantes-vacio" style="padding: 20px;">No hay voluntarios inscriptos todavía.</div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Acción de ONG (Warning) -->
+  <div class="modal-overlay hidden" id="modal-confirmar-ong">
+    <div class="modal-card" style="max-width: 460px; text-align: center;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;" id="confirmar-ong-titulo">Confirmar acción</h3>
+      <p id="confirmar-ong-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas realizar esta acción?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-ong">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-ong">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Cambio de Estado de Convocatoria (Warning) -->
+  <div class="modal-overlay hidden" id="modal-confirmar-convocatoria" style="z-index: 1100;">
+    <div class="modal-card" style="max-width: 460px; text-align: center;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;" id="confirmar-conv-titulo">Confirmar cambio de estado</h3>
+      <p id="confirmar-conv-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas cambiar el estado de esta convocatoria?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-conv">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-conv">Confirmar cambio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Cambio de Estado de Postulante (Warning) -->
+  <div class="modal-overlay hidden" id="modal-confirmar-postulante" style="z-index: 1100;">
+    <div class="modal-card" style="max-width: 460px; text-align: center;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="font-size: 20px; font-weight: 800; color: var(--color-navy); margin-bottom: 8px;" id="confirmar-postulante-titulo">Confirmar acción</h3>
+      <p id="confirmar-postulante-mensaje" style="font-size: 14.5px; color: var(--color-muted); line-height: 1.5; margin-bottom: 24px;">
+        ¿Estás seguro de que deseas cambiar el estado de este voluntario?
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-confirmar-postulante">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aceptar-confirmar-postulante">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>
