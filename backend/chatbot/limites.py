@@ -11,20 +11,20 @@ def verificar_limites(request):
         request.session.save()
         identificador = request.session.session_key or 'anon'
 
-    # Límites ampliados para pruebas
-    limite_diario = 500
-    limite_minuto = 100
-    limite_global_diario = 2000
-    limite_global_minuto = 100
+    # Subimos temporalmente el límite para pruebas masivas y evitar bloqueos
+    limite_diario = 10000
+    limite_minuto = 1000
+    limite_global_diario = 50000
+    limite_global_minuto = 1000
 
     hoy = time.strftime("%Y-%m-%d")
     minuto_actual = time.strftime("%Y-%m-%d-%H-%M")
 
-    # NUEVOS PREFIJOS (v2_): Esto descarta al instante cualquier residuo viejo en la RAM de Render
-    clave_min_user = f"chat_v2_min_{identificador}_{minuto_actual}"
-    clave_dia_user = f"chat_v2_dia_{identificador}_{hoy}"
-    clave_min_global = f"chat_v2_min_global_{minuto_actual}"
-    clave_dia_global = f"chat_v2_dia_global_{hoy}"
+    # NUEVO PREFIJO (v3_): Descarta 100% cualquier residuo viejo en la RAM de Render
+    clave_min_user = f"chat_v3_min_{identificador}_{minuto_actual}"
+    clave_dia_user = f"chat_v3_dia_{identificador}_{hoy}"
+    clave_min_global = f"chat_v3_min_global_{minuto_actual}"
+    clave_dia_global = f"chat_v3_dia_global_{hoy}"
 
     # 1. Verificar límites actuales
     if cache.get(clave_min_user, 0) >= limite_minuto:
