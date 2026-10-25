@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vacantes</title>
+    <link rel="stylesheet" href="../../css/ong.css">
+    <link rel="stylesheet" href="../../css/bot.css">   <!-- botiacss -->
+</head>
+<body data-page="vacantes">
+
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
+
+    <main class="main-content">
+        <div class="vacantes">
+
+            <!-- Título + botón nueva vacante -->
+            <section class="pagina-header">
+                <div>
+                    <h2>Vacantes de voluntariado</h2>
+                    <p>Gestiona las posiciones abiertas para nuevos voluntarios.</p>
+                </div>
+                <button type="button" class="btn-primario" id="btn-nueva-vacante" onclick="nuevaVacante()"></button>
+            </section>
+
+            <!-- Lista de vacantes (la rellena el JS) -->
+            <section class="vacantes-lista" id="vacantes-lista"></section>
+
+        </div>
+    </main>
+
+    <script src="../../js/ong.js"></script>
+    <script src="../../js/bot.js"></script>  <!-- botiajs -->
+</body>
+</html>

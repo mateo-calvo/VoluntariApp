@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen</title>
+    <link rel="stylesheet" href="../../css/ong.css">
+     <link rel="stylesheet" href="../../css/bot.css">   <!-- botiacss -->
+</head>
+<body data-page="resumen">
+
+    <div id="sidebar-container"></div> <!-- sidebar lateral, lo genera ong.js -->
+    <div id="header-container"></div>  <!-- barra superior, la genera ong.js -->
+
+    <main class="main-content">
+        <div class="resumen">
+
+            <!-- Bienvenida -->
+            <section class="resumen-bienvenida">
+                <h2>Bienvenida, <span id="resumen-nombre"></span> 👋</h2>
+                <p>Aquí tienes un resumen de la actividad de tu organización.</p>
+            </section>
+
+            <!-- Tarjetas de estadísticas (las rellena el JS) -->
+            <section class="stats-grid" id="stats-grid"></section>
+
+            <!-- Últimas solicitudes + Vacantes activas -->
+            <section class="resumen-columnas">
+                <article class="card">
+                    <div class="card-header">
+                        <h3>Últimas solicitudes</h3>
+                        <a href="solicitudesong.html" class="card-link">Ver todas</a>
+                    </div>
+                    <ul class="lista-solicitudes" id="lista-solicitudes"></ul>
+                </article>
+
+                <article class="card">
+                    <div class="card-header">
+                        <h3>Vacantes activas</h3>
+                        <a href="vacantesong.html" class="card-link">Gestionar</a>
+                    </div>
+                    <ul class="lista-vacantes" id="lista-vacantes"></ul>
+                </article>
+            </section>
+
+            <!-- Banner de alerta (lo rellena el JS) -->
+            <section class="banner-alerta" id="banner-alerta"></section>
+
+        </div>
+    </main>
+
+    <script src="../../js/ong.js"></script>
+     <script src="../../js/bot.js"></script>  <!-- botiajs -->
+</body>
+</html>
