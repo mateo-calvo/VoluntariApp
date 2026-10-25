@@ -8,10 +8,11 @@ def verificar_limites(request):
     else:
         ip = request.META.get('REMOTE_ADDR', 'anon')
 
-    limite_diario = 10
-    limite_minuto = 4
-    limite_global_diario = 300
-    limite_global_minuto = 10
+    # Límites ampliados para pruebas en equipo en producción
+    limite_diario = 200
+    limite_minuto = 20
+    limite_global_diario = 2000
+    limite_global_minuto = 100
 
     hoy = time.strftime("%Y-%m-%d")
     minuto_actual = time.strftime("%Y-%m-%d-%H-%M")
