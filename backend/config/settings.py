@@ -34,9 +34,11 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-solo-local-no-usar-en-produccion')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+if DEBUG:
+    ALLOWED_HOSTS += ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -116,7 +118,7 @@ REST_FRAMEWORK = {
     # 0 = usar la IP real de la conexión e ignorar X-Forwarded-For, que lo
     # escribe el cliente y permitiría saltear el límite. Al desplegar detrás
     # de un proxy, poner acá cuántos proxies hay delante de Django.
-    'NUM_PROXIES': 0,
+    'NUM_PROXIES': int(os.environ.get('NUM_PROXIES', 0)),
 }
 
 
@@ -131,6 +133,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000',
     'http://localhost:3000',
 ]
+# Orígenes extra (frontend en producción), separados por coma en la variable de entorno
+CORS_ALLOWED_ORIGINS += [o.strip() for o in os.environ.get('CORS_EXTRA_ORIGINS', '').split(',') if o.strip()]
 
 
 # Password validation

@@ -1,5 +1,7 @@
 // URL base del backend (Django). Cargar este archivo ANTES que el script de la página.
-const API_URL = "http://127.0.0.1:8000";
+// En local usa el backend local; en producción usa el backend de Render.
+const API_URL = (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8000' : 'https://voluntariapp-1.onrender.com');
+window.API_URL = API_URL;
 
 
 // Credenciales de Supabase

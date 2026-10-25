@@ -5,3 +5,4 @@ psycopg[binary]>=3.2
 dj-database-url>=2.2
 python-dotenv>=1.0
 google-genai>=2.0.0
+gunicorn>=22
