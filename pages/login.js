@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
         errorBox.classList.remove('hidden');
     }
 
+    if (params.get('expired') === '1') {
+        showError('Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.');
+    }
+
     function redirectAfterLogin(session) {
         const destino = next || DESTINO_POR_ROL[session?.rol] || 'mapa.html';
         if (convId) {

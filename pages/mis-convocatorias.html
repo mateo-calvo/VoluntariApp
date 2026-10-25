@@ -183,6 +183,80 @@
       background: rgba(255, 255, 255, 0.25);
       color: #ffffff;
     }
+    .filtros-search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: var(--color-white);
+      padding: 12px 16px;
+      border-radius: var(--radius-md, 8px);
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+    }
+    .filtros-search-bar .search-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 240px;
+    }
+    .filtros-search-bar .filter-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filtros-search-bar label {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--color-navy);
+      white-space: nowrap;
+    }
+    .filtros-search-bar input[type="text"],
+    .filtros-search-bar input[type="date"],
+    .filtros-search-bar select {
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      font-size: 13.5px;
+      outline: none;
+      background: #fff;
+      font-family: inherit;
+      color: #1e293b;
+      transition: border-color 0.15s ease;
+    }
+    .filtros-search-bar input[type="text"]:focus,
+    .filtros-search-bar input[type="date"]:focus,
+    .filtros-search-bar select:focus {
+      border-color: var(--color-green, #1A7A5E);
+    }
+    .filtros-search-bar input[type="text"] {
+      width: 100%;
+    }
+    .btn-clear-date {
+      background: #f1f5f9;
+      border: 1px solid var(--color-border);
+      color: var(--color-muted);
+      cursor: pointer;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 1;
+      padding: 0;
+      transition: all 0.15s ease;
+    }
+    .btn-clear-date:hover {
+      background: #e2e8f0;
+      color: var(--color-navy);
+    }
+    .btn-clear-date.hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -219,17 +293,17 @@
 
     <!-- Stats rápidas -->
     <div class="stats-row" id="stats-row">
-      <div class="stat-card">
+      <div class="stat-card" id="card-activas" data-filtro="ABIERTA" role="button" tabindex="0" title="Ver convocatorias abiertas">
         <strong id="stat-activas">0</strong>
         <span>Convocatorias abiertas</span>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="card-total" data-filtro="TODAS" role="button" tabindex="0" title="Ver todas las convocatorias">
         <strong id="stat-total">0</strong>
         <span>Total creadas</span>
       </div>
-      <div class="stat-card highlight">
-        <strong id="stat-cupos">0</strong>
-        <span>Cupos disponibles</span>
+      <div class="stat-card stat-warn stat-static" title="Total de voluntarios confirmados pendientes de validar asistencia">
+        <strong id="stat-asistencias">0</strong>
+        <span>Asistencias a aprobar</span>
       </div>
     </div>
 
@@ -250,6 +324,33 @@
       <button class="filter-btn" data-filtro="CANCELADA" type="button">
         Canceladas <span class="count-badge" id="count-cancelada">0</span>
       </button>
+    </div>
+
+    <!-- Barra de búsqueda, filtro por fecha y orden cronológico -->
+    <div class="filtros-search-bar" role="search" aria-label="Buscar y filtrar convocatorias">
+      <div class="search-field">
+        <label for="filtro-nombre">🔍 Buscar:</label>
+        <input type="text" id="filtro-nombre" placeholder="Por nombre o descripción..." autocomplete="off">
+      </div>
+      <div class="filter-field">
+        <label for="filtro-fecha">📅 Fecha:</label>
+        <input type="date" id="filtro-fecha" aria-label="Filtrar por fecha del voluntariado">
+        <button type="button" id="btn-limpiar-fecha" class="btn-clear-date hidden" title="Limpiar filtro de fecha" aria-label="Limpiar fecha">&times;</button>
+      </div>
+      <div class="filter-field">
+        <label for="filtro-causa">🏷️ Causa:</label>
+        <select id="filtro-causa" aria-label="Filtrar por causa">
+          <option value="">Todas las causas</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="filtro-orden">⇅ Ordenar:</label>
+        <select id="filtro-orden" aria-label="Ordenar convocatorias">
+          <option value="fecha-asc">Fecha (más próximas)</option>
+          <option value="fecha-desc">Fecha (más lejanas)</option>
+          <option value="alfabetico">Nombre (A - Z)</option>
+        </select>
+      </div>
     </div>
 
     <!-- Listado de Convocatorias -->
