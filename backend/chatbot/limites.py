@@ -9,8 +9,8 @@ def verificar_limites(request):
         ip = request.META.get('REMOTE_ADDR', 'anon')
 
     # Límites ampliados para pruebas en equipo en producción
-    limite_diario = 200
-    limite_minuto = 20
+    limite_diario = 500
+    limite_minuto = 100
     limite_global_diario = 2000
     limite_global_minuto = 100
 
