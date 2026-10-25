@@ -24,6 +24,19 @@ GENEROS_PERMITIDOS = [
     "Otro",
 ]
 
+
+def validar_requisitos_password(value: str):
+    """Valida longitud mínima (8), mayúscula, número y carácter especial."""
+    if len(value) < 8:
+        raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
+    if not re.search(r"[A-Z]", value):
+        raise serializers.ValidationError("La contraseña debe incluir al menos una letra mayúscula.")
+    if not re.search(r"[0-9]", value):
+        raise serializers.ValidationError("La contraseña debe incluir al menos un número.")
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?~`]", value):
+        raise serializers.ValidationError("La contraseña debe incluir al menos un carácter especial (ej: !@#$).")
+
+
 class RegistroVoluntarioSerializer(serializers.Serializer):
     """Valida los datos del registro de voluntario."""
 
@@ -43,6 +56,7 @@ class RegistroVoluntarioSerializer(serializers.Serializer):
         return Usuario.objects.normalize_email(value)
 
     def validate(self, data):
+        validar_requisitos_password(data["password"])
         usuario_tmp = Usuario(email=data["email"], nombre=data["nombre"])
         try:
             validate_password(data["password"], user=usuario_tmp)
@@ -222,8 +236,11 @@ class RegistroOngSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        from django.contrib.auth.password_validation import validate_password
-        validate_password(value)
+        validar_requisitos_password(value)
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
         return value
 
     def validate_web(self, value):
@@ -339,6 +356,7 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
     provincia_nombre = serializers.SerializerMethodField(read_only=True)
     localidad_nombre = serializers.SerializerMethodField(read_only=True)
     postulantes_count = serializers.SerializerMethodField(read_only=True)
+    asistencias_pendientes = serializers.SerializerMethodField(read_only=True)
     latitud = serializers.DecimalField(
         max_digits=18, decimal_places=12, required=False, allow_null=True
     )
@@ -370,6 +388,7 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
             "horas_estimadas",
             "requiere_aprobacion",
             "postulantes_count",
+            "asistencias_pendientes",
             "created_at",
         ]
         read_only_fields = ["id", "ong_id", "created_at"]
@@ -386,6 +405,12 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
     def get_postulantes_count(self, obj):
         try:
             return obj.postulaciones.filter(estado__in=["POSTULADO", "CONFIRMADO"]).count()
+        except Exception:
+            return 0
+
+    def get_asistencias_pendientes(self, obj):
+        try:
+            return obj.postulaciones.filter(estado="CONFIRMADO").count()
         except Exception:
             return 0
 
@@ -416,8 +441,15 @@ class PostulacionSerializer(serializers.ModelSerializer):
     nombre_organizacion = serializers.CharField(
         source="convocatoria.ong.nombre_organizacion", default="", read_only=True
     )
+    causa_nombre = serializers.CharField(
+        source="convocatoria.causa.nombre", default="", read_only=True
+    )
+    causa_id = serializers.IntegerField(
+        source="convocatoria.causa_id", default=None, read_only=True
+    )
     lugar = serializers.CharField(source="convocatoria.lugar", default="", read_only=True)
     fecha = serializers.CharField(source="convocatoria.fecha", default="", read_only=True)
+    hora = serializers.CharField(source="convocatoria.hora", default="", read_only=True)
     estado_convocatoria = serializers.CharField(
         source="convocatoria.estado", default="ABIERTA", read_only=True
     )
@@ -429,8 +461,11 @@ class PostulacionSerializer(serializers.ModelSerializer):
             "convocatoria_id",
             "titulo_convocatoria",
             "nombre_organizacion",
+            "causa_nombre",
+            "causa_id",
             "lugar",
             "fecha",
+            "hora",
             "estado",
             "estado_convocatoria",
             "created_at",

@@ -184,6 +184,35 @@ a {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.stat-card.stat-static {
+  cursor: default !important;
+  user-select: text;
+}
+
+.stat-card.stat-static:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  border-color: var(--color-green) !important;
+}
+
+.stat-card.stat-warn {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.stat-card.stat-warn strong {
+  color: #b45309;
+}
+
+.stat-card.stat-warn span {
+  color: #92400e;
+}
+
+.stat-card.stat-warn.stat-static:hover {
+  border-color: #fde68a !important;
+}
+
 /* Secciones y cards */
 .panel-section {
   margin-bottom: 28px;

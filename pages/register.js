@@ -449,6 +449,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checkboxTerminos) checkboxTerminos.required = !ongMode || !!paso2Visible;
     }
 
+    function validarRequisitosPassword(pass) {
+        if (!pass || pass.length < 8) {
+            return 'La contraseña debe tener al menos 8 caracteres.';
+        }
+        if (!/[A-Z]/.test(pass)) {
+            return 'La contraseña debe incluir al menos una letra mayúscula.';
+        }
+        if (!/[0-9]/.test(pass)) {
+            return 'La contraseña debe incluir al menos un número.';
+        }
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(pass)) {
+            return 'La contraseña debe incluir al menos un carácter especial (ej: !@#$).';
+        }
+        return null;
+    }
+
     function validarPaso1() {
         if (inputRazonSocial.value.trim().length < 3) {
             return 'Ingresa la razón social de la organización.';
@@ -468,8 +484,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inputDomicilio.value.trim() || !inputCp.value.trim()) {
             return 'Completa el domicilio legal y el código postal.';
         }
-        if (inputPassOng.value.length < 6) {
-            return 'La contraseña debe tener al menos 6 caracteres.';
+        const errorPass = validarRequisitosPassword(inputPassOng.value);
+        if (errorPass) {
+            return errorPass;
         }
         if (!leerUbicacion()) {
             return 'Buscá tu ubicación y elegí una opción de la lista.';
@@ -649,7 +666,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!provincia_id) throw new Error('Selecciona tu provincia.');
                     if (!localidad_id) throw new Error('Selecciona tu localidad.');
                     if (!direccion) throw new Error('Ingresa tu dirección.');
-                    if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.');
+                    const errorPassVol = validarRequisitosPassword(password);
+                    if (errorPassVol) throw new Error(errorPassVol);
 
                     const res = await fetch(`${API_URL}/api/auth/register-voluntario`, {
                         method: 'POST',
@@ -695,7 +713,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (razon.length < 3) throw new Error('Ingresa la razón social de la organización.');
                     if (!CUIT_RE.test(cuit)) throw new Error('El CUIT debe tener formato 30-12345678-9.');
-                    if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.');
+                    const errorPassOng = validarRequisitosPassword(password);
+                    if (errorPassOng) throw new Error(errorPassOng);
                     if (descripcion.length < 10) throw new Error('Contanos en al menos 10 caracteres qué hace tu organización.');
                     if (!validUrl(web)) throw new Error('El sitio web debe empezar con https://');
                     if (!validUrl(linkPago)) throw new Error('El link de donación debe empezar con https://');

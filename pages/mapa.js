@@ -261,7 +261,23 @@ function mapApiItem(c) {
     contacto: c.ong_email_contacto || c.email_contacto || '',
     descripcion: c.descripcion || '',
     necesidades: c.necesidades || '',
+    fecha: c.fecha || '',
+    hora: c.hora || '',
   };
+}
+
+function formatearFechaHora(fecha, hora) {
+  if (!fecha) return 'Fecha a coordinar';
+  let strFecha = fecha;
+  if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+    const [y, m, d] = fecha.slice(0, 10).split('-');
+    strFecha = `${d}/${m}/${y}`;
+  }
+  let strHora = '';
+  if (hora) {
+    strHora = ` · ${String(hora).slice(0, 5)} hs`;
+  }
+  return `${strFecha}${strHora}`;
 }
 
 // ---- Mapa Leaflet ----
@@ -314,6 +330,7 @@ function renderMarkers(list) {
     marker.bindPopup(`
       <strong>${item.emoji} ${esc(item.nombre)}</strong><br>
       📍 ${esc(item.barrio)}<br>
+      📅 ${esc(formatearFechaHora(item.fecha, item.hora))}<br>
       ⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.totalCupos} cupos totales<br>
       <span class="popup-cupos">🤝 ${item.cupos} disponibles</span>
       ${badgeHtml}
@@ -403,6 +420,7 @@ function renderList(list) {
       <div class="ong-info">
         <h3 class="ong-name">${o.nombre} ${reviewBadge(o)} ${postuladoBadge}</h3>
         <p class="ong-barrio">📍 ${o.barrio}</p>
+        <p style="font-size:12.5px; color:#1A7A5E; font-weight:700; margin:2px 0 4px 0;">📅 ${esc(formatearFechaHora(o.fecha, o.hora))}</p>
         <div class="ong-meta"><span>👥 ${o.totalCupos} cupos totales</span><span class="rating">★ ${o.rating}</span></div>
         <p class="ong-dist">➤ ${o.distancia.toFixed(1)} km</p>
         ${cuposText}
@@ -538,6 +556,7 @@ function renderDetail() {
       <p class="detail-desc">${esc(item.descripcion)}</p>
       ${item.necesidades ? `<p class="detail-row">🙌 Buscan: <strong>${esc(item.necesidades)}</strong></p>` : ''}
       <p class="detail-row">📍 <strong>${esc(item.barrio)}</strong></p>
+      <p class="detail-row">📅 <strong>${esc(formatearFechaHora(item.fecha, item.hora))}</strong></p>
       <p class="detail-row">⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.inscriptos != null ? item.inscriptos : item.voluntarios} inscriptos de ${item.totalCupos || totalPlazas} cupos &nbsp;·&nbsp; ➤ ${item.distancia.toFixed(1)} km</p>
       <p class="detail-row">🤝 <strong>${item.cupos} lugares libres</strong></p>
       <div class="detail-metrics">
