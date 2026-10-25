@@ -2,14 +2,16 @@ import time
 from django.core.cache import cache
 
 def verificar_limites(request):
-    # Asegurarnos de que la sesión esté iniciada para tener una clave única por navegador/usuario
-    if not request.session.session_key:
-        request.session.create()
-    
-    # Identificador único por sesión de usuario (independiente de la IP compartida de Render)
-    session_id = request.session.session_key
+    # Identificador único robusto: ID de usuario si está logueado, o session_key persistente
+    if request.user.is_authenticated:
+        identificador = f"user_{request.user.id}"
+    else:
+        if not request.session.session_key:
+            request.session.create()
+        request.session.save()
+        identificador = request.session.session_key or 'anon'
 
-    # Límites ampliados para pruebas en equipo en producción
+    # Límites ampliados para pruebas
     limite_diario = 500
     limite_minuto = 100
     limite_global_diario = 2000
@@ -18,11 +20,11 @@ def verificar_limites(request):
     hoy = time.strftime("%Y-%m-%d")
     minuto_actual = time.strftime("%Y-%m-%d-%H-%M")
 
-    # Usamos el session_id en lugar de solo la IP para que cada usuario tenga su contador propio
-    clave_min_user = f"chat_min_{session_id}_{minuto_actual}"
-    clave_dia_user = f"chat_dia_{session_id}_{hoy}"
-    clave_min_global = f"chat_min_global_{minuto_actual}"
-    clave_dia_global = f"chat_dia_global_{hoy}"
+    # NUEVOS PREFIJOS (v2_): Esto descarta al instante cualquier residuo viejo en la RAM de Render
+    clave_min_user = f"chat_v2_min_{identificador}_{minuto_actual}"
+    clave_dia_user = f"chat_v2_dia_{identificador}_{hoy}"
+    clave_min_global = f"chat_v2_min_global_{minuto_actual}"
+    clave_dia_global = f"chat_v2_dia_global_{hoy}"
 
     # 1. Verificar límites actuales
     if cache.get(clave_min_user, 0) >= limite_minuto:
