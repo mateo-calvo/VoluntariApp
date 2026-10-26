@@ -14,23 +14,35 @@
             <a href="index.html" class="logo">
                 <img src="images/logo.png" alt="VoluntariApp">
             </a>
-            <button type="button" class="navbar-toggle" id="navbar-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
             <ul class="nav-links" id="nav-links">
                 <li><a href="#como-funciona">Cómo funciona</a></li>
                 <li><a href="#organizaciones">ONGs</a></li>
                 <li><a href="./pages/mapa.html">Mapa</a></li>
                 <li><button type="button" class="btn btn-donar" id="donar-open" aria-haspopup="dialog">Donar</button></li>
+                <li class="nav-mobile-auth">
+                    <a href="./pages/login.html" class="btn btn-login-mobile">Iniciar Sesión</a>
+                    <a href="./pages/register.html" class="btn btn-register-mobile">Unite Gratis</a>
+                </li>
             </ul>
             <div class="header-auth-container">
                 <a href="./pages/login.html" class="btn btn-login">Iniciar Sesión</a>
                 <a href="./pages/register.html" class="btn btn-register">Unite Gratis</a>
             </div>
+            <button type="button" class="navbar-toggle" id="navbar-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+                <span class="toggle-icon toggle-icon-open" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </span>
+                <span class="toggle-icon toggle-icon-close" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </span>
+            </button>
         </nav>
     </header>
     <main>
@@ -253,19 +265,43 @@
 
     <script src="js/donar.js" defer></script>
     <script>
-        document.getElementById('navbar-toggle')?.addEventListener('click', function () {
-            const links = document.getElementById('nav-links');
-            const abierto = links.classList.toggle('is-open');
+        const navToggle = document.getElementById('navbar-toggle');
+        const navLinks = document.getElementById('nav-links');
+
+        function cerrarMenu() {
+            if (navLinks && navLinks.classList.contains('is-open')) {
+                navLinks.classList.remove('is-open');
+                navToggle?.setAttribute('aria-expanded', 'false');
+                navToggle?.setAttribute('aria-label', 'Abrir menú');
+            }
+        }
+
+        navToggle?.addEventListener('click', function () {
+            const abierto = navLinks.classList.toggle('is-open');
             this.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            this.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
         });
-        document.querySelectorAll('#nav-links a').forEach(a => {
-            a.addEventListener('click', () => {
-                const links = document.getElementById('nav-links');
-                if (links && links.classList.contains('is-open')) {
-                    links.classList.remove('is-open');
-                    document.getElementById('navbar-toggle')?.setAttribute('aria-expanded', 'false');
-                }
+
+        // Cerrar al clickear en enlaces o botones del menú
+        document.querySelectorAll('#nav-links a, #nav-links button').forEach(el => {
+            el.addEventListener('click', () => {
+                cerrarMenu();
             });
+        });
+
+        // Cerrar al clickear fuera
+        document.addEventListener('click', (e) => {
+            const navbar = document.querySelector('.navbar');
+            if (navLinks && navLinks.classList.contains('is-open') && navbar && !navbar.contains(e.target)) {
+                cerrarMenu();
+            }
+        });
+
+        // Cerrar con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                cerrarMenu();
+            }
         });
     </script>
 </body>

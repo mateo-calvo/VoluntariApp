@@ -517,10 +517,6 @@ function renderDetail() {
     </button>`;
 
   const totalPlazas = Math.max(1, Number(item.cupos || 0) + Number(item.voluntarios || 0));
-  const ocupacionReal = Math.round((Number(item.voluntarios || 0) / totalPlazas) * 100);
-  const ocupacionVisual = Math.max(14, ocupacionReal);
-  const actividadReal = Math.min(100, Math.round((Number(item.voluntarios || 0) * 9) + 18));
-  const actividadVisual = Math.max(20, actividadReal);
   const links = [
     web ? `<a class="detail-link" href="${esc(web)}" target="_blank" rel="noopener">🌐 Visitar sitio de la ONG</a>` : '',
     item.contacto ? `<span class="detail-row">✉️ Contacto: <strong>${esc(item.contacto)}</strong></span>` : '',
@@ -558,23 +554,6 @@ function renderDetail() {
       <p class="detail-row">📍 <strong>${esc(item.barrio)}</strong></p>
       <p class="detail-row">📅 <strong>${esc(formatearFechaHora(item.fecha, item.hora))}</strong></p>
       <p class="detail-row">⭐ ${item.rating} &nbsp;·&nbsp; 👥 ${item.inscriptos != null ? item.inscriptos : item.voluntarios} inscriptos de ${item.totalCupos || totalPlazas} cupos &nbsp;·&nbsp; ➤ ${item.distancia.toFixed(1)} km</p>
-      <p class="detail-row">🤝 <strong>${item.cupos} lugares libres</strong></p>
-      <div class="detail-metrics">
-        <div class="detail-metric">
-          <div class="detail-metric-head">
-            <span>Cupos ocupados</span>
-            <strong>${ocupacionReal}%</strong>
-          </div>
-          <div class="detail-metric-bar" role="presentation"><span style="width:${ocupacionVisual}%"></span></div>
-        </div>
-        <div class="detail-metric">
-          <div class="detail-metric-head">
-            <span>Actividad reciente</span>
-            <strong>${actividadReal}%</strong>
-          </div>
-          <div class="detail-metric-bar detail-metric-bar--soft" role="presentation"><span style="width:${actividadVisual}%"></span></div>
-        </div>
-      </div>
       ${links ? `<div class="detail-links">${links}</div>` : ''}
       <div class="detail-actions">
         ${btnHtml}
