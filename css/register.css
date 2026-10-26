@@ -736,35 +736,78 @@ input[type="password"]::-webkit-textfield-decoration-container {
 @media (max-width: 900px) {
     html,
     body {
-        height: 100% !important;
-        height: 100dvh !important;
-        overflow: hidden !important;
+        height: auto !important;
+        min-height: 100% !important;
+        min-height: 100dvh !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+
+    body {
+        background: 
+            linear-gradient(135deg, rgba(15, 33, 50, 0.84) 0%, rgba(15, 33, 50, 0.74) 100%),
+            url('../images/voluntarios.jpg') center/cover no-repeat fixed;
     }
 
     .auth-layout {
         flex-direction: column;
-        height: 100vh;
-        height: 100dvh;
-        overflow: hidden;
+        min-height: 100vh;
+        min-height: 100dvh;
+        height: auto;
+        width: 100%;
+        background: transparent;
+        overflow: visible;
     }
 
     .auth-banner {
-        display: none; /* Oculta banner en móvil para que el formulario quede fijo y sin saltos */
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        background: transparent;
+        height: auto;
+        padding: 16px 16px 0;
+        overflow: visible;
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .auth-banner .banner-top {
+        width: 100%;
+    }
+
+    .banner-top .back-link {
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 700;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .auth-banner .banner-quote-wrapper,
+    .auth-banner .banner-social-proof {
+        display: none;
     }
 
     .auth-content {
         flex: 1;
         width: 100%;
-        height: 100%;
-        padding: 18px 16px 28px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        justify-content: flex-start;
+        height: auto;
+        background-color: transparent;
+        padding: 10px 14px 28px;
+        overflow-y: visible;
     }
 
     .auth-form-card {
-        max-width: 100%;
-        margin: 0 auto;
+        max-width: 520px;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-radius: 20px;
+        padding: 24px 20px;
+        box-shadow: 0 16px 40px rgba(15, 33, 50, 0.38), 0 2px 8px rgba(15, 33, 50, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        margin: 6px auto 0;
     }
 
     .form-row-double {

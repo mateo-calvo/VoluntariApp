@@ -32,12 +32,35 @@ body {
     cursor: pointer;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    line-height: 0;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
 .navbar-toggle:hover {
     background-color: #e2eae8;
     border-color: #1A7A5E;
+    color: #1A7A5E;
+}
+
+.navbar-toggle:active {
+    transform: scale(0.95);
+}
+
+.navbar-toggle .toggle-icon-close {
+    display: none;
+}
+
+.navbar-toggle[aria-expanded="true"] .toggle-icon-open {
+    display: none;
+}
+
+.navbar-toggle[aria-expanded="true"] .toggle-icon-close {
+    display: block;
+}
+
+.nav-mobile-auth {
+    display: none;
 }
 
 main {
@@ -366,7 +389,8 @@ a {
     min-width: 2.5rem;
 }
 
-.how-work-card-content h2 {
+.how-work-card-content h2,
+.how-work-card-content h3 {
     font-size: 18px;
     font-weight: 700;
     color: #0F2132;
@@ -877,16 +901,18 @@ a {
     }
 
     .hero-title {
-        font-size: clamp(32px, 7vw, 44px);
+        font-size: clamp(30px, 6.5vw, 44px);
     }
 
     .hero-description {
         margin: 0 auto;
         font-size: 16.5px;
+        max-width: 520px;
     }
 
     .hero-connect-container {
         justify-content: center;
+        flex-wrap: wrap;
     }
 
     .hero-container-part-two {
@@ -909,6 +935,21 @@ a {
         padding: 3.5rem 0;
     }
 
+    .how-work-container-part-one,
+    .ongs-content {
+        max-width: 100%;
+    }
+
+    .ongs-checklist li {
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .ongs-checklist li::before {
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
     .footer-container {
         flex-direction: column;
         gap: 2.5rem;
@@ -921,6 +962,17 @@ a {
     }
 }
 
+@keyframes navSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @media (max-width: 840px) {
     .navbar {
         flex-wrap: wrap;
@@ -928,51 +980,120 @@ a {
         position: relative;
     }
 
+    .logo {
+        order: 1;
+    }
+
+    /* Sacar Unite Gratis y botones superiores cuando el menu hamburguesa esta activo */
+    .header-auth-container {
+        display: none !important;
+    }
+
+    /* HAMBURGER TOGGLE: a la derecha de todo */
     .navbar-toggle {
         display: inline-flex;
         order: 2;
         margin-left: auto;
     }
 
-    .header-auth-container {
-        order: 3;
-        margin-left: 8px;
-    }
-
+    /* Mobile navigation dropdown expands below */
     .nav-links {
         display: none;
-        order: 4;
+        order: 3;
         width: 100%;
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
-        padding: 14px 0 6px;
+        gap: 6px;
+        padding: 14px 0 8px;
         margin-top: 10px;
         border-top: 1px solid #e4e1e1;
     }
 
     .nav-links.is-open {
         display: flex;
+        animation: navSlideDown 0.22s ease-out;
+    }
+
+    /* Mostrar botones de autenticacion dentro del menu desplegable */
+    .nav-mobile-auth {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+        padding-top: 12px;
+        border-top: 1px dashed #d7e4e0;
+    }
+
+    .nav-mobile-auth .btn-login-mobile,
+    .nav-mobile-auth .btn-register-mobile {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 14px;
+        font-size: 14.5px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .nav-mobile-auth .btn-login-mobile {
+        background-color: transparent;
+        border: 1.5px solid #cdd8d3;
+        color: #0F2132;
+    }
+
+    .nav-mobile-auth .btn-login-mobile:hover {
+        background-color: #e2eae8;
+        border-color: #1A7A5E;
+        color: #1A7A5E;
+    }
+
+    .nav-mobile-auth .btn-register-mobile {
+        background-color: #1A7A5E;
+        color: #ffffff;
+    }
+
+    .nav-mobile-auth .btn-register-mobile:hover {
+        background-color: #14624b;
+    }
+
+    .nav-links li {
+        width: 100%;
     }
 
     .nav-links a {
         display: block;
-        padding: 8px 12px;
+        padding: 10px 14px;
         border-radius: 8px;
         font-weight: 700;
         font-size: 15px;
         color: #0F2132;
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 
-    .nav-links a:hover {
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
         background-color: #e2eae8;
+        color: #1A7A5E;
     }
 
     .nav-links .btn-donar {
         width: 100%;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        padding: 10px 14px;
+        padding: 11px 14px;
         margin-top: 4px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .footer-columns {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
     }
 }
 
@@ -982,13 +1103,59 @@ a {
     }
 
     .btn-login {
-        padding: 0.4rem 0.6rem;
+        padding: 0.38rem 0.55rem;
         font-size: 13px;
     }
 
     .btn-register {
         padding: 0.4rem 0.8rem;
         font-size: 13px;
+        white-space: nowrap;
+    }
+
+    /* In mobile dropdown: full width auth buttons for great mobile UX */
+    .nav-mobile-auth {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+        padding-top: 12px;
+        border-top: 1px dashed #d7e4e0;
+    }
+
+    .nav-mobile-auth .btn-login-mobile,
+    .nav-mobile-auth .btn-register-mobile {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 14px;
+        font-size: 14.5px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .nav-mobile-auth .btn-login-mobile {
+        background-color: transparent;
+        border: 1.5px solid #cdd8d3;
+        color: #0F2132;
+    }
+
+    .nav-mobile-auth .btn-login-mobile:hover {
+        background-color: #e2eae8;
+        border-color: #1A7A5E;
+        color: #1A7A5E;
+    }
+
+    .nav-mobile-auth .btn-register-mobile {
+        background-color: #1A7A5E;
+        color: #ffffff;
+    }
+
+    .nav-mobile-auth .btn-register-mobile:hover {
+        background-color: #14624b;
     }
 
     .hero-container {
@@ -1017,6 +1184,8 @@ a {
         width: 100%;
         text-align: center;
         justify-content: center;
+        display: flex;
+        align-items: center;
         padding: 0.85rem 1rem;
     }
 
@@ -1026,6 +1195,8 @@ a {
 
     .hero-stat-card {
         padding: 0.6rem 0.85rem;
+        right: 0.25rem;
+        top: 0.25rem;
     }
 
     .hero-stat-number {
@@ -1047,6 +1218,7 @@ a {
         min-width: 2rem;
     }
 
+    .how-work-card-content h2,
     .how-work-card-content h3 {
         font-size: 16px;
     }
@@ -1056,11 +1228,11 @@ a {
     }
 
     .ongs-media {
-        min-height: 240px;
+        min-height: 220px;
     }
 
     .ongs-media img {
-        min-height: 240px;
+        min-height: 220px;
         max-height: 280px;
     }
 
@@ -1106,6 +1278,8 @@ a {
         width: 100%;
         text-align: center;
         justify-content: center;
+        display: flex;
+        align-items: center;
     }
 
     .footer-columns {
@@ -1113,11 +1287,26 @@ a {
         gap: 1.75rem;
     }
 
+    .footer-brand {
+        align-items: center;
+        text-align: center;
+    }
+
+    .footer-brand p {
+        max-width: 100%;
+    }
+
     .footer-bottom {
         flex-direction: column;
         align-items: center;
         text-align: center;
         gap: 12px;
+    }
+
+    .footer-legal {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
     }
 
     .donar-modal {
@@ -1138,5 +1327,63 @@ a {
     .donar-amount {
         padding: 0.75rem 0.5rem;
         font-size: 15px;
+    }
+}
+
+@media (max-width: 440px) {
+    .global-container {
+        padding: 0 12px;
+    }
+
+    /* On narrow phone screens, hide the desktop login link in the header row so Unite Gratis + Hamburger fit with lots of space, and login is easily accessible inside the hamburger menu */
+    .header-auth-container .btn-login {
+        display: none;
+    }
+
+    .btn-register {
+        padding: 0.38rem 0.68rem;
+        font-size: 12.5px;
+    }
+
+    .navbar-toggle {
+        padding: 5px 6px;
+        margin-left: 0.4rem;
+    }
+
+    .navbar-toggle svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .hero-stat-card {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .hero-stat-number {
+        font-size: 17px;
+    }
+
+    .hero-stat-label {
+        font-size: 10.5px;
+    }
+}
+
+@media (max-width: 360px) {
+    .navbar .logo img {
+        height: 26px;
+    }
+
+    .btn-register {
+        padding: 0.35rem 0.5rem;
+        font-size: 11.5px;
+    }
+
+    .badge-ong {
+        font-size: 11.5px;
+        padding: 0.35rem 0.75rem;
+    }
+
+    .how-work-card {
+        padding: 1rem 0.85rem;
     }
 }
