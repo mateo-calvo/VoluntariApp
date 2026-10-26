@@ -103,6 +103,14 @@ if 'test' in sys.argv:
         'NAME': ':memory:',
     }
 
+# Sistema de caché en memoria de alta velocidad (sub-milisegundo)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'voluntariapp-cache',
+    }
+}
+
 # Usuario propio (api.Usuario): login con email y campo rol.
 AUTH_USER_MODEL = 'api.Usuario'
 
