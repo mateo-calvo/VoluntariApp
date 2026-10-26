@@ -22,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <button class="voli-chip" onclick="enviarPreguntaRapida('¿Puedo postularme a más de un voluntariado al mismo tiempo?')">Múltiples postulaciones</button>
       <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo cancelo una postulación si ya no puedo asistir?')">Cancelar postulación</button>
       <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo usar los filtros del mapa?')">Filtros del mapa</button>
-      <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo guardo causas o las marco como favoritas?')">Guardar favoritas</button>
       <button class="voli-chip" onclick="enviarPreguntaRapida('¿Qué significan los iconos en el mapa?')">Iconos del mapa</button>
       <button class="voli-chip" onclick="enviarPreguntaRapida('¿Cómo donar a la app?')">¿Cómo donar a la app?</button>
     `;
