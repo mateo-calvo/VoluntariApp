@@ -19,14 +19,50 @@
                 <li><a href="#organizaciones">ONGs</a></li>
                 <li><a href="./pages/mapa.html">Mapa</a></li>
                 <li><button type="button" class="btn btn-donar" id="donar-open" aria-haspopup="dialog">Donar</button></li>
-                <li class="nav-mobile-auth">
-                    <a href="./pages/login.html" class="btn btn-login-mobile">Iniciar Sesión</a>
-                    <a href="./pages/register.html" class="btn btn-register-mobile">Unite Gratis</a>
+                <li class="nav-mobile-auth" id="nav-mobile-auth">
+                    <div class="auth-guest-mobile" id="auth-guest-mobile">
+                        <a href="./pages/login.html" class="btn btn-login-mobile">Iniciar Sesión</a>
+                        <a href="./pages/register.html" class="btn btn-register-mobile">Unite Gratis</a>
+                    </div>
+                    <div class="auth-user-mobile hidden" id="auth-user-mobile">
+                        <div class="user-chip-mobile" id="mobile-user-chip">
+                            <span class="avatar" id="mobile-user-avatar">V</span>
+                            <span class="username" id="mobile-user-name">Usuario</span>
+                        </div>
+                        <a href="./pages/mapa.html" class="btn btn-panel-mobile" id="mobile-panel-link">Mi panel</a>
+                        <button type="button" class="btn btn-logout-mobile" id="mobile-logout-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            <span>Cerrar sesión</span>
+                        </button>
+                    </div>
                 </li>
             </ul>
-            <div class="header-auth-container">
-                <a href="./pages/login.html" class="btn btn-login">Iniciar Sesión</a>
-                <a href="./pages/register.html" class="btn btn-register">Unite Gratis</a>
+            <div class="header-auth-container" id="header-auth-container">
+                <div class="auth-guest-desktop" id="auth-guest-desktop">
+                    <a href="./pages/login.html" class="btn btn-login">Iniciar Sesión</a>
+                    <a href="./pages/register.html" class="btn btn-register">Unite Gratis</a>
+                </div>
+                <div class="auth-user-desktop hidden" id="auth-user-desktop">
+                    <a href="./pages/mapa.html" class="btn btn-panel" id="header-panel-link">Mi panel</a>
+                    <div class="user-chip" id="header-user-chip">
+                        <span class="avatar" id="header-user-avatar">V</span>
+                        <span class="username" id="header-user-name">Usuario</span>
+                    </div>
+                    <button type="button" class="logout-link btn-logout" id="header-logout-btn" title="Cerrar sesión">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Salir</span>
+                    </button>
+                </div>
             </div>
             <button type="button" class="navbar-toggle" id="navbar-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
                 <span class="toggle-icon toggle-icon-open" aria-hidden="true">
@@ -303,6 +339,88 @@
                 cerrarMenu();
             }
         });
+
+        // Gestión de estado de sesión (invitado vs logueado)
+        const DESTINO_POR_ROL = {
+            voluntario: { href: './pages/participaciones.html', texto: 'Mis participaciones' },
+            ong: { href: './pages/mi-ong.html', texto: 'Mi ONG' },
+            admin: { href: './pages/admin.html', texto: 'Administración' },
+        };
+
+        function leerSesion() {
+            try {
+                return JSON.parse(sessionStorage.getItem('va_session') || localStorage.getItem('va_session') || 'null');
+            } catch {
+                return null;
+            }
+        }
+
+        function actualizarAuthHeader() {
+            const session = leerSesion();
+
+            const guestDesktop = document.getElementById('auth-guest-desktop');
+            const userDesktop = document.getElementById('auth-user-desktop');
+            const guestMobile = document.getElementById('auth-guest-mobile');
+            const userMobile = document.getElementById('auth-user-mobile');
+
+            if (session) {
+                const dest = DESTINO_POR_ROL[session.rol] || DESTINO_POR_ROL.voluntario;
+                const nombre = session.nombre || session.email || 'Usuario';
+                const inicial = (nombre.trim()[0] || 'U').toUpperCase();
+
+                // Desktop
+                guestDesktop?.classList.add('hidden');
+                userDesktop?.classList.remove('hidden');
+
+                const desktopPanel = document.getElementById('header-panel-link');
+                const desktopName = document.getElementById('header-user-name');
+                const desktopAvatar = document.getElementById('header-user-avatar');
+                if (desktopPanel) {
+                    desktopPanel.href = dest.href;
+                    desktopPanel.textContent = dest.texto;
+                }
+                if (desktopName) desktopName.textContent = nombre;
+                if (desktopAvatar) desktopAvatar.textContent = inicial;
+
+                // Mobile
+                guestMobile?.classList.add('hidden');
+                userMobile?.classList.remove('hidden');
+
+                const mobilePanel = document.getElementById('mobile-panel-link');
+                const mobileName = document.getElementById('mobile-user-name');
+                const mobileAvatar = document.getElementById('mobile-user-avatar');
+                if (mobilePanel) {
+                    mobilePanel.href = dest.href;
+                    mobilePanel.textContent = dest.texto;
+                }
+                if (mobileName) mobileName.textContent = nombre;
+                if (mobileAvatar) mobileAvatar.textContent = inicial;
+            } else {
+                guestDesktop?.classList.remove('hidden');
+                userDesktop?.classList.add('hidden');
+                guestMobile?.classList.remove('hidden');
+                userMobile?.classList.add('hidden');
+            }
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem('va_token');
+            sessionStorage.removeItem('va_session');
+            localStorage.removeItem('va_token');
+            localStorage.removeItem('va_session');
+            actualizarAuthHeader();
+        }
+
+        document.getElementById('header-logout-btn')?.addEventListener('click', cerrarSesion);
+        document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+            cerrarSesion();
+            cerrarMenu();
+        });
+
+        // Ejecutar al cargar la página y cuando se reactive la pestaña
+        actualizarAuthHeader();
+        window.addEventListener('pageshow', actualizarAuthHeader);
+        window.addEventListener('storage', actualizarAuthHeader);
     </script>
 </body>
 
