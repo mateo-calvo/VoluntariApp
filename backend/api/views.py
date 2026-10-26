@@ -371,6 +371,41 @@ def obtener_usuario_desde_token(request):
         return None, "Error de comunicación con el servicio de autenticación."
 
 
+def obtener_ong_autenticada(user_data):
+    """
+    Verifica que el usuario autenticado pertenezca a una ONG (por tabla Ong o metadata)
+    y retorna (ong_instance, error_response). Si error_response no es None, debe retornarse directamente.
+    """
+    user_id = user_data.get("id")
+    user_email = user_data.get("email")
+    user_meta = user_data.get("user_metadata", {}) or {}
+    rol = (user_meta.get("rol") or user_meta.get("role") or "").lower()
+
+    ong = None
+    try:
+        ong = Ong.objects.filter(id=user_id).first()
+        if not ong and user_email:
+            ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
+    except Exception as db_err:
+        print(f"[AUTH ONG DB ERROR] {db_err}")
+
+    # Si no tiene rol ong ni existe en la tabla Ong -> 403 Forbidden
+    if rol != "ong" and not ong:
+        return None, Response(
+            {"message": "Acceso restringido a organizaciones."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Si por alguna razón tiene rol ong pero la ficha de la organización no existe -> 404 Not Found
+    if not ong:
+        return None, Response(
+            {"message": "No se encontró la organización asociada a esta cuenta."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return ong, None
+
+
 @api_view(["GET", "PUT"])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -380,22 +415,9 @@ def ong_mi_perfil(request):
     if error or not user_data:
         return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    user_id = user_data.get("id")
-    rol = user_data.get("user_metadata", {}).get("rol")
-    if rol != "ong":
-        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
-
-    user_email = user_data.get("email")
-    try:
-        ong = Ong.objects.filter(id=user_id).first()
-        if not ong and user_email:
-            ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
-    except Exception as db_err:
-        print(f"[ONG MI PERFIL DB ERROR] {db_err}")
-        ong = None
-
-    if not ong:
-        return Response({"message": "No se encontró la organización asociada a esta cuenta."}, status=status.HTTP_404_NOT_FOUND)
+    ong, err_resp = obtener_ong_autenticada(user_data)
+    if err_resp:
+        return err_resp
 
     if request.method == "GET":
         serializer = OngPerfilSerializer(ong)
@@ -431,18 +453,9 @@ def ong_mis_convocatorias(request):
     if error or not user_data:
         return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    rol = user_data.get("user_metadata", {}).get("rol")
-    if rol != "ong":
-        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
-
-    user_id = user_data.get("id")
-    user_email = user_data.get("email")
-    ong = Ong.objects.filter(id=user_id).first()
-    if not ong and user_email:
-        ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
-
-    if not ong:
-        return Response({"message": "No se encontró la organización asociada a esta cuenta."}, status=status.HTTP_404_NOT_FOUND)
+    ong, err_resp = obtener_ong_autenticada(user_data)
+    if err_resp:
+        return err_resp
 
     if request.method == "GET":
         convocatorias = Convocatoria.objects.filter(ong=ong)
@@ -476,18 +489,9 @@ def ong_detalle_convocatoria(request, convocatoria_id):
     if error or not user_data:
         return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    rol = user_data.get("user_metadata", {}).get("rol")
-    if rol != "ong":
-        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
-
-    user_id = user_data.get("id")
-    user_email = user_data.get("email")
-    ong = Ong.objects.filter(id=user_id).first()
-    if not ong and user_email:
-        ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
-
-    if not ong:
-        return Response({"message": "No se encontró la organización asociada."}, status=status.HTTP_404_NOT_FOUND)
+    ong, err_resp = obtener_ong_autenticada(user_data)
+    if err_resp:
+        return err_resp
 
     convocatoria = Convocatoria.objects.filter(id=convocatoria_id, ong=ong).first()
     if not convocatoria:
@@ -539,18 +543,9 @@ def ong_convocatoria_postulaciones(request, convocatoria_id):
     if error or not user_data:
         return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    rol = user_data.get("user_metadata", {}).get("rol")
-    if rol != "ong":
-        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
-
-    user_id = user_data.get("id")
-    user_email = user_data.get("email")
-    ong = Ong.objects.filter(id=user_id).first()
-    if not ong and user_email:
-        ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
-
-    if not ong:
-        return Response({"message": "No se encontró la organización asociada."}, status=status.HTTP_404_NOT_FOUND)
+    ong, err_resp = obtener_ong_autenticada(user_data)
+    if err_resp:
+        return err_resp
 
     convocatoria = Convocatoria.objects.filter(id=convocatoria_id, ong=ong).first()
     if not convocatoria:
@@ -579,18 +574,9 @@ def ong_actualizar_postulacion(request, postulacion_id):
     if error or not user_data:
         return Response({"message": error or "No autorizado."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    rol = user_data.get("user_metadata", {}).get("rol")
-    if rol != "ong":
-        return Response({"message": "Acceso restringido a organizaciones."}, status=status.HTTP_403_FORBIDDEN)
-
-    user_id = user_data.get("id")
-    user_email = user_data.get("email")
-    ong = Ong.objects.filter(id=user_id).first()
-    if not ong and user_email:
-        ong = Ong.objects.filter(email_contacto__iexact=user_email).first()
-
-    if not ong:
-        return Response({"message": "No se encontró la organización asociada."}, status=status.HTTP_404_NOT_FOUND)
+    ong, err_resp = obtener_ong_autenticada(user_data)
+    if err_resp:
+        return err_resp
 
     postulacion = Postulacion.objects.filter(id=postulacion_id, convocatoria__ong=ong).select_related("convocatoria", "voluntario").first()
     if not postulacion:
