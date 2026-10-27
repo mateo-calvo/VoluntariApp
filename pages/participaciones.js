@@ -106,13 +106,20 @@ function activarFiltrosBusqueda() {
 
 async function cargarCausas() {
   const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
-  try {
-    const res = await fetch(`${baseUrl}/api/causas/`);
-    if (res.ok) {
-      causasCache = await res.json();
+  const cached = sessionStorage.getItem('va_cat_causas');
+  if (cached) {
+    try { causasCache = JSON.parse(cached); } catch (_) {}
+  }
+  if (!causasCache || causasCache.length === 0) {
+    try {
+      const res = await fetch(`${baseUrl}/api/causas/`);
+      if (res.ok) {
+        causasCache = await res.json();
+        try { sessionStorage.setItem('va_cat_causas', JSON.stringify(causasCache)); } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('Error al cargar causas:', e);
     }
-  } catch (e) {
-    console.warn('Error al cargar causas:', e);
   }
 
   if (!causasCache || causasCache.length === 0) {

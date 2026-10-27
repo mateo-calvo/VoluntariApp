@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
@@ -32,10 +33,13 @@ from .serializers import (
     VistaConvocatoriasMapaSerializer,
 )
 from .throttles import RegistroThrottle
+import hashlib
 import json
 import os
 import urllib.request
 import urllib.error
+
+from django.core.cache import cache
 
 
 MSG_EMAIL_EXISTE = "Ese email ya está registrado. Inicia sesión."
@@ -121,18 +125,31 @@ def register_voluntario(request):
 @permission_classes([AllowAny])
 def listar_convocatorias(request):
     """Devuelve las convocatorias públicas abiertas para el mapa consumiendo la vista de Supabase."""
-    convocatorias = VistaConvocatoriasMapa.objects.all()
-    serializer = VistaConvocatoriasMapaSerializer(convocatorias, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    data = cache.get("vista_convocatorias_mapa")
+    if data is None:
+        convocatorias = VistaConvocatoriasMapa.objects.all()
+        data = VistaConvocatoriasMapaSerializer(convocatorias, many=True).data
+        cache.set("vista_convocatorias_mapa", data, timeout=60)
+
+    res = Response(data, status=status.HTTP_200_OK)
+    res["Cache-Control"] = "public, max-age=30"
+    return res
+
 
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def listar_provincias(request):
     """Devuelve el listado de provincias ordenadas alfabéticamente."""
-    provincias = Provincia.objects.all()
-    serializer = ProvinciaSerializer(provincias, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    data = cache.get("catalogo_provincias")
+    if data is None:
+        provincias = Provincia.objects.all().order_by("nombre")
+        data = ProvinciaSerializer(provincias, many=True).data
+        cache.set("catalogo_provincias", data, timeout=86400)
+
+    res = Response(data, status=status.HTTP_200_OK)
+    res["Cache-Control"] = "public, max-age=86400"
+    return res
 
 
 @api_view(["GET"])
@@ -141,11 +158,18 @@ def listar_provincias(request):
 def listar_localidades(request):
     """Devuelve las localidades, opcionalmente filtradas por ?provincia_id=<id>."""
     provincia_id = request.query_params.get("provincia_id")
-    qs = Localidad.objects.all()
-    if provincia_id:
-        qs = qs.filter(provincia_id=provincia_id)
-    serializer = LocalidadSerializer(qs, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    cache_key = f"catalogo_localidades_{provincia_id or 'todas'}"
+    data = cache.get(cache_key)
+    if data is None:
+        qs = Localidad.objects.all().order_by("nombre")
+        if provincia_id:
+            qs = qs.filter(provincia_id=provincia_id)
+        data = LocalidadSerializer(qs, many=True).data
+        cache.set(cache_key, data, timeout=86400)
+
+    res = Response(data, status=status.HTTP_200_OK)
+    res["Cache-Control"] = "public, max-age=86400"
+    return res
 
 @api_view(["POST"])
 @authentication_classes([])
@@ -349,6 +373,13 @@ def obtener_usuario_desde_token(request):
     if not token:
         return None, "Token de autorización vacío."
 
+    # Cache en memoria por 60 segundos para evitar llamadas repetidas a la API externa de Supabase
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    cache_key = f"auth_token_user_{token_hash}"
+    cached_user = cache.get(cache_key)
+    if cached_user is not None:
+        return cached_user, None
+
     supabase_url = os.getenv("SUPABASE_URL", "https://fzfiwitvjqlrqimxxcmt.supabase.co")
     anon_key = os.getenv("SUPABASE_ANON_KEY", "")
 
@@ -363,6 +394,7 @@ def obtener_usuario_desde_token(request):
     try:
         with urllib.request.urlopen(req) as resp:
             user_data = json.loads(resp.read().decode("utf-8"))
+            cache.set(cache_key, user_data, timeout=60)
             return user_data, None
     except urllib.error.HTTPError:
         return None, "Token inválido o expirado."
@@ -439,9 +471,16 @@ def ong_mi_perfil(request):
 @permission_classes([AllowAny])
 def listar_causas(request):
     """Devuelve el catálogo de causas / categorías de voluntariado."""
-    causas = Causa.objects.all()
-    serializer = CausaSerializer(causas, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    cache_key = "catalogo_causas"
+    data = cache.get(cache_key)
+    if data is None:
+        causas = Causa.objects.all()
+        data = CausaSerializer(causas, many=True).data
+        cache.set(cache_key, data, timeout=3600)
+
+    res = Response(data, status=status.HTTP_200_OK)
+    res["Cache-Control"] = "public, max-age=3600"
+    return res
 
 
 @api_view(["GET", "POST"])
@@ -458,7 +497,20 @@ def ong_mis_convocatorias(request):
         return err_resp
 
     if request.method == "GET":
-        convocatorias = Convocatoria.objects.filter(ong=ong)
+        convocatorias = (
+            Convocatoria.objects.filter(ong=ong)
+            .select_related("causa", "provincia", "localidad")
+            .annotate(
+                postulantes_count_ann=Count(
+                    "postulaciones",
+                    filter=Q(postulaciones__estado__in=["POSTULADO", "CONFIRMADO"]),
+                ),
+                asistencias_pendientes_ann=Count(
+                    "postulaciones",
+                    filter=Q(postulaciones__estado="CONFIRMADO"),
+                ),
+            )
+        )
         estado_filtro = request.GET.get("estado")
         if estado_filtro and estado_filtro.upper() != "TODAS":
             convocatorias = convocatorias.filter(estado__iexact=estado_filtro)
@@ -471,6 +523,7 @@ def ong_mis_convocatorias(request):
             return Response({"message": primer_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             convocatoria = serializer.save(ong=ong)
+            cache.delete("vista_convocatorias_mapa")
             return Response({
                 "message": "Convocatoria publicada con éxito.",
                 "data": ConvocatoriaSerializer(convocatoria).data,
@@ -514,6 +567,7 @@ def ong_detalle_convocatoria(request, convocatoria_id):
             return Response({"message": primer_error(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             serializer.save()
+            cache.delete("vista_convocatorias_mapa")
             return Response({
                 "message": "Convocatoria actualizada con éxito.",
                 "data": serializer.data,
@@ -531,6 +585,7 @@ def ong_detalle_convocatoria(request, convocatoria_id):
             )
         convocatoria.estado = "CANCELADA"
         convocatoria.save()
+        cache.delete("vista_convocatorias_mapa")
         return Response({"message": "Convocatoria cancelada/cerrada con éxito."}, status=status.HTTP_200_OK)
 
 
@@ -763,7 +818,7 @@ def mis_postulaciones(request):
         return Response([], status=status.HTTP_200_OK)
 
     postulaciones = Postulacion.objects.filter(voluntario=voluntario).select_related(
-        "convocatoria", "convocatoria__ong"
+        "convocatoria", "convocatoria__ong", "convocatoria__causa"
     )
 
     estado_param = request.query_params.get("estado", "").strip().lower()
@@ -843,12 +898,22 @@ def admin_dashboard(request):
         total_parts = 0
 
     # Convocatorias
-    convocatorias_qs = Convocatoria.objects.select_related("ong", "causa", "provincia", "localidad").order_by("-created_at")
+    convocatorias_qs = (
+        Convocatoria.objects.select_related("ong", "causa", "provincia", "localidad")
+        .annotate(
+            postulaciones_count_ann=Count("postulaciones"),
+            confirmados_count_ann=Count(
+                "postulaciones",
+                filter=Q(postulaciones__estado__in=["POSTULADO", "CONFIRMADO"]),
+            ),
+        )
+        .order_by("-created_at")
+    )
     convocatorias_data = []
 
     for c in convocatorias_qs:
-        postulaciones_count = Postulacion.objects.filter(convocatoria=c).count()
-        confirmados_count = Postulacion.objects.filter(convocatoria=c, estado__in=["POSTULADO", "CONFIRMADO"]).count()
+        postulaciones_count = c.postulaciones_count_ann
+        confirmados_count = c.confirmados_count_ann
         cupos_libres = max(0, c.cupos_totales - confirmados_count)
 
         ubicacion = ""
@@ -880,10 +945,11 @@ def admin_dashboard(request):
 
     usuarios_data = []
     try:
-        for v in Voluntario.objects.all():
+        for v in Voluntario.objects.values("nombre", "apellido", "email"):
+            nombre = f"{v.get('nombre') or ''} {v.get('apellido') or ''}".strip()
             usuarios_data.append({
-                "nombre": f"{v.nombre} {v.apellido}".strip(),
-                "email": v.email or "",
+                "nombre": nombre or "Voluntario",
+                "email": v.get("email") or "",
                 "rol": "voluntario",
             })
     except Exception:
@@ -897,10 +963,11 @@ def admin_dashboard(request):
         })
 
     try:
-        for a in Administrador.objects.all():
+        for a in Administrador.objects.values("id", "nombre", "apellido"):
+            nombre = f"{a.get('nombre') or ''} {a.get('apellido') or ''}".strip() or "Administrador"
             usuarios_data.append({
-                "nombre": f"{a.nombre} {a.apellido}".strip() or "Administrador",
-                "email": user_data.get("email") if str(a.id) == str(user_id) else "admin@voluntariapp.org",
+                "nombre": nombre,
+                "email": user_data.get("email") if str(a["id"]) == str(user_id) else "admin@voluntariapp.org",
                 "rol": "admin",
             })
     except Exception:
@@ -1060,6 +1127,7 @@ def admin_actualizar_convocatoria(request, convocatoria_id):
 
     try:
         convocatoria.save()
+        cache.delete("vista_convocatorias_mapa")
     except Exception as e:
         return Response({"message": f"Error al actualizar la convocatoria: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 

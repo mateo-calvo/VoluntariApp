@@ -188,13 +188,20 @@ async function loadItems() {
     const timer = setTimeout(() => ctrl.abort(), 15000);
 
     const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
-    const res = await fetch(`${baseUrl}/api/convocatorias/`, { signal: ctrl.signal });
-    clearTimeout(timer);
+    const fetchConvocatoriasPromise = fetch(`${baseUrl}/api/convocatorias/`, { signal: ctrl.signal })
+      .then(async (res) => {
+        clearTimeout(timer);
+        if (!res.ok) throw new Error(`El servidor respondió con código ${res.status}`);
+        return res.json();
+      });
 
-    if (!res.ok) throw new Error(`El servidor respondió con código ${res.status}`);
-    const data = await res.json();
+    // Cargar mapa y postulaciones en paralelo para reducir latencia
+    const [data] = await Promise.all([
+      fetchConvocatoriasPromise,
+      syncMisPostulaciones(),
+    ]);
+
     if (Array.isArray(data)) {
-      await syncMisPostulaciones();
       state.items = data.map(mapApiItem);
       aplicarOverridesDemo();
       state.isLoading = false;
