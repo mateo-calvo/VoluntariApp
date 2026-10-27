@@ -7,14 +7,14 @@ Django + Django REST Framework + Supabase (PostgreSQL & Auth).
 - Python 3.12+
 - Archivo `.env` en `backend/` con las credenciales de Supabase:
   ```env
-  DJANGO_SECRET_KEY=clave-secreta-de-desarrollo
+  DJANGO_SECRET_KEY=tu-clave-secreta-de-desarrollo
   DJANGO_DEBUG=True
   DB_NAME=postgres
-  DB_USER=postgres.fzfiwitvjqlrqimxxcmt
+  DB_USER=postgres.tu_proyecto
   DB_PASSWORD=tu_password_supabase
   DB_HOST=aws-1-sa-east-1.pooler.supabase.com
   DB_PORT=5432
-  SUPABASE_URL=https://fzfiwitvjqlrqimxxcmt.supabase.co
+  SUPABASE_URL=https://tu_proyecto.supabase.co
   SUPABASE_ANON_KEY=tu_anon_key
   ```
 
@@ -52,17 +52,14 @@ python backend/manage.py runserver
 
 ---
 
-## 👥 Usuarios de Prueba para Testing
+## 👥 Usuarios y Roles
 
-El sistema cuenta con usuarios reales en Supabase para probar cada rol:
+El sistema admite tres roles principales:
+* **Voluntario:** Búsqueda en el mapa y postulación a convocatorias (`pages/mapa.html` y `pages/participaciones.html`).
+* **ONG:** Gestión de convocatorias y postulantes (`pages/mi-ong.html` y `pages/mis-convocatorias.html`).
+* **Admin:** Panel de auditoría y aprobación de organizaciones (`pages/admin.html`).
 
-| Rol | Email | Contraseña | Destino tras login |
-|---|---|---|---|
-| **Voluntario** | `analubari@gmail.com` | `Voluntario123!` | Redirige al mapa de convocatorias (`mapa.html`) |
-| **ONG** | `contacto@cruzroja.org.ar` | `Ong1234!` | Redirige al panel de la ONG (`mi-ong.html`) |
-| **Admin** | `admin@voluntariapp.org` | `Admin1234!` | Redirige al panel de administración (`admin.html`) |
-
-> En la pantalla de login (`pages/login.html`) se encuentran los botones de acceso rápido que permiten seleccionar el rol y adaptan el contexto del formulario.
+> Para pruebas de desarrollo, los usuarios de rol Voluntario u ONG pueden registrarse directamente desde `pages/register.html`.
 
 ---
 
