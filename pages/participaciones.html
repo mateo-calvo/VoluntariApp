@@ -167,7 +167,13 @@
     <p class="form-success hidden" id="panel-ok" role="status"></p>
 
     <section class="panel-section">
-      <div class="card-list" id="parts-list"></div>
+      <div class="card-list" id="parts-list">
+        <div class="loading-state" id="loading-state">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Cargando convocatorias...</p>
+          <span class="loading-subtext">Obteniendo las oportunidades en las que te anotaste</span>
+        </div>
+      </div>
       <div class="empty hidden" id="parts-empty">
         Todavía no participás en ninguna convocatoria.
         <br>

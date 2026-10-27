@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # tiene que ir antes de CommonMiddleware
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -103,6 +104,14 @@ if 'test' in sys.argv:
         'NAME': ':memory:',
     }
 
+# Sistema de caché en memoria de alta velocidad (sub-milisegundo)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'voluntariapp-cache',
+    }
+}
+
 # Usuario propio (api.Usuario): login con email y campo rol.
 AUTH_USER_MODEL = 'api.Usuario'
 
@@ -135,6 +144,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 # Orígenes extra (frontend en producción), separados por coma en la variable de entorno
 CORS_ALLOWED_ORIGINS += [o.strip() for o in os.environ.get('CORS_EXTRA_ORIGINS', '').split(',') if o.strip()]
+
+# Cachear preflights CORS en el navegador durante 24 horas (elimina peticiones OPTIONS repetidas)
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 
 # Password validation

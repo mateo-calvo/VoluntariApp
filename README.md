@@ -58,15 +58,13 @@ python manage.py runserver 127.0.0.1:8000
 # Opción B: python -m http.server 8080 (desde la raíz del repo)
 ```
 
-### 👥 Cuentas de prueba (Supabase Auth)
+### 👥 Roles y Acceso
+El sistema cuenta con tres roles diferenciados:
+* **Voluntario:** Acceso al mapa interactivo y postulación a convocatorias (`pages/mapa.html`).
+* **ONG:** Panel de gestión de convocatorias y postulantes (`pages/mi-ong.html`).
+* **Administrador:** Panel de verificación de organizaciones (`pages/admin.html`).
 
-| Rol | Email | Contraseña | Destino tras login |
-|---|---|---|---|
-| **Voluntario** | `demo@voluntariapp.org` | `demo1234` | Mapa de convocatorias (`pages/mapa.html`) |
-| **ONG** | `contacto@cruzroja.org.ar` | `Ong1234!` | Panel de ONG (`pages/mi-ong.html`) |
-| **Admin** | `admin@voluntariapp.org` | `Admin1234!` | Panel de Administración (`pages/admin.html`) |
-
-> En `pages/login.html` se encuentran disponibles los botones rápidos que completan estas credenciales automáticamente.
+> Para pruebas locales, las cuentas de voluntario u ONG pueden crearse desde `pages/register.html`.
 > Ver `backend/README.md` para detalles de variables de entorno y creación de administradores adicionales.
 
 ---

@@ -106,13 +106,20 @@ function activarFiltrosBusqueda() {
 
 async function cargarCausas() {
   const baseUrl = typeof API_URL !== 'undefined' ? API_URL : 'http://127.0.0.1:8000';
-  try {
-    const res = await fetch(`${baseUrl}/api/causas/`);
-    if (res.ok) {
-      causasCache = await res.json();
+  const cached = sessionStorage.getItem('va_cat_causas');
+  if (cached) {
+    try { causasCache = JSON.parse(cached); } catch (_) {}
+  }
+  if (!causasCache || causasCache.length === 0) {
+    try {
+      const res = await fetch(`${baseUrl}/api/causas/`);
+      if (res.ok) {
+        causasCache = await res.json();
+        try { sessionStorage.setItem('va_cat_causas', JSON.stringify(causasCache)); } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('Error al cargar causas:', e);
     }
-  } catch (e) {
-    console.warn('Error al cargar causas:', e);
   }
 
   if (!causasCache || causasCache.length === 0) {
@@ -211,6 +218,18 @@ function clasificarParticipacion(p) {
 
 async function pintarParticipaciones() {
   const token = sessionStorage.getItem('va_token');
+  const listEl = document.getElementById('parts-list');
+  const emptyEl = document.getElementById('parts-empty');
+  if (emptyEl) emptyEl.classList.add('hidden');
+  if (listEl) {
+    listEl.innerHTML = `
+      <div class="loading-state" id="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Cargando convocatorias...</p>
+        <span class="loading-subtext">Obteniendo las oportunidades en las que te anotaste</span>
+      </div>
+    `;
+  }
 
   if (token) {
     try {

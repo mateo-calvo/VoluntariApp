@@ -100,11 +100,15 @@
                             <div class="form-group">
                                 <label for="nombre">Nombre *</label>
                                 <input type="text" id="nombre" name="nombre" placeholder="María"
+                                    minlength="2" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$"
+                                    title="Solo se permiten letras y espacios (entre 2 y 50 caracteres)"
                                     autocomplete="given-name" required>
                             </div>
                             <div class="form-group">
                                 <label for="apellido">Apellido *</label>
                                 <input type="text" id="apellido" name="apellido" placeholder="García"
+                                    minlength="2" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$"
+                                    title="Solo se permiten letras y espacios (entre 2 y 50 caracteres)"
                                     autocomplete="family-name" required>
                             </div>
                         </div>
