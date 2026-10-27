@@ -270,6 +270,7 @@ function mapApiItem(c) {
     necesidades: c.necesidades || '',
     fecha: c.fecha || '',
     hora: c.hora || '',
+    requiereAprobacion: Boolean(c.requiere_aprobacion),
   };
 }
 
@@ -415,11 +416,20 @@ function renderList(list) {
   container.innerHTML = list
     .map(
       (o) => {
-        const yaIn = yaParticipa(o.id);
-        const postuladoBadge = yaIn ? `<span style="background:#27ae60; color:#fff; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:700; margin-left:6px; display:inline-block; vertical-align:middle;">Participando ✓</span>` : '';
-        const cuposText = yaIn
-          ? `<span class="ong-cupos" style="color:#27ae60; font-weight:700;">🤝 Ya estás anotado &nbsp;·&nbsp; ${o.cupos} lugares libres</span>`
-          : `<span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>`;
+        const estadoPost = state.postulacionesMap ? state.postulacionesMap[String(o.id)] : null;
+        const isPostulado = estadoPost === 'POSTULADO';
+        const isConfirmado = estadoPost === 'CONFIRMADO' || (!estadoPost && yaParticipa(o.id));
+
+        let postuladoBadge = '';
+        let cuposText = `<span class="ong-cupos">🤝 ${o.cupos} lugares libres</span>`;
+
+        if (isPostulado) {
+          postuladoBadge = `<span style="background:#d97706; color:#fff; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:700; margin-left:6px; display:inline-block; vertical-align:middle;">Pendiente ⏳</span>`;
+          cuposText = `<span class="ong-cupos" style="color:#d97706; font-weight:700;">⏳ Postulación pendiente &nbsp;·&nbsp; ${o.cupos} lugares libres</span>`;
+        } else if (isConfirmado) {
+          postuladoBadge = `<span style="background:#27ae60; color:#fff; font-size:11px; padding:2px 8px; border-radius:9999px; font-weight:700; margin-left:6px; display:inline-block; vertical-align:middle;">Participando ✓</span>`;
+          cuposText = `<span class="ong-cupos" style="color:#27ae60; font-weight:700;">🤝 Ya estás anotado &nbsp;·&nbsp; ${o.cupos} lugares libres</span>`;
+        }
 
         return `
     <article class="ong-card ${o.id === state.selectedId ? "active" : ""}" data-id="${o.id}">
@@ -490,13 +500,20 @@ function renderDetail() {
 
   const session = getSession();
   const estadoPost = state.postulacionesMap ? state.postulacionesMap[String(item.id)] : null;
-  const alreadyIn = yaParticipa(item.id) || ['POSTULADO', 'CONFIRMADO'].includes(estadoPost);
+  const isPostulado = estadoPost === 'POSTULADO';
+  const isConfirmado = estadoPost === 'CONFIRMADO' || (!estadoPost && yaParticipa(item.id));
   const isCancelado = estadoPost === 'CANCELADO';
   const isFinalizado = ['ASISTIO', 'FINALIZADO'].includes(estadoPost);
   const sinCupos = item.cupos <= 0;
 
   let btnHtml;
-  if (alreadyIn) {
+  if (isPostulado) {
+    btnHtml = `
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary" disabled style="background:#d97706; cursor:default;" title="Tu postulación quedó pendiente de aprobación por parte de la organización">Participación pendiente ⏳</button>
+        <button class="btn-secondary" id="detail-cancel" style="color:#c0392b; border-color:#c0392b; padding:10px; border-radius:8px; font-weight:600; cursor:pointer;">Cancelar mi postulación</button>
+      </div>`;
+  } else if (isConfirmado) {
     btnHtml = `
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn-primary" disabled style="background:#27ae60; cursor:default;">Ya estás participando ✓</button>
@@ -649,9 +666,14 @@ async function joinConvocatoria(item) {
         item.cupos = data.lugares_libres != null ? data.lugares_libres : Math.max(0, item.cupos - 1);
         item.inscriptos = data.inscriptos_actuales != null ? data.inscriptos_actuales : (item.inscriptos || 0) + 1;
         item.voluntarios = item.inscriptos;
-        if (state.postulacionesMap) state.postulacionesMap[String(item.id)] = 'POSTULADO';
-        guardarParticipacion(item);
-        toast(data.message || '¡Listo! Ya estás participando en esta convocatoria.', 'success');
+        const nuevoEstado = (data.postulacion && data.postulacion.estado)
+          ? data.postulacion.estado
+          : (item.requiereAprobacion ? 'POSTULADO' : 'CONFIRMADO');
+        if (state.postulacionesMap) state.postulacionesMap[String(item.id)] = nuevoEstado;
+        if (nuevoEstado === 'CONFIRMADO') {
+          guardarParticipacion(item);
+        }
+        toast(data.message || (nuevoEstado === 'POSTULADO' ? '¡Te postulaste con éxito! Tu postulación quedó pendiente de aprobación por parte de la organización.' : '¡Listo! Ya estás participando en esta convocatoria.'), 'success');
         refresh(false);
         return;
       }

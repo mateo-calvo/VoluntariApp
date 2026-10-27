@@ -28,6 +28,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputEmailVol = document.getElementById('email');
     const inputPassVol = document.getElementById('password');
 
+    // Restricción de caracteres especiales y números en nombre y apellido
+    function restringirNombreApellido(input) {
+        if (!input) return;
+        input.addEventListener('input', () => {
+            const original = input.value;
+            const limpio = original.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]/g, '');
+            if (original !== limpio) {
+                input.value = limpio;
+            }
+        });
+    }
+    restringirNombreApellido(inputNombre);
+    restringirNombreApellido(inputApellido);
+
     // ---------- Carga dinámica de Provincias y Localidades (con caché en sessionStorage) ----------
     async function inicializarCascadaUbicacion(selectProv, selectLoc) {
         if (!selectProv) return;
@@ -676,6 +690,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const password = inputPassVol ? inputPassVol.value : '';
 
                     if (!nombre || !apellido) throw new Error('Ingresa tu nombre y apellido completos.');
+                    if (nombre.length < 2 || nombre.length > 50) throw new Error('El nombre debe tener entre 2 y 50 caracteres.');
+                    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/.test(nombre)) throw new Error('El nombre solo puede contener letras y espacios, sin números ni caracteres especiales.');
+                    if (apellido.length < 2 || apellido.length > 50) throw new Error('El apellido debe tener entre 2 y 50 caracteres.');
+                    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/.test(apellido)) throw new Error('El apellido solo puede contener letras y espacios, sin números ni caracteres especiales.');
                     if (!dni) throw new Error('Ingresa tu DNI o documento.');
                     if (!telefono) throw new Error('Ingresa tu número de teléfono.');
                     if (!genero) throw new Error('Selecciona tu género.');

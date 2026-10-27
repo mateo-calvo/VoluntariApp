@@ -230,6 +230,15 @@ async function actualizarLocalidadesPorProvincia(provId, selectedLocId = null) {
 
 async function cargarConvocatorias(session) {
   const contenedor = document.getElementById('convocatorias-lista');
+  if (contenedor) {
+    contenedor.innerHTML = `
+      <div class="loading-state" id="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Cargando convocatorias...</p>
+        <span class="loading-subtext">Obteniendo las oportunidades de tu organización</span>
+      </div>
+    `;
+  }
   const token = leerToken();
 
   if (token) {
@@ -1029,7 +1038,13 @@ function cerrarModalPostulantes() {
 async function cargarPostulantesModal(convocatoriaId) {
   const cont = document.getElementById('postulantes-lista-contenedor');
   if (cont) {
-    cont.innerHTML = '<div class="empty-state" style="padding:24px;"><p>Cargando postulantes...</p></div>';
+    cont.innerHTML = `
+      <div class="loading-state" style="padding: 36px 20px; box-shadow: none; border-style: dashed;">
+        <div class="loading-spinner" style="width: 28px; height: 28px;"></div>
+        <p class="loading-text" style="font-size: 15px;">Cargando postulantes...</p>
+        <span class="loading-subtext" style="font-size: 13px;">Consultando voluntarios inscriptos</span>
+      </div>
+    `;
   }
 
   const token = leerToken();
