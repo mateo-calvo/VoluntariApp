@@ -1,6 +1,7 @@
 import re
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from .models import (
@@ -40,8 +41,28 @@ def validar_requisitos_password(value: str):
 class RegistroVoluntarioSerializer(serializers.Serializer):
     """Valida los datos del registro de voluntario."""
 
-    nombre = serializers.CharField(min_length=2, max_length=150, trim_whitespace=True)
-    apellido = serializers.CharField(min_length=2, max_length=100, trim_whitespace=True)
+    nombre = serializers.CharField(
+        min_length=2,
+        max_length=50,
+        trim_whitespace=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$",
+                message="El nombre solo puede contener letras y espacios, sin números ni caracteres especiales.",
+            )
+        ],
+    )
+    apellido = serializers.CharField(
+        min_length=2,
+        max_length=50,
+        trim_whitespace=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$",
+                message="El apellido solo puede contener letras y espacios, sin números ni caracteres especiales.",
+            )
+        ],
+    )
     dni = serializers.CharField(min_length=6, max_length=20, trim_whitespace=True)
     telefono = serializers.CharField(min_length=6, max_length=30, trim_whitespace=True)
     genero = serializers.ChoiceField(choices=GENEROS_PERMITIDOS)
