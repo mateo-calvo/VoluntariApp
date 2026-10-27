@@ -577,3 +577,41 @@ body {
 .btn-close:hover {
   color: var(--color-navy);
 }
+
+/* Estado de carga compartido para paneles */
+.loading-state {
+  background: var(--color-white, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));
+  width: 100%;
+}
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: var(--color-primary, #0d9488);
+  border-radius: 50%;
+  animation: spin-loading 0.8s linear infinite;
+}
+@keyframes spin-loading {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-navy, #0f172a);
+  margin: 0;
+}
+.loading-subtext {
+  font-size: 13.5px;
+  color: var(--color-muted, #64748b);
+  margin: 0;
+}

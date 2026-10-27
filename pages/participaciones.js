@@ -218,6 +218,18 @@ function clasificarParticipacion(p) {
 
 async function pintarParticipaciones() {
   const token = sessionStorage.getItem('va_token');
+  const listEl = document.getElementById('parts-list');
+  const emptyEl = document.getElementById('parts-empty');
+  if (emptyEl) emptyEl.classList.add('hidden');
+  if (listEl) {
+    listEl.innerHTML = `
+      <div class="loading-state" id="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Cargando convocatorias...</p>
+        <span class="loading-subtext">Obteniendo las oportunidades en las que te anotaste</span>
+      </div>
+    `;
+  }
 
   if (token) {
     try {
