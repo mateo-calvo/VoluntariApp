@@ -119,13 +119,20 @@ async function cargarCausas() {
   const selectCausa = document.getElementById('c-causa');
   const token = leerToken();
 
-  try {
-    const res = await fetch(`${API_URL}/api/causas/`);
-    if (res.ok) {
-      causasCache = await res.json();
+  const cachedCausas = sessionStorage.getItem('va_cat_causas');
+  if (cachedCausas) {
+    try { causasCache = JSON.parse(cachedCausas); } catch (_) {}
+  }
+  if (!causasCache || causasCache.length === 0) {
+    try {
+      const res = await fetch(`${API_URL}/api/causas/`);
+      if (res.ok) {
+        causasCache = await res.json();
+        try { sessionStorage.setItem('va_cat_causas', JSON.stringify(causasCache)); } catch (_) {}
+      }
+    } catch (err) {
+      console.warn('No se pudieron cargar causas desde API, usando respaldo:', err);
     }
-  } catch (err) {
-    console.warn('No se pudieron cargar causas desde API, usando respaldo:', err);
   }
 
   if (!causasCache || causasCache.length === 0) {
@@ -155,15 +162,26 @@ async function cargarProvincias() {
   const selectProv = document.getElementById('c-provincia');
   if (!selectProv) return;
 
-  try {
-    const res = await fetch(`${API_URL}/api/provincias/`);
-    if (res.ok) {
-      provinciasCache = await res.json();
-      selectProv.innerHTML = '<option value="" disabled selected>Selecciona una provincia</option>' +
-        provinciasCache.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
+  const cachedProv = sessionStorage.getItem('va_cat_provincias');
+  if (cachedProv) {
+    try { provinciasCache = JSON.parse(cachedProv); } catch (_) {}
+  }
+
+  if (!provinciasCache || provinciasCache.length === 0) {
+    try {
+      const res = await fetch(`${API_URL}/api/provincias/`);
+      if (res.ok) {
+        provinciasCache = await res.json();
+        try { sessionStorage.setItem('va_cat_provincias', JSON.stringify(provinciasCache)); } catch (_) {}
+      }
+    } catch (err) {
+      console.warn('Error cargando provincias:', err);
     }
-  } catch (err) {
-    console.warn('Error cargando provincias:', err);
+  }
+
+  if (provinciasCache && provinciasCache.length > 0) {
+    selectProv.innerHTML = '<option value="" disabled selected>Selecciona una provincia</option>' +
+      provinciasCache.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
   }
 
   selectProv.addEventListener('change', async () => {
@@ -182,9 +200,21 @@ async function actualizarLocalidadesPorProvincia(provId, selectedLocId = null) {
   if (!provId) return;
 
   try {
-    const res = await fetch(`${API_URL}/api/localidades/?provincia_id=${encodeURIComponent(provId)}`);
-    if (res.ok) {
-      const data = await res.json();
+    let data = null;
+    const cacheKey = `va_cat_loc_${provId}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try { data = JSON.parse(cached); } catch (_) {}
+    }
+    if (!data) {
+      const res = await fetch(`${API_URL}/api/localidades/?provincia_id=${encodeURIComponent(provId)}`);
+      if (res.ok) {
+        data = await res.json();
+        try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+      }
+    }
+
+    if (data && Array.isArray(data)) {
       selectLoc.innerHTML = '<option value="" disabled selected>Selecciona una localidad</option>' +
         data.map(l => `<option value="${l.id}">${esc(l.nombre)}</option>`).join('');
       selectLoc.disabled = false;

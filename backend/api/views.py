@@ -945,10 +945,11 @@ def admin_dashboard(request):
 
     usuarios_data = []
     try:
-        for v in Voluntario.objects.all():
+        for v in Voluntario.objects.values("nombre", "apellido", "email"):
+            nombre = f"{v.get('nombre') or ''} {v.get('apellido') or ''}".strip()
             usuarios_data.append({
-                "nombre": f"{v.nombre} {v.apellido}".strip(),
-                "email": v.email or "",
+                "nombre": nombre or "Voluntario",
+                "email": v.get("email") or "",
                 "rol": "voluntario",
             })
     except Exception:
@@ -962,10 +963,11 @@ def admin_dashboard(request):
         })
 
     try:
-        for a in Administrador.objects.all():
+        for a in Administrador.objects.values("id", "nombre", "apellido"):
+            nombre = f"{a.get('nombre') or ''} {a.get('apellido') or ''}".strip() or "Administrador"
             usuarios_data.append({
-                "nombre": f"{a.nombre} {a.apellido}".strip() or "Administrador",
-                "email": user_data.get("email") if str(a.id) == str(user_id) else "admin@voluntariapp.org",
+                "nombre": nombre,
+                "email": user_data.get("email") if str(a["id"]) == str(user_id) else "admin@voluntariapp.org",
                 "rol": "admin",
             })
     except Exception:

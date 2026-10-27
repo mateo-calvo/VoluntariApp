@@ -145,6 +145,9 @@ CORS_ALLOWED_ORIGINS = [
 # Orígenes extra (frontend en producción), separados por coma en la variable de entorno
 CORS_ALLOWED_ORIGINS += [o.strip() for o in os.environ.get('CORS_EXTRA_ORIGINS', '').split(',') if o.strip()]
 
+# Cachear preflights CORS en el navegador durante 24 horas (elimina peticiones OPTIONS repetidas)
+CORS_PREFLIGHT_MAX_AGE = 86400
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators

@@ -28,13 +28,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputEmailVol = document.getElementById('email');
     const inputPassVol = document.getElementById('password');
 
-    // ---------- Carga dinámica de Provincias y Localidades (Django API) ----------
+    // ---------- Carga dinámica de Provincias y Localidades (con caché en sessionStorage) ----------
     async function inicializarCascadaUbicacion(selectProv, selectLoc) {
         if (!selectProv) return;
         try {
-            const res = await fetch(`${API_URL}/api/provincias/`);
-            if (!res.ok) throw new Error('Error al obtener provincias');
-            const data = await res.json();
+            let data = null;
+            const cached = sessionStorage.getItem('va_cat_provincias');
+            if (cached) {
+                try { data = JSON.parse(cached); } catch (_) {}
+            }
+            if (!data) {
+                const res = await fetch(`${API_URL}/api/provincias/`);
+                if (!res.ok) throw new Error('Error al obtener provincias');
+                data = await res.json();
+                try { sessionStorage.setItem('va_cat_provincias', JSON.stringify(data)); } catch (_) {}
+            }
 
             selectProv.innerHTML = '<option value="" disabled selected>Selecciona tu provincia</option>';
             data.forEach((p) => {
@@ -58,9 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!provId) return;
 
             try {
-                const res = await fetch(`${API_URL}/api/localidades/?provincia_id=${encodeURIComponent(provId)}`);
-                if (!res.ok) throw new Error('Error al obtener localidades');
-                const data = await res.json();
+                let data = null;
+                const cacheKey = `va_cat_loc_${provId}`;
+                const cached = sessionStorage.getItem(cacheKey);
+                if (cached) {
+                    try { data = JSON.parse(cached); } catch (_) {}
+                }
+                if (!data) {
+                    const res = await fetch(`${API_URL}/api/localidades/?provincia_id=${encodeURIComponent(provId)}`);
+                    if (!res.ok) throw new Error('Error al obtener localidades');
+                    data = await res.json();
+                    try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+                }
 
                 selectLoc.innerHTML = '<option value="" disabled selected>Selecciona tu localidad</option>';
                 data.forEach((loc) => {
