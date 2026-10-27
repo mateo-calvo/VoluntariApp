@@ -403,12 +403,16 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
         return obj.localidad.nombre if obj.localidad else ""
 
     def get_postulantes_count(self, obj):
+        if hasattr(obj, "postulantes_count_ann"):
+            return obj.postulantes_count_ann
         try:
             return obj.postulaciones.filter(estado__in=["POSTULADO", "CONFIRMADO"]).count()
         except Exception:
             return 0
 
     def get_asistencias_pendientes(self, obj):
+        if hasattr(obj, "asistencias_pendientes_ann"):
+            return obj.asistencias_pendientes_ann
         try:
             return obj.postulaciones.filter(estado="CONFIRMADO").count()
         except Exception:

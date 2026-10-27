@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
@@ -496,7 +497,20 @@ def ong_mis_convocatorias(request):
         return err_resp
 
     if request.method == "GET":
-        convocatorias = Convocatoria.objects.filter(ong=ong)
+        convocatorias = (
+            Convocatoria.objects.filter(ong=ong)
+            .select_related("causa", "provincia", "localidad")
+            .annotate(
+                postulantes_count_ann=Count(
+                    "postulaciones",
+                    filter=Q(postulaciones__estado__in=["POSTULADO", "CONFIRMADO"]),
+                ),
+                asistencias_pendientes_ann=Count(
+                    "postulaciones",
+                    filter=Q(postulaciones__estado="CONFIRMADO"),
+                ),
+            )
+        )
         estado_filtro = request.GET.get("estado")
         if estado_filtro and estado_filtro.upper() != "TODAS":
             convocatorias = convocatorias.filter(estado__iexact=estado_filtro)
@@ -804,7 +818,7 @@ def mis_postulaciones(request):
         return Response([], status=status.HTTP_200_OK)
 
     postulaciones = Postulacion.objects.filter(voluntario=voluntario).select_related(
-        "convocatoria", "convocatoria__ong"
+        "convocatoria", "convocatoria__ong", "convocatoria__causa"
     )
 
     estado_param = request.query_params.get("estado", "").strip().lower()
@@ -884,12 +898,22 @@ def admin_dashboard(request):
         total_parts = 0
 
     # Convocatorias
-    convocatorias_qs = Convocatoria.objects.select_related("ong", "causa", "provincia", "localidad").order_by("-created_at")
+    convocatorias_qs = (
+        Convocatoria.objects.select_related("ong", "causa", "provincia", "localidad")
+        .annotate(
+            postulaciones_count_ann=Count("postulaciones"),
+            confirmados_count_ann=Count(
+                "postulaciones",
+                filter=Q(postulaciones__estado__in=["POSTULADO", "CONFIRMADO"]),
+            ),
+        )
+        .order_by("-created_at")
+    )
     convocatorias_data = []
 
     for c in convocatorias_qs:
-        postulaciones_count = Postulacion.objects.filter(convocatoria=c).count()
-        confirmados_count = Postulacion.objects.filter(convocatoria=c, estado__in=["POSTULADO", "CONFIRMADO"]).count()
+        postulaciones_count = c.postulaciones_count_ann
+        confirmados_count = c.confirmados_count_ann
         cupos_libres = max(0, c.cupos_totales - confirmados_count)
 
         ubicacion = ""
