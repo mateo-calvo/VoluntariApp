@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Conocé las 6 causas solidarias de VoluntariApp: Desarrollo social, Salud, Educación, Medioambiente, Infancias y juventudes, y Derechos humanos. Encontrá tu propósito y sumate como voluntario.">
+    <title>Causas Solidarias | VoluntariApp</title>
+
+    <link rel="icon" type="image/x-icon" href="../images/favicon.ico">
+    <link rel="apple-touch-icon" href="../images/apple-touch-icon.png">
+
+    <!-- CSS del Sistema de Diseño -->
+    <link rel="stylesheet" href="../css/tokens.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/causas.css">
+</head>
+
+<body>
+    <!-- ===== HEADER Y NAVEGACIÓN ===== -->
+    <header class="navbar-background">
+        <nav class="navbar global-container">
+            <a href="../index.html" class="logo" title="VoluntariApp - Inicio">
+                <img src="../images/logo.png" alt="VoluntariApp" width="160" height="36">
+            </a>
+
+            <button type="button" class="navbar-toggle" id="navbar-toggle" aria-label="Abrir menú" aria-expanded="false"
+                aria-controls="nav-links">
+                <svg class="toggle-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                <svg class="toggle-icon-close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="../index.html#como-funciona">Cómo funciona</a></li>
+                <li><a href="./mapa.html">Mapa</a></li>
+                <li><a href="./causas.html" style="color: var(--color-green); font-weight: 700;">Causas</a></li>
+                <li class="nav-mobile-auth" id="nav-mobile-auth">
+                    <div class="auth-guest-mobile" id="auth-guest-mobile">
+                        <a href="./login.html" class="btn btn-login-mobile">Iniciar Sesión</a>
+                        <a href="./register.html" class="btn btn-register-mobile">Unite Gratis</a>
+                    </div>
+                    <div class="auth-user-mobile hidden" id="auth-user-mobile">
+                        <div class="user-chip-mobile" id="mobile-user-chip">
+                            <span class="avatar" id="mobile-user-avatar">V</span>
+                            <span class="username" id="mobile-user-name">Usuario</span>
+                        </div>
+                        <a href="./mapa.html" class="btn btn-panel-mobile" id="mobile-panel-link">Mi panel</a>
+                        <button type="button" class="btn btn-logout-mobile" id="mobile-logout-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            <span>Cerrar sesión</span>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+
+            <div class="header-auth-container" id="header-auth-container">
+                <div class="auth-guest-desktop" id="auth-guest-desktop">
+                    <a href="./login.html" class="btn btn-login">Iniciar Sesión</a>
+                    <a href="./register.html" class="btn btn-register">Unite Gratis</a>
+                </div>
+                <div class="auth-user-desktop hidden" id="auth-user-desktop">
+                    <a href="./mapa.html" class="btn btn-panel" id="header-panel-link">Mi panel</a>
+                    <div class="user-chip" id="header-user-chip">
+                        <span class="avatar" id="header-user-avatar">V</span>
+                        <span class="username" id="header-user-name">Usuario</span>
+                    </div>
+                    <button type="button" class="logout-link btn-logout" id="header-logout-btn" title="Cerrar sesión">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="causas-main">
+        <!-- ===== HERO SECTION (Limpio y claro) ===== -->
+        <section class="causas-hero-section">
+            <div class="causas-hero-container">
+                <div class="causas-badge">
+                    <span>✨</span>
+                    <span>6 Áreas de Impacto Social</span>
+                </div>
+                <h1 class="causas-hero-title">Causas que <span>Transforman</span> Realidades</h1>
+                <p class="causas-hero-desc">
+                    Detrás de cada voluntario hay un propósito. Conocé las 6 áreas donde cientos de organizaciones comunitarias
+                    trabajan día a día y encontrá la causa donde tu tiempo y energía pueden generar una verdadera diferencia.
+                </p>
+
+                <div class="causas-stats-strip">
+                    <div class="causas-stat-unit">
+                        <span class="causas-stat-value">6</span>
+                        <span class="causas-stat-name">Causas Solidarias</span>
+                    </div>
+                    <div class="causas-stat-unit">
+                        <span class="causas-stat-value">+100</span>
+                        <span class="causas-stat-name">Convocatorias Abiertas</span>
+                    </div>
+                    <div class="causas-stat-unit">
+                        <span class="causas-stat-value">+50</span>
+                        <span class="causas-stat-name">ONGs Activas</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== BARRA STICKY DE FILTROS ===== -->
+        <nav class="causas-filter-bar" aria-label="Filtro de causas">
+            <div class="causas-filter-container">
+                <button type="button" class="causa-pill-filter active" data-filter="todas">
+                    🌐 Todas las Causas
+                </button>
+                <button type="button" class="causa-pill-filter" data-filter="desarrollo-social">
+                    🤲 Desarrollo social
+                </button>
+                <button type="button" class="causa-pill-filter" data-filter="salud">
+                    🚑 Salud
+                </button>
+                <button type="button" class="causa-pill-filter" data-filter="educacion">
+                    📚 Educación
+                </button>
+                <button type="button" class="causa-pill-filter" data-filter="medioambiente">
+                    🌿 Medioambiente
+                </button>
+                <button type="button" class="causa-pill-filter" data-filter="infancias">
+                    👶 Infancias y juventudes
+                </button>
+                <button type="button" class="causa-pill-filter" data-filter="derechos">
+                    🕊️ Derechos humanos
+                </button>
+            </div>
+        </nav>
+
+        <!-- ===== SECCIÓN DE CONTENIDO Y GRILLA ===== -->
+        <section class="causas-content-section">
+            <div class="causas-main-wrapper">
+                <div class="causas-header-text">
+                    <h2>Elegí la causa que te mueve</h2>
+                    <p>Hacé clic en cualquiera de las causas para conocer sus desafíos, actividades y ver las oportunidades abiertas en el mapa.</p>
+                </div>
+
+                <div class="causas-cards-grid" id="causas-grid">
+                    <!-- 1. Desarrollo Social -->
+                    <article class="causa-card-box" data-causa="desarrollo-social">
+                        <div>
+                            <div class="causa-box-header">
+                                <div class="causa-box-icon" aria-hidden="true">🤲</div>
+                                <span class="causa-box-badge">Comunidad</span>
+                            </div>
+                            <h3 class="causa-box-title">Desarrollo Social</h3>
+                            <p class="causa-box-desc">
+                                Apoyo directo a comedores, merenderos y centros comunitarios que brindan contención alimentaria,
+                                abrigo y asistencia urgente a familias en situación de vulnerabilidad social y económica.
+                            </p>
+                            <div class="causa-activities-wrapper">
+                                <div class="causa-activities-tag">¿Qué hace un voluntario?</div>
+                                <ul class="causa-activities-ul">
+                                    <li>Preparación y entrega de viandas en comedores barriales.</li>
+                                    <li>Clasificación de donaciones de ropa y alimentos.</li>
+                                    <li>Acompañamiento a personas en situación de calle.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="./mapa.html?categoria=desarrollo-social" class="causa-box-action" title="Ver convocatorias de Desarrollo social">
+                            <span>Ver convocatorias en el mapa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </article>
+
+                    <!-- 2. Salud -->
+                    <article class="causa-card-box" data-causa="salud">
+                        <div>
+                            <div class="causa-box-header">
+                                <div class="causa-box-icon" aria-hidden="true">🚑</div>
+                                <span class="causa-box-badge">Bienestar</span>
+                            </div>
+                            <h3 class="causa-box-title">Salud y Bienestar</h3>
+                            <p class="causa-box-desc">
+                                Promoción de la salud física y mental comunitaria, acompañamiento a pacientes internados y adultos mayores,
+                                campañas de prevención, colectas voluntarias de sangre y capacitaciones en primeros auxilios.
+                            </p>
+                            <div class="causa-activities-wrapper">
+                                <div class="causa-activities-tag">¿Qué hace un voluntario?</div>
+                                <ul class="causa-activities-ul">
+                                    <li>Acompañamiento recreativo y emocional en hospitales.</li>
+                                    <li>Logística y difusión en jornadas de donación de sangre.</li>
+                                    <li>Campañas barriales de prevención y promoción de la salud.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="./mapa.html?categoria=salud" class="causa-box-action" title="Ver convocatorias de Salud">
+                            <span>Ver convocatorias en el mapa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </article>
+
+                    <!-- 3. Educación -->
+                    <article class="causa-card-box" data-causa="educacion">
+                        <div>
+                            <div class="causa-box-header">
+                                <div class="causa-box-icon" aria-hidden="true">📚</div>
+                                <span class="causa-box-badge">Formación</span>
+                            </div>
+                            <h3 class="causa-box-title">Educación e Inclusión</h3>
+                            <p class="causa-box-desc">
+                                Impulso a la igualdad de oportunidades a través del conocimiento: apoyo escolar primario y secundario,
+                                alfabetización de adultos, fortalecimiento de bibliotecas populares y talleres de oficios.
+                            </p>
+                            <div class="causa-activities-wrapper">
+                                <div class="causa-activities-tag">¿Qué hace un voluntario?</div>
+                                <ul class="causa-activities-ul">
+                                    <li>Clases de apoyo escolar en matemáticas, lengua e historia.</li>
+                                    <li>Talleres de computación, robótica y habilidades digitales.</li>
+                                    <li>Fomento de la lectura comunitaria y tutorías pedagógicas.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="./mapa.html?categoria=educacion" class="causa-box-action" title="Ver convocatorias de Educación">
+                            <span>Ver convocatorias en el mapa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </article>
+
+                    <!-- 4. Medioambiente -->
+                    <article class="causa-card-box" data-causa="medioambiente">
+                        <div>
+                            <div class="causa-box-header">
+                                <div class="causa-box-icon" aria-hidden="true">🌿</div>
+                                <span class="causa-box-badge">Ecología</span>
+                            </div>
+                            <h3 class="causa-box-title">Medioambiente</h3>
+                            <p class="causa-card-desc causa-box-desc">
+                                Cuidado del ecosistema y acción climática local: plantación de árboles nativos, limpieza de ríos y costas,
+                                reciclaje comunitario, rescate animal y fomento de huertas agroecológicas sostenibles.
+                            </p>
+                            <div class="causa-activities-wrapper">
+                                <div class="causa-activities-tag">¿Qué hace un voluntario?</div>
+                                <ul class="causa-activities-ul">
+                                    <li>Jornadas de recolección y separación de plásticos en parques.</li>
+                                    <li>Reforestación con especies nativas en reservas ecológicas.</li>
+                                    <li>Talleres sobre compostaje doméstico y huertas comunitarias.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="./mapa.html?categoria=medioambiente" class="causa-box-action" title="Ver convocatorias de Medioambiente">
+                            <span>Ver convocatorias en el mapa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </article>
+
+                    <!-- 5. Infancias y Juventudes -->
+                    <article class="causa-card-box" data-causa="infancias">
+                        <div>
+                            <div class="causa-box-header">
+                                <div class="causa-box-icon" aria-hidden="true">👶</div>
+                                <span class="causa-box-badge">Juventud</span>
+                            </div>
+                            <h3 class="causa-box-title">Infancias y Juventudes</h3>
+                            <p class="causa-box-desc">
+                                Espacios seguros de desarrollo integral para niños, niñas y adolescentes. Fomento del juego, el deporte formativo,
+                                la expresión artística y el acompañamiento afectivo como herramientas de protección y futuro.
+                            </p>
+                            <div class="causa-activities-wrapper">
+                                <div class="causa-activities-tag">¿Qué hace un voluntario?</div>
+                                <ul class="causa-activities-ul">
+                                    <li>Coordinación de kermeses, festejos y actividades lúdicas.</li>
+                                    <li>Entrenamientos deportivos comunitarios (fútbol, vóley, etc.).</li>
+                                    <li>Talleres de música, plástica, teatro y expresión creativa.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="./mapa.html?categoria=infancias" class="causa-box-action" title="Ver convocatorias de Infancias y juventudes">
+                            <span>Ver convocatorias en el mapa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </article>
+
+                    <!-- 6. Derechos Humanos -->
+                    <article class="causa-card-box" data-causa="derechos">
+                        <div>
+                            <div class="causa-box-header">
+                                <div class="causa-box-icon" aria-hidden="true">🕊️</div>
+                                <span class="causa-box-badge">Justicia</span>
+                            </div>
+                            <h3 class="causa-box-title">Derechos Humanos</h3>
+                            <p class="causa-box-desc">
+                                Defensa activa de la dignidad humana, promoción de la igualdad de género, erradicación de la discriminación,
+                                inclusión de personas migrantes y asesoramiento en el acceso a la justicia y derechos básicos.
+                            </p>
+                            <div class="causa-activities-wrapper">
+                                <div class="causa-activities-tag">¿Qué hace un voluntario?</div>
+                                <ul class="causa-activities-ul">
+                                    <li>Orientación legal y social primaria a vecinos y migrantes.</li>
+                                    <li>Talleres sobre perspectiva de género y prevención de violencias.</li>
+                                    <li>Campañas de visibilización comunitaria y memoria social.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="./mapa.html?categoria=derechos" class="causa-box-action" title="Ver convocatorias de Derechos humanos">
+                            <span>Ver convocatorias en el mapa</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </article>
+                </div>
+
+                <!-- LLAMADO A LA ACCIÓN FINAL -->
+                <div class="causas-cta-wrapper">
+                    <div class="causas-cta-box">
+                        <h3>¿No sabés por cuál causa empezar?</h3>
+                        <p>
+                            No te preocupes. En nuestro mapa podés explorar todas las convocatorias activas cerca de tu zona,
+                            filtrar por días y horarios, o consultar a nuestro asistente virtual con IA para recibir una recomendación personalizada.
+                        </p>
+                        <div class="causas-cta-links">
+                            <a href="./mapa.html" class="btn-cta-explore">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+                                Explorar el Mapa Completo
+                            </a>
+                            <a href="./register.html" class="btn-cta-register">
+                                Registrarme como Voluntario
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== FOOTER (Idéntico a index.html) ===== -->
+    <footer class="footer-background">
+        <div class="global-container">
+            <div class="footer-container">
+                <div class="footer-brand">
+                    <a href="../index.html" class="logo">
+                        <img src="../images/logo.png" alt="VoluntariApp">
+                    </a>
+                    <p>Conectamos voluntarios con ONGs para construir un mundo más justo y solidario.</p>
+                </div>
+                <div class="footer-columns">
+                    <div class="footer-col">
+                        <h4>Plataforma</h4>
+                        <ul>
+                            <li><a href="../index.html#como-funciona">Cómo funciona</a></li>
+                            <li><a href="./mapa.html">Buscar ONGs</a></li>
+                            <li><a href="./causas.html">Causas</a></li>
+                            <li><a href="./mapa.html">Mapa de oportunidades</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Organizaciones</h4>
+                        <ul>
+                            <li><a href="./register.html?tipo=ong">Registrar ONG</a></li>
+                            <li><a href="./login.html">Gestión de voluntarios</a></li>
+                            <li><a href="./mapa.html">Recursos</a></li>
+                            <li><a href="../index.html#como-funciona">Precios</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Compañía</h4>
+                        <ul>
+                            <li><a href="../index.html#como-funciona">Sobre nosotros</a></li>
+                            <li><a href="./mapa.html">Blog</a></li>
+                            <li><a href="./mapa.html">Prensa</a></li>
+                            <li><a href="./mapa.html">Contacto</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 VoluntariApp. Todos los derechos reservados.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacidad</a>
+                    <a href="#">Términos</a>
+                    <a href="#">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script>
+        // Manejo del menú responsive
+        const toggleBtn = document.getElementById('navbar-toggle');
+        const navLinks = document.getElementById('nav-links');
+
+        function cerrarMenu() {
+            toggleBtn?.setAttribute('aria-expanded', 'false');
+            navLinks?.classList.remove('open');
+            document.body.classList.remove('menu-open');
+        }
+
+        toggleBtn?.addEventListener('click', () => {
+            const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
+            toggleBtn.setAttribute('aria-expanded', String(!isOpen));
+            navLinks?.classList.toggle('open', !isOpen);
+            document.body.classList.toggle('menu-open', !isOpen);
+        });
+
+        // Filtrado dinámico en la página de causas
+        const pillButtons = document.querySelectorAll('.causa-pill-filter');
+        const cards = document.querySelectorAll('.causa-card-box');
+
+        pillButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const filter = btn.dataset.filter;
+
+                pillButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                cards.forEach((card) => {
+                    if (filter === 'todas' || card.dataset.causa === filter) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Auth Header dinámico
+        const DESTINO_POR_ROL = {
+            voluntario: { href: './participaciones.html', texto: 'Mis participaciones' },
+            ong: { href: './mi-ong.html', texto: 'Mi ONG' },
+            admin: { href: './admin.html', texto: 'Panel Admin' },
+        };
+
+        function leerSesion() {
+            try {
+                return JSON.parse(sessionStorage.getItem('va_session') || localStorage.getItem('va_session') || 'null');
+            } catch {
+                return null;
+            }
+        }
+
+        function actualizarAuthHeader() {
+            const session = leerSesion();
+
+            const guestDesktop = document.getElementById('auth-guest-desktop');
+            const userDesktop = document.getElementById('auth-user-desktop');
+            const guestMobile = document.getElementById('auth-guest-mobile');
+            const userMobile = document.getElementById('auth-user-mobile');
+
+            if (session) {
+                const dest = DESTINO_POR_ROL[session.rol] || DESTINO_POR_ROL.voluntario;
+                const nombre = session.nombre || session.email || 'Usuario';
+                const inicial = (nombre.trim()[0] || 'U').toUpperCase();
+
+                guestDesktop?.classList.add('hidden');
+                userDesktop?.classList.remove('hidden');
+
+                const desktopPanel = document.getElementById('header-panel-link');
+                const desktopName = document.getElementById('header-user-name');
+                const desktopAvatar = document.getElementById('header-user-avatar');
+                if (desktopPanel) {
+                    desktopPanel.href = dest.href;
+                    desktopPanel.textContent = dest.texto;
+                }
+                if (desktopName) desktopName.textContent = nombre;
+                if (desktopAvatar) desktopAvatar.textContent = inicial;
+
+                guestMobile?.classList.add('hidden');
+                userMobile?.classList.remove('hidden');
+
+                const mobilePanel = document.getElementById('mobile-panel-link');
+                const mobileName = document.getElementById('mobile-user-name');
+                const mobileAvatar = document.getElementById('mobile-user-avatar');
+                if (mobilePanel) {
+                    mobilePanel.href = dest.href;
+                    mobilePanel.textContent = dest.texto;
+                }
+                if (mobileName) mobileName.textContent = nombre;
+                if (mobileAvatar) mobileAvatar.textContent = inicial;
+            } else {
+                guestDesktop?.classList.remove('hidden');
+                userDesktop?.classList.add('hidden');
+                guestMobile?.classList.remove('hidden');
+                userMobile?.classList.add('hidden');
+            }
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem('va_token');
+            sessionStorage.removeItem('va_session');
+            localStorage.removeItem('va_token');
+            localStorage.removeItem('va_session');
+            actualizarAuthHeader();
+        }
+
+        document.getElementById('header-logout-btn')?.addEventListener('click', cerrarSesion);
+        document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+            cerrarSesion();
+            cerrarMenu();
+        });
+
+        actualizarAuthHeader();
+        window.addEventListener('pageshow', actualizarAuthHeader);
+        window.addEventListener('storage', actualizarAuthHeader);
+    </script>
+</body>
+
+</html>

@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="online-dot"></div>
           </div>
           <div class="voli-header-info">
-            <h4>TeAyudoIA — Asistente</h4>
+            <h4>TeAyudo — Asistente</h4>
             <span>VoluntariApp · En línea ahora</span>
           </div>
         </div>
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="voli-msg-avatar">🤖</div>
           <div>
             <div class="voli-msg-bubble">
-              ¡Hola! 👋 Soy <strong>TeAyudoIA</strong>, tu asistente en VoluntariApp. ¿Cómo puedo ayudarte hoy?
+              ¡Hola! 👋 Soy <strong>TeAyudo</strong>, tu asistente en VoluntariApp. ¿Cómo puedo ayudarte hoy?
             </div>
             <div class="voli-msg-time">12:22</div>
             
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
     input.value = "";
     sendBtn.classList.remove("active");
 
-    // Bloquear controles mientras la IA está respondiendo
+    // Bloquear controles mientras el chatbot está respondiendo
     input.disabled = true;
     sendBtn.disabled = true;
 

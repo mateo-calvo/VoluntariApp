@@ -1044,7 +1044,17 @@ window.addEventListener("orientationchange", () => {
   await loadItems();
   refresh(false);
   setTimeout(() => map.invalidateSize(), 250);
-  const convId = new URLSearchParams(window.location.search).get('conv');
+  const urlParams = new URLSearchParams(window.location.search);
+  const catParam = urlParams.get('categoria');
+  if (catParam && CATEGORIA_LABELS[catParam]) {
+    state.categoria = catParam;
+    if (catLabel) catLabel.textContent = CATEGORIA_LABELS[catParam];
+    catMenu?.querySelectorAll(".dropdown-item").forEach((el) => {
+      el.classList.toggle("active", el.dataset.value === catParam);
+    });
+    refresh(false);
+  }
+  const convId = urlParams.get('conv');
   if (convId && state.items.some((o) => String(o.id) === String(convId))) {
     selectItem(convId, true);
     if (window.innerWidth <= 900) {
