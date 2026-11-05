@@ -239,6 +239,8 @@ class ConvocatoriasEndpointTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        cache.clear()  # las vistas cachean; sin esto un test ve los datos del anterior
+        self.addCleanup(cache.clear)
 
     @patch("api.views.VistaConvocatoriasMapa.objects.all")
     def test_listar_convocatorias_retorna_200_con_campos(self, mock_all):
@@ -479,12 +481,14 @@ class ProvinciasEndpointTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        cache.clear()  # las vistas cachean; sin esto un test ve los datos del anterior
+        self.addCleanup(cache.clear)
 
     @patch("api.views.Provincia.objects.all")
     def test_listar_provincias_retorna_200_con_datos(self, mock_all):
         p1 = Provincia(id=1, nombre="Buenos Aires")
         p2 = Provincia(id=2, nombre="Córdoba")
-        mock_all.return_value = [p1, p2]
+        mock_all.return_value.order_by.return_value = [p1, p2]
 
         res = self.client.get(self.URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -496,7 +500,7 @@ class ProvinciasEndpointTests(TestCase):
 
     @patch("api.views.Provincia.objects.all")
     def test_listar_provincias_vacia(self, mock_all):
-        mock_all.return_value = []
+        mock_all.return_value.order_by.return_value = []
         res = self.client.get(self.URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.json(), [])
@@ -509,12 +513,14 @@ class LocalidadesEndpointTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        cache.clear()  # las vistas cachean; sin esto un test ve los datos del anterior
+        self.addCleanup(cache.clear)
 
     @patch("api.views.Localidad.objects.all")
     def test_listar_localidades_sin_filtro(self, mock_all):
         l1 = Localidad(id=1, nombre="La Plata", provincia_id=1)
         l2 = Localidad(id=2, nombre="Quilmes", provincia_id=1)
-        mock_all.return_value = [l1, l2]
+        mock_all.return_value.order_by.return_value = [l1, l2]
 
         res = self.client.get(self.URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -529,7 +535,7 @@ class LocalidadesEndpointTests(TestCase):
         l1 = Localidad(id=10, nombre="Rosario", provincia_id=2)
         mock_qs = MagicMock()
         mock_qs.filter.return_value = [l1]
-        mock_all.return_value = mock_qs
+        mock_all.return_value.order_by.return_value = mock_qs
 
         res = self.client.get(f"{self.URL}?provincia_id=2")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -541,7 +547,7 @@ class LocalidadesEndpointTests(TestCase):
 
     @patch("api.views.Localidad.objects.all")
     def test_listar_localidades_vacia(self, mock_all):
-        mock_all.return_value = []
+        mock_all.return_value.order_by.return_value = []
         res = self.client.get(self.URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.json(), [])
@@ -660,6 +666,8 @@ class OngMiPerfilEndpointTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user_uuid = uuid.UUID("b0000000-0000-0000-0000-000000000001")
+        cache.clear()  # las vistas cachean; sin esto un test ve los datos del anterior
+        self.addCleanup(cache.clear)
 
     def test_acceso_sin_token_devuelve_401(self):
         res = self.client.get(self.URL)
@@ -718,9 +726,10 @@ class OngMiPerfilEndpointTests(TestCase):
         self.assertEqual(data["cuit"], "30-12345678-9")
         self.assertTrue(data["esta_verificada"])
 
+    @patch("api.models.Ong.save")
     @patch("api.views.Ong.objects.filter")
     @patch("urllib.request.urlopen")
-    def test_put_perfil_ong_actualiza_campos(self, mock_urlopen, mock_ong_filter):
+    def test_put_perfil_ong_actualiza_campos(self, mock_urlopen, mock_ong_filter, mock_save):
         mock_resp = MagicMock()
         mock_resp.read.return_value = json.dumps({
             "id": str(self.user_uuid),
@@ -729,25 +738,24 @@ class OngMiPerfilEndpointTests(TestCase):
         mock_resp.__enter__.return_value = mock_resp
         mock_urlopen.return_value = mock_resp
 
-        mock_ong = MagicMock()
-        mock_ong.id = self.user_uuid
-        mock_ong.nombre_organizacion = "Nombre Anterior"
-        mock_ong.cuit = "30-12345678-9"
-        mock_ong.descripcion_institucional = "Descripción previa de prueba"
-        mock_ong.provincia_id = 1
-        mock_ong.localidad_id = 1
-        mock_ong.provincia.nombre = "CABA"
-        mock_ong.localidad.nombre = "Palermo"
-        mock_ong.direccion = "Calle Vieja 100"
-        mock_ong.telefono_contacto = ""
-        mock_ong.email_contacto = "contacto@ong.org"
-        mock_ong.contacto = "Referente"
-        mock_ong.sitio_web = ""
-        mock_ong.link_donacion = ""
-        mock_ong.logo_url = ""
-        mock_ong.rating = 5.0
-        mock_ong.esta_verificada = False
-        mock_ong.created_at = "2026-10-20T00:00:00Z"
+        # Instancia real (sin guardar): DRF recorre _meta.pk.remote_field al hacer
+        # serializer.save(), y con un MagicMock esa cadena no termina nunca (el test
+        # se colgaba y llegaba a comer varios GB de RAM). Ong.save se parchea abajo.
+        mock_ong = Ong(
+            id=self.user_uuid,
+            nombre_organizacion="Nombre Anterior",
+            cuit="30-12345678-9",
+            descripcion_institucional="Descripción previa de prueba",
+            direccion="Calle Vieja 100",
+            telefono_contacto="",
+            email_contacto="contacto@ong.org",
+            contacto="Referente",
+            sitio_web="",
+            link_donacion="",
+            logo_url="",
+            rating=5.0,
+            esta_verificada=False,
+        )
 
         mock_ong_filter.return_value.first.return_value = mock_ong
 
@@ -760,6 +768,9 @@ class OngMiPerfilEndpointTests(TestCase):
         res = self.client.put(self.URL, payload, format="json", HTTP_AUTHORIZATION="Bearer token-ong-valido")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("éxito", res.json()["message"])
+        mock_save.assert_called_once()
+        self.assertEqual(mock_ong.nombre_organizacion, "Nombre Nuevo ONG")
+        self.assertEqual(mock_ong.cuit, "30-12345678-9")  # el CUIT es de solo lectura
 
 
 

@@ -96,7 +96,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("voliResetBtn");
 
   // Cargar historial previo de la sesión actual si existe
-  const historialGuardado = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
+  let historialGuardado = [];
+  try {
+    historialGuardado = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
+    if (!Array.isArray(historialGuardado)) historialGuardado = [];
+  } catch {
+    historialGuardado = []; // historial corrupto: arrancamos de cero
+  }
   if (historialGuardado.length > 0) {
     chatBody.innerHTML = ""; // Limpiamos el saludo inicial por defecto si hay historial guardado
     historialGuardado.forEach(msg => {
@@ -156,6 +162,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!sendBtn.disabled) enviarMensaje();
   });
 
+  function leerToken() {
+    try {
+      return sessionStorage.getItem("va_token") || "";
+    } catch {
+      return "";
+    }
+  }
+
+  // Ubicación que guardó el mapa al tocar "Ubicación" (pages/mapa.js).
+  // El bot no pide permisos: si no hay una guardada y válida, no manda nada.
+  function leerUbicacionGuardada() {
+    try {
+      const u = JSON.parse(sessionStorage.getItem("va_ubicacion_usuario") || "null");
+      const valida = (n, max) => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= max;
+      if (u && valida(u.lat, 90) && valida(u.lng, 180)) return { lat: u.lat, lng: u.lng };
+    } catch {}
+    return null;
+  }
+
   async function enviarMensaje() {
     const texto = input.value.trim();
     if (!texto) return;
@@ -176,10 +201,15 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch((["localhost", "127.0.0.1"].includes(location.hostname) ? "http://127.0.0.1:8000" : "https://voluntariapp-1.onrender.com") + "/api/chat/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        headers: {
+          "Content-Type": "application/json",
+          // Si hay sesión iniciada, el servidor cuenta los mensajes por usuario (y no solo por IP)
+          ...(leerToken() ? { Authorization: `Bearer ${leerToken()}` } : {}),
+        },
+        body: JSON.stringify({
           mensaje: texto,
-          vista: esVistaOng ? "ong" : "voluntario" // enviamos la vista actual al backend
+          vista: esVistaOng ? "ong" : "voluntario", // enviamos la vista actual al backend
+          ...(esVistaOng ? {} : leerUbicacionGuardada() || {}), // lat y lng, solo voluntarios
         }),
       });
 
@@ -243,34 +273,46 @@ document.addEventListener("DOMContentLoaded", () => {
     return texto.replace(/\*\*/g, "").replace(/\*/g, "").trim();
   }
 
+  // Arma un div con texto plano. textContent nunca interpreta HTML:
+  // "<img src=x onerror=...>" se muestra como texto y no se ejecuta.
+  function crearDiv(clase, texto) {
+    const div = document.createElement("div");
+    div.className = clase;
+    div.textContent = texto;
+    return div;
+  }
+
   function agregarMensajeUI(remitente, texto, horaPersonalizada = null, guardar = true) {
-    const hora = horaPersonalizada || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // remitente y hora también pueden venir de sessionStorage: no confiamos en ellos
+    remitente = remitente === "bot" ? "bot" : "user";
+    texto = String(texto ?? "");
+    const hora = String(horaPersonalizada || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     const row = document.createElement("div");
     row.className = `voli-msg-row ${remitente}`;
 
+    const contenido = document.createElement("div");
+    contenido.appendChild(crearDiv("voli-msg-bubble", texto));
+    const horaDiv = crearDiv("voli-msg-time", hora);
     if (remitente === "bot") {
-      row.innerHTML = `
-        <div class="voli-msg-avatar">🤖</div>
-        <div>
-          <div class="voli-msg-bubble">${texto}</div>
-          <div class="voli-msg-time">${hora}</div>
-        </div>
-      `;
+      row.appendChild(crearDiv("voli-msg-avatar", "🤖"));
     } else {
-      row.innerHTML = `
-        <div>
-          <div class="voli-msg-bubble">${texto}</div>
-          <div class="voli-msg-time" style="text-align:right;">${hora}</div>
-        </div>
-      `;
+      horaDiv.style.textAlign = "right";
     }
+    contenido.appendChild(horaDiv);
+    row.appendChild(contenido);
 
     chatBody.appendChild(row);
     chatBody.scrollTop = chatBody.scrollHeight;
 
     // Guardar en sessionStorage correspondiente a la sección si procede
     if (guardar) {
-      const historialChat = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
+      let historialChat = [];
+      try {
+        historialChat = JSON.parse(sessionStorage.getItem(claveSesion) || "[]");
+        if (!Array.isArray(historialChat)) historialChat = [];
+      } catch {
+        historialChat = [];
+      }
       historialChat.push({ remitente, texto, hora });
       sessionStorage.setItem(claveSesion, JSON.stringify(historialChat));
     }
