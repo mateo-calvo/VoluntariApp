@@ -10,7 +10,7 @@ from django.contrib.sessions.models import Session
 from django.core.cache import cache
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 
-from . import limites, views
+from . import faq, limites, views
 from .test_ia import NO_ENTENDI_VOLUNTARIO, SIN_REGLA, con_ias, ia_falsa
 from .utiles_test import BloqueaRed, SinRed, procesar
 
@@ -226,9 +226,10 @@ class TopeDeIaTests(SinRed):
 
     def test_tope_diario(self):
         llamadas = []
-        with entorno(CHAT_IA_LIMITE_MIN=100, CHAT_IA_LIMITE_DIA=2), con_ias(ia_falsa("Groq", "de la IA", llamadas=llamadas), ia_falsa("Gemini")):
+        with entorno(CHAT_IA_LIMITE_MIN=100, CHAT_IA_LIMITE_DIA=2), con_ias(ia_falsa("Groq", "gen-roles", llamadas=llamadas), ia_falsa("Gemini")):
             respuestas = [procesar(SIN_REGLA)[0] for _ in range(4)]
-        self.assertEqual(respuestas, ["de la IA", "de la IA", NO_ENTENDI_VOLUNTARIO, NO_ENTENDI_VOLUNTARIO])
+        roles = faq.respuesta_directa("¿Qué tipos de cuenta hay?", "voluntario")
+        self.assertEqual(respuestas, [roles, roles, NO_ENTENDI_VOLUNTARIO, NO_ENTENDI_VOLUNTARIO])
         self.assertEqual(len(llamadas), 2)
 
     def test_el_tope_por_minuto_no_gasta_el_cupo_del_dia(self):

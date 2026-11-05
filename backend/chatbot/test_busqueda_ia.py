@@ -16,7 +16,7 @@ from django.test.utils import CaptureQueriesContext
 from api.models import VistaConvocatoriasMapa
 
 from . import busqueda, ia, servicio
-from .test_ia import SIN_REGLA, con_ias, ia_falsa
+from .test_ia import SIN_REGLA, con_ias, ia_falsa, respuesta_del_faq
 from .utiles_test import BloqueaRed, ConBase, SinRed, procesar
 
 HOY = date(2026, 10, 26)  # lunes
@@ -198,10 +198,12 @@ class EsBusquedaTests(ConFilas):
 
 
 class FlujoConIaTests(ConFilas):
-    def ias(self, groq_json=None, gemini_json=None, groq_falla=False, gemini_falla=False, llamadas=None):
+    def ias(self, groq_json=None, gemini_json=None, groq_falla=False, gemini_falla=False, llamadas=None, conversacional="TEXTO LIBRE DE LA IA"):
+        """conversacional: lo que contestan las IAs en el fallback conversacional (un id del FAQ);
+        groq_json / gemini_json: lo que contestan al interpretar una búsqueda."""
         return con_ias(
-            ia_falsa("Groq", "TEXTO LIBRE DE LA IA", falla=groq_falla, llamadas=llamadas, respuesta_json=groq_json or "{}"),
-            ia_falsa("Gemini", "TEXTO LIBRE DE LA IA", falla=gemini_falla, llamadas=llamadas, respuesta_json=gemini_json or "{}"),
+            ia_falsa("Groq", conversacional, falla=groq_falla, llamadas=llamadas, respuesta_json=groq_json or "{}"),
+            ia_falsa("Gemini", conversacional, falla=gemini_falla, llamadas=llamadas, respuesta_json=gemini_json or "{}"),
         )
 
     def test_la_ia_interpreta_y_el_codigo_arma_la_lista(self):
@@ -268,9 +270,9 @@ class FlujoConIaTests(ConFilas):
 
     def test_lo_que_no_es_una_busqueda_va_al_faq_no_a_la_busqueda(self):
         llamadas = []
-        with self.ias(llamadas=llamadas):
+        with self.ias(llamadas=llamadas, conversacional="gen-roles"):
             r, _ = procesar(SIN_REGLA)
-        self.assertEqual(r, "TEXTO LIBRE DE LA IA")
+        self.assertEqual(r, respuesta_del_faq("gen-roles"))
         self.assertEqual(len(llamadas), 1)
         self.assertNotIn("Hoy es", llamadas[0][2])  # el prompt del FAQ, no el de extracción
 
@@ -278,16 +280,16 @@ class FlujoConIaTests(ConFilas):
         def base_caida():
             raise OperationalError("sin conexión")
 
-        with self.ias(groq_json=json_ia(lugar="Palermo")), patch.object(busqueda, "_filas_abiertas", base_caida):
+        with self.ias(groq_json=json_ia(lugar="Palermo"), conversacional="gen-roles"), patch.object(busqueda, "_filas_abiertas", base_caida):
             r, log = procesar("convocatorias en Palermo")
         self.assertIn("Búsqueda no disponible: OperationalError", log)
-        self.assertEqual(r, "TEXTO LIBRE DE LA IA")  # sigue con la IA conversacional
+        self.assertEqual(r, respuesta_del_faq("gen-roles"))  # sigue con la IA conversacional
 
     def test_la_ong_no_busca(self):
         llamadas = []
-        with self.ias(groq_json=json_ia(lugar="Palermo"), llamadas=llamadas):
+        with self.ias(groq_json=json_ia(lugar="Palermo"), llamadas=llamadas, conversacional="gen-roles"):
             r, _ = procesar("convocatorias en Palermo", vista="ong")
-        self.assertEqual(r, "TEXTO LIBRE DE LA IA")
+        self.assertEqual(r, respuesta_del_faq("gen-roles"))
         self.assertNotIn("Hoy es", llamadas[0][2])
 
 

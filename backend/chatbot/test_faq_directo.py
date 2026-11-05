@@ -117,6 +117,6 @@ class FlujoTests(SinRed):
         r, _ = procesar("hola")
         self.assertEqual(r, "¡Hola! ¿En qué te puedo ayudar hoy con tus voluntariados?")
         # Ni regla ni FAQ: la IA
-        with con_ias(ia_falsa("Groq", "de la IA"), ia_falsa("Gemini")):
+        with con_ias(ia_falsa("Groq", "gen-roles"), ia_falsa("Gemini")):
             r, _ = procesar(SIN_REGLA)
-        self.assertEqual(r, "de la IA")
+        self.assertEqual(r, entrada("gen-roles")["respuesta"])

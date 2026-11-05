@@ -113,9 +113,9 @@ class ReglasDeBusquedaTests(ConBase):
     # ── cortesías ──
 
     def test_una_cortesia_no_tapa_la_pregunta(self):
-        with con_ias(ia_falsa("Groq", "respuesta a la pregunta"), ia_falsa("Gemini")):
+        with con_ias(ia_falsa("Groq", "vol-cancelar"), ia_falsa("Gemini")):
             r, _ = procesar("hola, ¿cómo cancelo mi postulación?")
-            self.assertEqual(r, "respuesta a la pregunta")
+            self.assertEqual(r, faq.respuesta_directa("¿Cómo cancelo mi postulación?", "voluntario"))
             # "holanda" y "cholas" contienen "hola" como substring, pero no son un saludo
             r, _ = procesar("quiero ser voluntario en holanda")
             self.assertNotEqual(r, "¡Hola! ¿En qué te puedo ayudar hoy con tus voluntariados?")

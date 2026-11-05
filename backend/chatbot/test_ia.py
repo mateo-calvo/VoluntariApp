@@ -13,6 +13,10 @@ from . import faq, ia, proveedor, proveedor_groq, servicio
 from .proveedor_groq import ProveedorError
 from .utiles_test import SinRed, procesar
 
+def respuesta_del_faq(id_):
+    return next(e["respuesta"] for e in faq._leer(faq.RUTA_FAQ) if e["id"] == id_)
+
+
 # El mensaje de último recurso (el "No entendí" de Natalia, ahora con los nombres reales de la interfaz)
 NO_ENTENDI_VOLUNTARIO = servicio.NO_ENTENDI["voluntario"]
 NO_ENTENDI_ONG = servicio.NO_ENTENDI["ong"]
@@ -53,13 +57,15 @@ class CortesiasNoLlamanALaIaTests(SinRed):
 class IaConElFaqTests(SinRed):
     def test_mensaje_sin_regla_llama_a_groq_con_el_faq_en_el_prompt(self):
         llamadas = []
-        with con_ias(ia_falsa("Groq", "Tocá Mis participaciones.", llamadas=llamadas), ia_falsa("Gemini", llamadas=llamadas)):
+        with con_ias(ia_falsa("Groq", "vol-cancelar", llamadas=llamadas), ia_falsa("Gemini", llamadas=llamadas)):
             r, log = procesar(SIN_REGLA)
-        self.assertEqual(r, "Tocá Mis participaciones.")
+        self.assertEqual(r, respuesta_del_faq("vol-cancelar"))  # la del FAQ, tal cual
         self.assertEqual([l[0] for l in llamadas], ["Groq"])  # Gemini no se gasta si Groq respondió
         _, historial, prompt = llamadas[0]
         self.assertEqual(historial, [{"role": "user", "parts": [{"text": SIN_REGLA}]}])
-        self.assertIn("Respondé solo con información de la lista", prompt)
+        self.assertIn("id: vol-cancelar", prompt)
+        self.assertIn(respuesta_del_faq("vol-cancelar"), prompt)
+        self.assertIn("únicamente el id", prompt)
         self.assertIn("SIN_RESPUESTA", prompt)
         self.assertIn("Respondió Groq", log)
 
@@ -74,12 +80,14 @@ class IaConElFaqTests(SinRed):
             prompt = llamadas[0][2]
             self.assertIn(debe["respuesta"], prompt, vista)
             self.assertNotIn(no_debe["respuesta"], prompt, vista)
+            self.assertIn(f"id: {debe['id']}\n", prompt, vista)
+            self.assertNotIn(f"id: {no_debe['id']}\n", prompt, vista)
 
     def test_si_groq_falla_usa_gemini(self):
         llamadas = []
-        with con_ias(ia_falsa("Groq", falla=True, llamadas=llamadas), ia_falsa("Gemini", "de Gemini", llamadas=llamadas)):
+        with con_ias(ia_falsa("Groq", falla=True, llamadas=llamadas), ia_falsa("Gemini", "gen-roles", llamadas=llamadas)):
             r, log = procesar(SIN_REGLA)
-        self.assertEqual(r, "de Gemini")
+        self.assertEqual(r, respuesta_del_faq("gen-roles"))
         self.assertEqual([l[0] for l in llamadas], ["Groq", "Gemini"])
         self.assertIn("Respondió Gemini", log)
 
@@ -104,14 +112,6 @@ class IaConElFaqTests(SinRed):
             ia.FRASE_SIN_RESPUESTA,
             "Sobre eso no tengo información. Podés preguntarme cómo usar VoluntariApp: postularte, el mapa, tu cuenta o tu ONG.",
         )
-
-    def test_una_respuesta_con_verificar_nunca_llega_al_usuario(self):
-        with con_ias(ia_falsa("Groq", "[VERIFICAR] algo sin confirmar"), ia_falsa("Gemini", "respuesta buena")):
-            r, _ = procesar(SIN_REGLA)
-        self.assertEqual(r, "respuesta buena")
-        with con_ias(ia_falsa("Groq", "[VERIFICAR] a"), ia_falsa("Gemini", "otra [VERIFICAR]")):
-            r, _ = procesar(SIN_REGLA)
-        self.assertEqual(r, NO_ENTENDI_VOLUNTARIO)
 
     def test_el_mensaje_se_recorta_antes_de_ir_a_la_ia(self):
         llamadas = []
