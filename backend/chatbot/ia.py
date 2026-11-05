@@ -9,6 +9,7 @@ import re
 
 from .busqueda import lugares_disponibles, nombres_de_causas, prompt_extraccion, validar_filtros_ia
 from .faq import MARCA_SIN_VERIFICAR, entradas_faq
+from .limites import reservar_llamada_ia
 from .proveedor import obtener_respuesta_gemini
 from .proveedor_groq import ProveedorError, obtener_respuesta_groq
 
@@ -66,6 +67,9 @@ def responder_con_ia(historial, vista_actual):
     prompt = construir_prompt(entradas, vista)
 
     for nombre, proveedor in proveedores():
+        if not reservar_llamada_ia():
+            print("[CHATBOT] Tope de llamadas a la IA alcanzado: no se llama a la IA.")
+            return None
         try:
             respuesta = proveedor(mensajes, prompt)
         except ProveedorError as e:
@@ -92,6 +96,9 @@ def interpretar_busqueda(texto):
     mensajes = [{"role": "user", "parts": [{"text": texto.strip()[:LARGO_MAXIMO_IA]}]}]
     prompt = prompt_extraccion(causas)
     for nombre, proveedor in proveedores():
+        if not reservar_llamada_ia():
+            print("[CHATBOT] Tope de llamadas a la IA alcanzado: no se llama a la IA.")
+            return None
         try:
             crudo = proveedor(mensajes, prompt, modo_json=True)
         except ProveedorError as e:
