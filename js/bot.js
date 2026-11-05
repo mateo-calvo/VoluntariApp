@@ -156,6 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!sendBtn.disabled) enviarMensaje();
   });
 
+  // Ubicación que guardó el mapa al tocar "Ubicación" (pages/mapa.js).
+  // El bot no pide permisos: si no hay una guardada y válida, no manda nada.
+  function leerUbicacionGuardada() {
+    try {
+      const u = JSON.parse(sessionStorage.getItem("va_ubicacion_usuario") || "null");
+      const valida = (n, max) => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= max;
+      if (u && valida(u.lat, 90) && valida(u.lng, 180)) return { lat: u.lat, lng: u.lng };
+    } catch {}
+    return null;
+  }
+
   async function enviarMensaje() {
     const texto = input.value.trim();
     if (!texto) return;
@@ -177,9 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch((["localhost", "127.0.0.1"].includes(location.hostname) ? "http://127.0.0.1:8000" : "https://voluntariapp-1.onrender.com") + "/api/chat/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           mensaje: texto,
-          vista: esVistaOng ? "ong" : "voluntario" // enviamos la vista actual al backend
+          vista: esVistaOng ? "ong" : "voluntario", // enviamos la vista actual al backend
+          ...(esVistaOng ? {} : leerUbicacionGuardada() || {}), // lat y lng, solo voluntarios
         }),
       });
 

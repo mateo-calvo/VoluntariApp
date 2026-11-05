@@ -28,7 +28,7 @@ def responder_chat(request):
             }
         ]
 
-        respuesta_bot = procesar_mensaje_usuario(historial, vista_actual)
+        respuesta_bot = procesar_mensaje_usuario(historial, vista_actual, data.get("lat"), data.get("lng"))
 
         # Agregamos un aviso amigable según las consultas que le queden
         if consultas_restantes == 0:

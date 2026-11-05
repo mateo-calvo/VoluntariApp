@@ -9,7 +9,9 @@ class ProveedorError(Exception):
     """El proveedor no pudo responder: hay que probar con el siguiente."""
 
 
-def obtener_respuesta_groq(historial, prompt_sistema):
+def obtener_respuesta_groq(historial, prompt_sistema, modo_json=False):
+    """modo_json=True: devuelve el texto sin limpiar (el JSON lo pide el prompt
+    y lo valida busqueda.validar_filtros_ia)."""
     api_key = os.getenv("GROQ_API_KEY")
     modelo = os.getenv("GROQ_MODEL")
     if not api_key or not modelo:
@@ -41,4 +43,6 @@ def obtener_respuesta_groq(historial, prompt_sistema):
     if not texto or not texto.strip():
         raise ProveedorError("Groq devolvió una respuesta vacía")
 
+    if modo_json:
+        return texto.strip()
     return texto.replace("**", "").replace("*", "").strip()

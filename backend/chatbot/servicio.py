@@ -1,6 +1,14 @@
-from .busqueda import responder_busqueda_por_reglas
+from django.db import DatabaseError
+
+from .busqueda import (
+    buscar_convocatorias,
+    es_busqueda,
+    formatear_respuesta_fija,
+    lugares_disponibles,
+    responder_busqueda_por_reglas,
+)
 from .faq import normalizar, respuesta_directa
-from .ia import responder_con_ia
+from .ia import interpretar_busqueda, responder_con_ia
 
 # Último recurso: lo que se responde si no hay FAQ, búsqueda ni IA que sirva
 NO_ENTENDI = {
@@ -39,7 +47,33 @@ def responder_cortesia(texto, vista):
     return None
 
 
-def procesar_mensaje_usuario(historial, vista_actual="voluntario"):
+def responder_busqueda(texto, lat=None, lng=None):
+    """Convocatorias reales de la base, o None si el mensaje no pide convocatorias.
+    1. Si es un pedido claro, la IA interpreta (causa, lugar, fechas) y el código arma la lista.
+    2. Si las IAs fallan, busca por reglas (la búsqueda de Natalia).
+    3. Pidió convocatorias pero sin ningún filtro ("¿hay algo cerca?"): las próximas / más cercanas."""
+    try:
+        pide_convocatorias = es_busqueda(texto, lugares_disponibles())
+        if pide_convocatorias:
+            interpretado = interpretar_busqueda(texto)
+            if interpretado is not None:
+                filtros, quien = interpretado
+                # Se loguean los filtros, nunca las coordenadas
+                print(f"[CHATBOT] Búsqueda interpretada por {quien}: {filtros} | ubicación: {'sí' if lat is not None and lng is not None else 'no'}")
+                return formatear_respuesta_fija(buscar_convocatorias(**filtros, lat=lat, lng=lng), filtros)
+            print("[CHATBOT] Sin IA para interpretar la búsqueda: uso las reglas.")
+
+        respuesta = responder_busqueda_por_reglas(texto)
+        if respuesta is None and pide_convocatorias:
+            respuesta = formatear_respuesta_fija(buscar_convocatorias(lat=lat, lng=lng))
+        return respuesta
+    except DatabaseError as e:
+        # Si la base no responde, seguimos con el resto del flujo (IA conversacional, mensaje de siempre)
+        print(f"[CHATBOT] Búsqueda no disponible: {type(e).__name__}")
+        return None
+
+
+def procesar_mensaje_usuario(historial, vista_actual="voluntario", lat=None, lng=None):
     if not historial or not historial[-1].get("parts"):
         return "Hola, ¿en qué te puedo ayudar hoy?"
 
@@ -56,9 +90,9 @@ def procesar_mensaje_usuario(historial, vista_actual="voluntario"):
     if respuesta:
         return respuesta
 
-    # 3. Búsqueda de convocatorias por reglas (solo voluntarios)
+    # 3. Búsqueda de convocatorias reales (solo voluntarios)
     if vista == "voluntario":
-        respuesta = responder_busqueda_por_reglas(texto)
+        respuesta = responder_busqueda(texto, lat, lng)
         if respuesta:
             return respuesta
 

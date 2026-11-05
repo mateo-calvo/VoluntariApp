@@ -17,7 +17,7 @@ from django.test import SimpleTestCase, TestCase
 
 from api.models import Causa, Convocatoria, Localidad, Ong, Provincia
 
-from . import busqueda, servicio
+from . import busqueda, ia, servicio
 
 
 class BloqueaRed:
@@ -41,10 +41,13 @@ class SinRed(BloqueaRed, SimpleTestCase):
 
     def setUp(self):
         super().setUp()
-        for nombre in ("nombres_de_causas", "lugares_disponibles"):
-            p = patch.object(busqueda, nombre, lambda: [])
-            p.start()
-            self.addCleanup(p.stop)
+        # Cada módulo importó estos nombres por su cuenta: hay que reemplazarlos en todos
+        for modulo in (busqueda, servicio, ia):
+            for nombre in ("nombres_de_causas", "lugares_disponibles"):
+                if hasattr(modulo, nombre):
+                    p = patch.object(modulo, nombre, lambda: [])
+                    p.start()
+                    self.addCleanup(p.stop)
 
 
 MODELOS_SIN_MIGRAR = (Provincia, Localidad, Causa, Ong, Convocatoria)  # en orden de dependencia

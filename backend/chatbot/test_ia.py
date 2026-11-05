@@ -19,13 +19,14 @@ NO_ENTENDI_ONG = servicio.NO_ENTENDI["ong"]
 SIN_REGLA = "blablabla xyz"  # ni FAQ, ni cortesía, ni búsqueda: solo queda la IA
 
 
-def ia_falsa(nombre, texto="respuesta de la ia", falla=False, llamadas=None):
-    def proveedor_falso(historial, prompt):
+def ia_falsa(nombre, texto="respuesta de la ia", falla=False, llamadas=None, respuesta_json="{}"):
+    """IA de mentira. En modo_json (interpretación de búsquedas) devuelve respuesta_json."""
+    def proveedor_falso(historial, prompt, modo_json=False):
         if llamadas is not None:
             llamadas.append((nombre, historial, prompt))
         if falla:
             raise ProveedorError(f"{nombre} falló: 503")
-        return texto
+        return respuesta_json if modo_json else texto
     return proveedor_falso
 
 
@@ -198,6 +199,13 @@ class GroqTests(SinRed):
                 with self.assertRaises(ProveedorError, msg=nombre):
                     proveedor_groq.obtener_respuesta_groq(self.HISTORIAL, "P")
 
+    @patch.dict(os.environ, {"GROQ_API_KEY": "falsa", "GROQ_MODEL": "modelo-falso"})
+    def test_modo_json_no_limpia_y_el_modo_normal_si(self):
+        cuerpo = json.dumps({"choices": [{"message": {"content": '{"lugar": "**x**"}'}}]})
+        with patch("chatbot.proveedor_groq.httpx.post", self._post_falso(cuerpo, {})):
+            self.assertIn("**", proveedor_groq.obtener_respuesta_groq(self.HISTORIAL, "P", modo_json=True))
+            self.assertNotIn("**", proveedor_groq.obtener_respuesta_groq(self.HISTORIAL, "P"))
+
     def test_sin_clave_o_sin_modelo_es_proveedor_error(self):
         for entorno in ({}, {"GROQ_API_KEY": "falsa"}, {"GROQ_MODEL": "m"}):
             with patch.dict(os.environ, entorno, clear=True):
@@ -260,6 +268,15 @@ class GeminiTests(SinRed):
             with patch("chatbot.proveedor.genai.Client", self._cliente_falso({}, texto=vacio)):
                 with self.assertRaises(ProveedorError, msg=repr(vacio)):
                     proveedor.obtener_respuesta_gemini(self.HISTORIAL, "P")
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "falsa"})
+    def test_modo_json_pide_json_y_no_recorta(self):
+        capturado = {}
+        crudo = '{"causa": null, "lugar": "Ciudad Autónoma de Buenos Aires"}'
+        with patch("chatbot.proveedor.genai.Client", self._cliente_falso(capturado, texto=crudo)):
+            r = proveedor.obtener_respuesta_gemini(self.HISTORIAL, "P", modo_json=True)
+        self.assertEqual(r, crudo)  # sin el recorte a la última oración (un JSON no termina en punto)
+        self.assertEqual(types.GenerateContentConfig(**capturado["config"]).response_mime_type, "application/json")
 
     def test_sin_clave_es_proveedor_error(self):
         with patch.dict(os.environ, {}, clear=True):

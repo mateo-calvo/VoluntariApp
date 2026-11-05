@@ -7,6 +7,7 @@ Si fallan todas las IAs, devuelve None y el que llama usa su mensaje de siempre.
 """
 import re
 
+from .busqueda import lugares_disponibles, nombres_de_causas, prompt_extraccion, validar_filtros_ia
 from .faq import MARCA_SIN_VERIFICAR, entradas_faq
 from .proveedor import obtener_respuesta_gemini
 from .proveedor_groq import ProveedorError, obtener_respuesta_groq
@@ -80,4 +81,26 @@ def responder_con_ia(historial, vista_actual):
         return respuesta
 
     print("[CHATBOT] Ninguna IA respondió.")
+    return None
+
+
+def interpretar_busqueda(texto):
+    """(filtros, nombre de la IA) con lo que la IA entiende de un pedido de convocatorias (causa, lugar,
+    fechas), ya validado; o None si fallaron las IAs o devolvieron un JSON inválido. La IA solo
+    interpreta: nunca arma la lista. A la IA va únicamente el texto; la ubicación no sale del servidor."""
+    causas, lugares = nombres_de_causas(), lugares_disponibles()
+    mensajes = [{"role": "user", "parts": [{"text": texto.strip()[:LARGO_MAXIMO_IA]}]}]
+    prompt = prompt_extraccion(causas)
+    for nombre, proveedor in proveedores():
+        try:
+            crudo = proveedor(mensajes, prompt, modo_json=True)
+        except ProveedorError as e:
+            print(f"[CHATBOT] Filtros: {e}. Probando el siguiente...")
+            continue
+        filtros = validar_filtros_ia(crudo, causas, lugares)
+        if filtros is not None:
+            return filtros, nombre
+        # JSON inválido: no gastamos otra IA, las reglas responden al instante
+        print(f"[CHATBOT] Filtros: {nombre} devolvió un JSON inválido.")
+        return None
     return None

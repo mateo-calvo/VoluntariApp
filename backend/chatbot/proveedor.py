@@ -6,7 +6,8 @@ from google.genai.errors import APIError
 from .proveedor_groq import ProveedorError
 
 
-def obtener_respuesta_gemini(historial_mensajes, prompt_sistema):
+def obtener_respuesta_gemini(historial_mensajes, prompt_sistema, modo_json=False):
+    """modo_json=True: pide a Gemini un JSON y lo devuelve sin limpiar ni recortar."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ProveedorError("La API Key de Gemini no está configurada en las variables de entorno.")
@@ -25,6 +26,8 @@ def obtener_respuesta_gemini(historial_mensajes, prompt_sistema):
         # Menos "pensamiento" = respuesta más rápida
         "thinking_config": {"thinking_level": "low"},
     }
+    if modo_json:
+        config["response_mime_type"] = "application/json"
 
     try:
         response = client.models.generate_content(
@@ -41,6 +44,10 @@ def obtener_respuesta_gemini(historial_mensajes, prompt_sistema):
     # Una respuesta sin texto también cuenta como fallo
     if not response.text or not response.text.strip():
         raise ProveedorError("Gemini devolvió una respuesta vacía")
+
+    # Un JSON no se toca: el recorte de más abajo lo rompería (no termina en punto)
+    if modo_json:
+        return response.text.strip()
 
     # Limpieza de asteriscos y formato Markdown
     texto_limpio = response.text.replace("**", "").replace("*", "").strip()

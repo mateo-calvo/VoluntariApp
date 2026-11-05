@@ -999,6 +999,11 @@ document.getElementById("locate-btn")?.addEventListener("click", () => {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
+      // El chatbot (js/bot.js) la usa para ordenar convocatorias por distancia.
+      // sessionStorage: se borra al cerrar la pestaña.
+      try {
+        sessionStorage.setItem('va_ubicacion_usuario', JSON.stringify({ lat: latitude, lng: longitude }));
+      } catch {}
       L.marker([latitude, longitude])
         .addTo(map)
         .bindPopup("📍 Estás aquí")
