@@ -71,10 +71,17 @@
   },
   {
     "id": "vol-postularse",
-    "preguntas": ["¿Cómo me postulo a una convocatoria?", "¿Cómo participo en un voluntariado?", "¿Dónde está el botón Quiero participar?", "¿Puedo postularme sin cuenta?", "¿Una ONG se puede postular?"],
+    "preguntas": ["¿Cómo me postulo a una convocatoria?", "¿Cómo participo en un voluntariado?", "¿Dónde está el botón Quiero participar?", "¿Puedo postularme sin cuenta?", "¿Una ONG se puede postular?", "¿Cómo postularme a una causa?"],
     "palabras_clave": ["postular", "participar", "quiero participar", "anotarme", "inscribirme", "sin cuenta"],
     "respuesta": "Abrí una convocatoria desde el mapa o la lista y tocá Quiero participar en el detalle. Tenés que iniciar sesión con una cuenta de voluntario: si no lo hiciste, te llevamos al login y después volvés a la misma convocatoria. Las cuentas de ONG no pueden postularse.",
     "fuente": "pages/mapa.js (joinConvocatoria); pages/login.js (parámetro conv); backend/api/views.py (postular_convocatoria: solo rol voluntario)"
+  },
+  {
+    "id": "vol-multiples-postulaciones",
+    "preguntas": ["¿Puedo postularme a más de un voluntariado al mismo tiempo?", "¿Me puedo anotar en varias convocatorias?", "¿Puedo participar en más de una convocatoria?", "¿Hay un máximo de postulaciones?"],
+    "palabras_clave": ["varias", "más de una", "múltiples", "al mismo tiempo", "postulaciones", "máximo"],
+    "respuesta": "Sí, podés postularte a varias convocatorias distintas. Lo único que no podés es postularte dos veces a la misma, ni volver a hacerlo si ya la cancelaste.",
+    "fuente": "backend/api/views.py (postular_convocatoria: solo bloquea una postulación previa a la misma convocatoria; no hay límite entre convocatorias)"
   },
   {
     "id": "vol-postulacion-pendiente",
@@ -99,7 +106,7 @@
   },
   {
     "id": "vol-cancelar",
-    "preguntas": ["¿Cómo cancelo mi postulación?", "Ya no puedo ir, ¿cómo me bajo?", "¿Puedo volver a postularme si cancelé?", "¿Dónde está el botón Anular?"],
+    "preguntas": ["¿Cómo cancelo mi postulación?", "Ya no puedo ir, ¿cómo me bajo?", "¿Puedo volver a postularme si cancelé?", "¿Dónde está el botón Anular?", "¿Cómo cancelo una postulación si ya no puedo asistir?"],
     "palabras_clave": ["cancelar", "anular", "bajarme", "darme de baja", "no puedo ir", "no puedo asistir"],
     "respuesta": "Podés cancelar, esté pendiente o confirmada, desde Mis participaciones (botón Anular) o desde el detalle de la convocatoria en el mapa (Cancelar mi postulación). Ojo: una vez cancelada no podés volver a postularte a esa misma convocatoria.",
     "fuente": "pages/participaciones.js; pages/mapa.js (confirmarCancelacionModal); backend/api/views.py (postular_convocatoria: estado CANCELADO)"
@@ -113,7 +120,7 @@
   },
   {
     "id": "map-buscar-filtrar",
-    "preguntas": ["¿Cómo busco una ONG en el mapa?", "¿Cómo busco convocatorias por zona?", "¿Cómo filtro por categoría?", "¿Cómo uso la barra de búsqueda del mapa?"],
+    "preguntas": ["¿Cómo busco una ONG en el mapa?", "¿Cómo busco convocatorias por zona?", "¿Cómo filtro por categoría?", "¿Cómo uso la barra de búsqueda del mapa?", "¿Cómo usar los filtros del mapa?"],
     "palabras_clave": ["buscar", "búsqueda", "filtrar", "filtro", "mapa", "zona", "ciudad"],
     "respuesta": "En la barra del mapa podés buscar por nombre de ONG o ciudad, y filtrar por categoría y por distancia. Los resultados se actualizan en el mapa y en la lista lateral.",
     "fuente": "pages/mapa.html (search-input, filtros); pages/mapa.js (getFiltered)"
@@ -127,7 +134,7 @@
   },
   {
     "id": "map-ubicacion",
-    "preguntas": ["¿Para qué sirve el botón Ubicación?", "¿Cómo uso mi ubicación en el mapa?", "¿Por qué me pide permiso de ubicación?", "¿Cómo veo las convocatorias más cercanas a mí?"],
+    "preguntas": ["¿Para qué sirve el botón Ubicación?", "¿Cómo uso mi ubicación en el mapa?", "¿Por qué me pide permiso de ubicación?", "¿Cómo veo las convocatorias más cercanas a mí?", "¿Cómo busco causas cerca de mi ubicación actual?"],
     "palabras_clave": ["ubicación", "ubicacion", "mi ubicación", "geolocalización", "permiso", "estoy aquí"],
     "respuesta": "Tocá el botón Ubicación de la barra del mapa: el navegador te pide permiso y el mapa se centra donde estás, con una marca de Estás aquí.",
     "fuente": "pages/mapa.js (locate-btn); pages/mapa.html"
@@ -138,6 +145,13 @@
     "palabras_clave": ["actualiza", "actualizar", "no aparece", "no se ve", "cupos", "recargar"],
     "respuesta": "Los cambios pueden tardar hasta un minuto en verse en el mapa. Si no ves algo que acabás de cambiar, esperá un momento y recargá la página.",
     "fuente": "backend/api/views.py (listar_convocatorias: cache timeout=60 y Cache-Control max-age=30; las ONG invalidan la caché al crear o editar una convocatoria, pero no cuando alguien se postula)"
+  },
+  {
+    "id": "map-iconos",
+    "preguntas": ["¿Qué significan los iconos en el mapa?", "¿Qué quieren decir los íconos del mapa?", "¿Por qué los pines tienen colores distintos?", "¿Qué es cada pin del mapa?"],
+    "palabras_clave": ["iconos", "íconos", "pin", "pines", "colores", "emoji", "mapa"],
+    "respuesta": "Cada pin del mapa es una convocatoria, y su ícono y su color indican la categoría: salud, infancias y juventudes, medioambiente, desarrollo social, educación o derechos humanos. Tocá un pin para ver el detalle.",
+    "fuente": "pages/mapa.js (CATEGORIA_ESTILOS, makeIcon, marker.on('click'))"
   },
   {
     "id": "map-categorias",
@@ -162,7 +176,7 @@
   },
   {
     "id": "gen-donar-app",
-    "preguntas": ["¿Cómo dono a VoluntariApp?", "¿Cómo ayudo a mantener la app?", "¿Dónde está el botón Donar?", "Quiero apoyar a la plataforma"],
+    "preguntas": ["¿Cómo dono a VoluntariApp?", "¿Cómo ayudo a mantener la app?", "¿Dónde está el botón Donar?", "Quiero apoyar a la plataforma", "¿Cómo donar a la app?"],
     "palabras_clave": ["donar a la app", "donar", "apoyar", "mantener la app", "botón donar"],
     "respuesta": "Por ahora las donaciones a VoluntariApp no están habilitadas. Si querés ayudar, podés donarle directamente a una ONG desde su ficha en el mapa, con el botón Donar a esta ONG.",
     "fuente": "index.html (#donar-open); js/donar.js (MP_LINKS: «unica» vacío y «mensual» con preapproval_plan_id=XXXX)"
@@ -190,14 +204,14 @@
   },
   {
     "id": "ong-publicar",
-    "preguntas": ["¿Cómo publico una convocatoria?", "¿Cómo creo una nueva convocatoria?", "¿Qué datos lleva una convocatoria?", "¿Qué es requiere aprobación?"],
+    "preguntas": ["¿Cómo publico una convocatoria?", "¿Cómo creo una nueva convocatoria?", "¿Qué datos lleva una convocatoria?", "¿Qué es requiere aprobación?", "¿Cómo publicar una convocatoria?"],
     "palabras_clave": ["publicar", "crear convocatoria", "nueva convocatoria", "requiere aprobación", "cupos", "mis convocatorias"],
     "respuesta": "En Mis Convocatorias tocá el botón para crear una nueva y completá título, causa, provincia, localidad, cupos, fecha, hora, lugar, descripción y horas estimadas. Si tildás que requiere aprobación, vos confirmás cada postulación; si no, los voluntarios quedan confirmados al instante.",
     "fuente": "pages/mis-convocatorias.js (guardarConvocatoria); backend/api/views.py (ong_mis_convocatorias, postular_convocatoria)"
   },
   {
     "id": "ong-postulantes",
-    "preguntas": ["¿Cómo veo quién se postuló a mi convocatoria?", "¿Cómo acepto o rechazo a un voluntario?", "¿Dónde veo el contacto de los voluntarios?", "¿Puedo confirmar más gente que los cupos?"],
+    "preguntas": ["¿Cómo veo quién se postuló a mi convocatoria?", "¿Cómo acepto o rechazo a un voluntario?", "¿Dónde veo el contacto de los voluntarios?", "¿Puedo confirmar más gente que los cupos?", "¿Cómo veo los datos de contacto de un voluntario postulado?", "¿Cómo rechazo o acepto una postulación?"],
     "palabras_clave": ["postulantes", "postulados", "confirmar", "rechazar", "aceptar", "contacto", "voluntarios"],
     "respuesta": "En Mis Convocatorias tocá Postulantes en la convocatoria: ahí ves nombre, email y teléfono de cada voluntario. En los pendientes aparecen los botones Confirmar y Rechazar, y no se puede confirmar más gente que los cupos.",
     "fuente": "pages/mis-convocatorias.js (renderizarPostulantesModal); backend/api/views.py (ong_actualizar_postulacion, PostulanteOngSerializer)"
@@ -211,7 +225,7 @@
   },
   {
     "id": "ong-estado-convocatoria",
-    "preguntas": ["¿Cómo cierro o pauso una convocatoria?", "¿Cómo cancelo una convocatoria?", "¿Puedo volver a abrir una convocatoria cerrada?", "¿Puedo editar una convocatoria cancelada o finalizada?"],
+    "preguntas": ["¿Cómo cierro o pauso una convocatoria?", "¿Cómo cancelo una convocatoria?", "¿Puedo volver a abrir una convocatoria cerrada?", "¿Puedo editar una convocatoria cancelada o finalizada?", "¿Cómo edito o cierro una convocatoria publicada?", "¿Puedo pausar temporariamente una búsqueda de voluntarios?"],
     "palabras_clave": ["cerrar", "pausar", "cancelar convocatoria", "finalizar", "estado", "reabrir", "editar"],
     "respuesta": "Desde el selector Estado de cada convocatoria la podés pasar a Abierta, Cerrada, Finalizada o Cancelada. Cerrada deja de recibir postulaciones y la podés volver a abrir; Finalizada y Cancelada son definitivas y ya no se pueden editar.",
     "fuente": "pages/mis-convocatorias.js (select-estado-rapido); backend/api/views.py (ong_detalle_convocatoria; postular_convocatoria exige estado ABIERTA); backend/api/serializers.py (validate_estado)"
@@ -225,7 +239,7 @@
   },
   {
     "id": "ong-recibir-donaciones",
-    "preguntas": ["¿Cómo recibo donaciones en mi ONG?", "¿Dónde cargo mi link de donación?", "¿Qué link de pago sirve?", "¿Por qué no aparece mi botón de donar?"],
+    "preguntas": ["¿Cómo recibo donaciones en mi ONG?", "¿Dónde cargo mi link de donación?", "¿Qué link de pago sirve?", "¿Por qué no aparece mi botón de donar?", "¿Cómo se gestionan las donaciones que recibe mi causa?"],
     "palabras_clave": ["donaciones", "link de donación", "link de pago", "mercado pago", "alias", "recibir"],
     "respuesta": "Cargá tu link de donación en Mi Perfil. Tiene que ser un link de Mercado Pago (que empiece con https://): es el que usa el botón Donar a esta ONG del mapa.",
     "fuente": "pages/mi-ong.js (f-pago, validUrl); js/donar-ong.js (validarLinkMercadoPago); pages/mapa.js (si el link no es de Mercado Pago usa https://link.mercadopago.com.ar/voluntariapp)"

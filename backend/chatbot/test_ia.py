@@ -9,14 +9,14 @@ import httpx
 from google.genai import errors as genai_errors
 from google.genai import types
 
-from . import faq, ia, proveedor, proveedor_groq
+from . import faq, ia, proveedor, proveedor_groq, servicio
 from .proveedor_groq import ProveedorError
 from .utiles_test import SinRed, procesar
 
-# Textos de Natalia que tienen que seguir iguales
-NO_ENTENDI_VOLUNTARIO = "No entendí muy bien tu consulta. Podes consultarme sobre cómo buscar causas por zona, fecha, día u horario."
-NO_ENTENDI_ONG = "No entendí muy bien tu consulta. Como organización, podés administrar tus vacantes y revisar solicitudes."
-SIN_REGLA = "blablabla xyz"  # no activa ninguna regla de Natalia (ni en voluntario ni en ONG)
+# El mensaje de último recurso (el "No entendí" de Natalia, ahora con los nombres reales de la interfaz)
+NO_ENTENDI_VOLUNTARIO = servicio.NO_ENTENDI["voluntario"]
+NO_ENTENDI_ONG = servicio.NO_ENTENDI["ong"]
+SIN_REGLA = "blablabla xyz"  # ni FAQ, ni cortesía, ni búsqueda: solo queda la IA
 
 
 def ia_falsa(nombre, texto="respuesta de la ia", falla=False, llamadas=None):
@@ -34,16 +34,18 @@ def con_ias(groq, gemini):
     return patch.multiple("chatbot.ia", obtener_respuesta_groq=groq, obtener_respuesta_gemini=gemini)
 
 
-class ReglasDeNataliaTests(SinRed):
-    def test_las_reglas_siguen_respondiendo_igual_y_no_llaman_a_la_ia(self):
+class CortesiasNoLlamanALaIaTests(SinRed):
+    def test_las_cortesias_responden_igual_y_no_llaman_a_la_ia(self):
         llamadas = []
         with con_ias(ia_falsa("Groq", llamadas=llamadas), ia_falsa("Gemini", llamadas=llamadas)):
             r, _ = procesar("hola")
             self.assertEqual(r, "¡Hola! ¿En qué te puedo ayudar hoy con tus voluntariados?")
-            r, _ = procesar("cómo postularme")
-            self.assertTrue(r.startswith("Para postularte a un voluntariado, hacé clic"), r)
-            r, _ = procesar("quiero publicar una convocatoria", vista="ong")
-            self.assertEqual(r, "Para publicar o gestionar convocatorias y vacantes abiertas, ingresa a la sección Vacantes desde tu menú lateral.")
+            r, _ = procesar("hola", vista="ong")
+            self.assertEqual(r, "¡Hola! ¿En qué te puedo ayudar hoy con la administración de tu ONG?")
+            r, _ = procesar("muchas gracias!")
+            self.assertEqual(r, "¡De nada! Estoy para ayudarte en lo que necesites dentro de VoluntariApp.")
+            r, _ = procesar("chau", vista="ong")
+            self.assertEqual(r, "¡Hasta luego! Éxitos en la gestión de tus convocatorias.")
         self.assertEqual(llamadas, [])
 
 
