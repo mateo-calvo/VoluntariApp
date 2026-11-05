@@ -1,11 +1,18 @@
 from datetime import datetime
 from api.models import Convocatoria
+from .faq import respuesta_directa
 from .ia import responder_con_ia
 
 def procesar_mensaje_usuario(historial, vista_actual="voluntario"):
     if not historial or not historial[-1].get("parts"):
         return "Hola, ¿en qué te puedo ayudar hoy?"
     
+    # Si el mensaje coincide fuerte con una entrada del FAQ se responde eso, antes que las
+    # reglas por palabras clave (que suelen confundirse) y sin gastar IA.
+    respuesta_faq = respuesta_directa(historial[-1]["parts"][0].get("text", ""), vista_actual)
+    if respuesta_faq:
+        return respuesta_faq
+
     mensaje_actual = historial[-1]["parts"][0].get("text", "").lower().strip()
     
     # Contexto acumulado de toda la charla para mantener memoria
