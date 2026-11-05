@@ -1,5 +1,6 @@
 from datetime import datetime
 from api.models import Convocatoria
+from .ia import responder_con_ia
 
 def procesar_mensaje_usuario(historial, vista_actual="voluntario"):
     if not historial or not historial[-1].get("parts"):
@@ -177,7 +178,7 @@ def procesar_mensaje_usuario(historial, vista_actual="voluntario"):
         if any(w in mensaje_actual for w in ["mapa", "filtrar", "encontrar"]):
             return "Podes buscar organizaciones y causas usando la barra superior del mapa interactivo o filtrando por categorías y distancia."
         else:
-            return "No entendí muy bien tu consulta. Podes consultarme sobre cómo buscar causas por zona, fecha, día u horario."
+            return responder_con_ia(historial, "voluntario") or "No entendí muy bien tu consulta. Podes consultarme sobre cómo buscar causas por zona, fecha, día u horario."
 
     else:  # Vista ONG
         if any(w in mensaje_actual for w in ["publicar", "convocatoria", "vacante", "crear"]):
@@ -185,4 +186,4 @@ def procesar_mensaje_usuario(historial, vista_actual="voluntario"):
         elif any(w in mensaje_actual for w in ["solicitud", "postulante"]):
             return "Podes revisar las solicitudes de los voluntarios directamente desde la sección Solicitudes."
         else:
-            return "No entendí muy bien tu consulta. Como organización, podés administrar tus vacantes y revisar solicitudes."
+            return responder_con_ia(historial, "ong") or "No entendí muy bien tu consulta. Como organización, podés administrar tus vacantes y revisar solicitudes."

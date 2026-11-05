@@ -1,0 +1,233 @@
+[
+  {
+    "id": "gen-que-es",
+    "preguntas": ["¿Qué es VoluntariApp?", "¿Para qué sirve esta app?", "¿De qué se trata VoluntariApp?", "¿Cómo funciona la plataforma?"],
+    "palabras_clave": ["qué es", "para qué sirve", "cómo funciona", "voluntariapp", "plataforma"],
+    "respuesta": "VoluntariApp conecta voluntarios con ONGs. Explorás las convocatorias en un mapa, te postulás con el botón Quiero participar y las ONGs gestionan sus cupos desde su panel.",
+    "fuente": "README.md; index.html (sección Cómo funciona)"
+  },
+  {
+    "id": "gen-roles",
+    "preguntas": ["¿Qué tipos de cuenta hay?", "¿Qué roles existen?", "¿Qué diferencia hay entre voluntario y ONG?", "¿Qué cuenta me conviene crear?"],
+    "palabras_clave": ["tipos de cuenta", "roles", "rol", "voluntario", "ong", "administrador", "admin"],
+    "respuesta": "Hay tres tipos de cuenta: voluntario, ONG y administrador. Al registrarte elegís voluntario u ONG; el panel de administración es para quienes verifican a las organizaciones.",
+    "fuente": "backend/api/models.py (Usuario.Rol); pages/register.js; pages/admin.js"
+  },
+  {
+    "id": "gen-gratis",
+    "preguntas": ["¿Cuesta algo usar VoluntariApp?", "¿Es gratis?", "¿Tengo que pagar para ser voluntario?", "¿Hay que poner tarjeta para registrarme?"],
+    "palabras_clave": ["gratis", "cuesta", "pagar", "precio", "tarjeta", "costo"],
+    "respuesta": "Sí, para los voluntarios es gratis: crear la cuenta no pide tarjeta ni ningún pago.",
+    "fuente": "index.html (cta-note: «Gratis siempre para voluntarios · Sin tarjeta»); el footer tiene un link «Precios» sin contenido"
+  },
+  {
+    "id": "vol-registro",
+    "preguntas": ["¿Cómo me registro como voluntario?", "¿Cómo creo una cuenta?", "Quiero ser voluntario, ¿qué hago?", "¿Qué datos me piden para registrarme?"],
+    "palabras_clave": ["registr", "crear cuenta", "cuenta", "unirme", "sumarme", "datos"],
+    "respuesta": "Entrá a Unite Gratis, elegí la opción de voluntario y completá nombre, apellido, DNI, teléfono, género, fecha de nacimiento, provincia, localidad, dirección, email y contraseña. Cuando se crea la cuenta te llevamos al inicio de sesión.",
+    "fuente": "index.html; pages/register.js; backend/api/serializers.py (RegistroVoluntarioSerializer)"
+  },
+  {
+    "id": "vol-registro-nombre",
+    "preguntas": ["¿Por qué no me deja escribir números en el nombre?", "Me borra caracteres cuando escribo mi apellido", "¿Qué caracteres acepta el nombre y el apellido?", "No me acepta mi nombre en el registro"],
+    "palabras_clave": ["nombre", "apellido", "caracteres", "números", "no me acepta", "registro"],
+    "respuesta": "El nombre y el apellido aceptan solo letras (con tildes y ñ), espacios, apóstrofo y guion, entre 2 y 50 caracteres. Si escribís números u otros símbolos, el formulario los borra.",
+    "fuente": "pages/register.js (restringirNombreApellido y validación del submit); pages/register.html (pattern); backend/api/serializers.py (RegistroVoluntarioSerializer: RegexValidator, max_length=50)"
+  },
+  {
+    "id": "gen-requisitos-password",
+    "preguntas": ["¿Qué requisitos tiene la contraseña?", "¿Por qué no me acepta la contraseña?", "¿Cuántos caracteres tiene que tener la clave?", "¿La contraseña necesita mayúsculas o símbolos?"],
+    "palabras_clave": ["contraseña", "clave", "password", "requisitos", "mayúscula", "caracteres", "símbolo"],
+    "respuesta": "La contraseña tiene que tener al menos 8 caracteres, una mayúscula, un número y un carácter especial (por ejemplo !@#$).",
+    "fuente": "pages/register.js (validarRequisitosPassword); backend/api/serializers.py (validar_requisitos_password)"
+  },
+  {
+    "id": "gen-login-destino",
+    "preguntas": ["¿Cómo inicio sesión?", "¿Cómo entro a mi cuenta?", "No sé cómo loguearme", "¿A dónde me lleva cuando inicio sesión?"],
+    "palabras_clave": ["iniciar sesión", "inicio de sesión", "login", "loguear", "entrar", "ingresar"],
+    "respuesta": "Tocá Iniciar Sesión e ingresá tu email y contraseña. Después te llevamos a tu pantalla según tu cuenta: el mapa si sos voluntario, Mi Perfil si sos ONG y el panel de administración si sos admin.",
+    "fuente": "pages/login.js (DESTINO_POR_ROL)"
+  },
+  {
+    "id": "gen-cerrar-sesion",
+    "preguntas": ["¿Cómo cierro sesión?", "¿Dónde está el botón Salir?", "¿Cómo salgo de mi cuenta?", "Ya inicié sesión pero me sigue mostrando Iniciar Sesión"],
+    "palabras_clave": ["cerrar sesión", "salir", "logout", "desloguear", "sesión"],
+    "respuesta": "Tocá Salir en la barra superior de la página de inicio o de tu panel (en el celular, Cerrar sesión en el menú). La sesión se guarda en la pestaña del navegador, así que si la cerrás tenés que volver a iniciar sesión.",
+    "fuente": "index.html (header-logout-btn, mobile-logout-btn); pages/participaciones.html, pages/mi-ong.html, pages/mis-convocatorias.html (link Salir); pages/login.js (sessionStorage va_session)"
+  },
+  {
+    "id": "gen-recuperar-password",
+    "preguntas": ["Me olvidé la contraseña, ¿qué hago?", "¿Cómo recupero mi contraseña?", "No puedo entrar, perdí la clave", "¿Cómo restablezco mi contraseña?"],
+    "palabras_clave": ["olvidé", "olvide", "olvidaste", "recuperar", "restablecer", "contraseña", "clave"],
+    "respuesta": "Por ahora VoluntariApp no tiene recuperación de contraseña: la opción ¿La olvidaste? todavía no envía ningún mail. Si la recordás, podés volver a intentar desde Iniciar sesión.",
+    "fuente": "pages/login.html (link ¿La olvidaste?); pages/recuperar.html (script con setTimeout simulado); pages/recovery.js; no hay endpoint en backend/api/urls.py"
+  },
+  {
+    "id": "gen-confirmar-email",
+    "preguntas": ["¿Tengo que confirmar mi email?", "Me dice que el correo no está confirmado", "No me llegó el mail de confirmación", "Creé la cuenta pero no puedo entrar"],
+    "palabras_clave": ["confirmar", "confirmación", "correo no confirmado", "mail", "email", "verificar correo"],
+    "respuesta": "Si al iniciar sesión te avisa que el correo no está confirmado, buscá el mail de confirmación en tu bandeja de entrada (y en spam), confirmalo y volvé a intentar.",
+    "fuente": "backend/api/views.py (login_view: caso «email not confirmed»); depende de la configuración de Supabase Auth"
+  },
+  {
+    "id": "vol-postularse",
+    "preguntas": ["¿Cómo me postulo a una convocatoria?", "¿Cómo participo en un voluntariado?", "¿Dónde está el botón Quiero participar?", "¿Puedo postularme sin cuenta?", "¿Una ONG se puede postular?"],
+    "palabras_clave": ["postular", "participar", "quiero participar", "anotarme", "inscribirme", "sin cuenta"],
+    "respuesta": "Abrí una convocatoria desde el mapa o la lista y tocá Quiero participar en el detalle. Tenés que iniciar sesión con una cuenta de voluntario: si no lo hiciste, te llevamos al login y después volvés a la misma convocatoria. Las cuentas de ONG no pueden postularse.",
+    "fuente": "pages/mapa.js (joinConvocatoria); pages/login.js (parámetro conv); backend/api/views.py (postular_convocatoria: solo rol voluntario)"
+  },
+  {
+    "id": "vol-postulacion-pendiente",
+    "preguntas": ["¿Por qué mi postulación dice pendiente?", "¿Quedé confirmado o tengo que esperar?", "¿Cuándo me confirman la participación?", "¿Qué significa pendiente de aprobación?"],
+    "palabras_clave": ["pendiente", "aprobación", "confirmada", "confirmar", "esperar", "aceptan"],
+    "respuesta": "Si la convocatoria requiere aprobación, tu postulación queda pendiente hasta que la ONG la confirme; si no, queda confirmada al instante. En el mapa la ves como Pendiente ⏳ (o Participando ✓ si está confirmada), y en Mis participaciones como Pendiente de aprobación o Confirmado ✓.",
+    "fuente": "backend/api/views.py (postular_convocatoria: requiere_aprobacion); pages/mapa.js (renderList y renderDetail: isPostulado / isConfirmado); pages/participaciones.js (clasificarParticipacion)"
+  },
+  {
+    "id": "vol-estados-postulacion",
+    "preguntas": ["¿Qué estados puede tener mi postulación?", "¿Qué significa Asistió?", "¿Qué quiere decir Confirmado?", "¿Quién marca mi asistencia?"],
+    "palabras_clave": ["estado", "estados", "asistió", "asistio", "confirmado", "cancelado", "postulado"],
+    "respuesta": "Tu postulación puede estar Pendiente de aprobación, Confirmada, Asistió o Cancelada. La ONG es la que te confirma y marca tu asistencia. Si la ONG cancela la convocatoria, te figura como Convocatoria cancelada.",
+    "fuente": "backend/api/models.py (Postulacion.Estado); pages/participaciones.js (clasificarParticipacion); pages/mis-convocatorias.js"
+  },
+  {
+    "id": "vol-sin-cupos",
+    "preguntas": ["¿Qué pasa si no hay cupos?", "Me dice sin cupos por ahora", "¿Por qué no me deja postularme?", "¿Se liberan lugares si alguien cancela?"],
+    "palabras_clave": ["cupos", "sin cupos", "lleno", "lugares", "no me deja"],
+    "respuesta": "Cuando una convocatoria no tiene más cupos, el botón aparece como Sin cupos por ahora y no podés postularte. Si alguien cancela su postulación, ese lugar se libera.",
+    "fuente": "pages/mapa.js (renderDetail: sinCupos); backend/api/views.py (postular_convocatoria: conteo de POSTULADO y CONFIRMADO)"
+  },
+  {
+    "id": "vol-cancelar",
+    "preguntas": ["¿Cómo cancelo mi postulación?", "Ya no puedo ir, ¿cómo me bajo?", "¿Puedo volver a postularme si cancelé?", "¿Dónde está el botón Anular?"],
+    "palabras_clave": ["cancelar", "anular", "bajarme", "darme de baja", "no puedo ir", "no puedo asistir"],
+    "respuesta": "Podés cancelar, esté pendiente o confirmada, desde Mis participaciones (botón Anular) o desde el detalle de la convocatoria en el mapa (Cancelar mi postulación). Ojo: una vez cancelada no podés volver a postularte a esa misma convocatoria.",
+    "fuente": "pages/participaciones.js; pages/mapa.js (confirmarCancelacionModal); backend/api/views.py (postular_convocatoria: estado CANCELADO)"
+  },
+  {
+    "id": "vol-ver-participaciones",
+    "preguntas": ["¿Dónde veo mis participaciones?", "¿Cómo veo a qué convocatorias me anoté?", "¿Dónde está mi historial?", "¿Cómo veo las convocatorias a las que asistí?"],
+    "palabras_clave": ["mis participaciones", "historial", "mis postulaciones", "a qué me anoté", "asistidas"],
+    "respuesta": "Cuando iniciás sesión, el botón Mis participaciones aparece en el mapa y en la barra superior de la página de inicio. Ahí ves tus postulaciones en Participando (pendientes y confirmadas), Asistidas, Canceladas y Todas, y las podés filtrar por nombre, fecha o causa.",
+    "fuente": "pages/mapa.js (PANEL_POR_ROL); index.html (DESTINO_POR_ROL); pages/participaciones.html (status-filters); pages/participaciones.js (clasificarParticipacion: filtro participando)"
+  },
+  {
+    "id": "map-buscar-filtrar",
+    "preguntas": ["¿Cómo busco una ONG en el mapa?", "¿Cómo busco convocatorias por zona?", "¿Cómo filtro por categoría?", "¿Cómo uso la barra de búsqueda del mapa?"],
+    "palabras_clave": ["buscar", "búsqueda", "filtrar", "filtro", "mapa", "zona", "ciudad"],
+    "respuesta": "En la barra del mapa podés buscar por nombre de ONG o ciudad, y filtrar por categoría y por distancia. Los resultados se actualizan en el mapa y en la lista lateral.",
+    "fuente": "pages/mapa.html (search-input, filtros); pages/mapa.js (getFiltered)"
+  },
+  {
+    "id": "map-distancia",
+    "preguntas": ["¿Cómo funciona el filtro de distancia?", "¿Desde dónde se miden los kilómetros?", "¿Qué significa hasta 5 km?", "El filtro de distancia no me muestra lo que está cerca mío"],
+    "palabras_clave": ["distancia", "kilómetros", "km", "cerca", "cercanas"],
+    "respuesta": "El filtro de distancia (hasta 3, 5 o 10 km) por ahora mide desde el centro de la Ciudad de Buenos Aires, no desde donde estás vos. El botón Ubicación centra el mapa en tu posición, pero no cambia ese filtro.",
+    "fuente": "pages/mapa.js (mapApiItem: haversineKm con CABA_CENTER); pages/mapa.html (distance-dropdown-menu)"
+  },
+  {
+    "id": "map-ubicacion",
+    "preguntas": ["¿Para qué sirve el botón Ubicación?", "¿Cómo uso mi ubicación en el mapa?", "¿Por qué me pide permiso de ubicación?", "¿Cómo veo las convocatorias más cercanas a mí?"],
+    "palabras_clave": ["ubicación", "ubicacion", "mi ubicación", "geolocalización", "permiso", "estoy aquí"],
+    "respuesta": "Tocá el botón Ubicación de la barra del mapa: el navegador te pide permiso y el mapa se centra donde estás, con una marca de Estás aquí.",
+    "fuente": "pages/mapa.js (locate-btn); pages/mapa.html"
+  },
+  {
+    "id": "map-datos-actualizados",
+    "preguntas": ["¿Por qué no veo mi cambio en el mapa?", "Publiqué una convocatoria y no aparece", "Los cupos no se actualizan", "¿Cada cuánto se actualiza el mapa?"],
+    "palabras_clave": ["actualiza", "actualizar", "no aparece", "no se ve", "cupos", "recargar"],
+    "respuesta": "Los cambios pueden tardar hasta un minuto en verse en el mapa. Si no ves algo que acabás de cambiar, esperá un momento y recargá la página.",
+    "fuente": "backend/api/views.py (listar_convocatorias: cache timeout=60 y Cache-Control max-age=30; las ONG invalidan la caché al crear o editar una convocatoria, pero no cuando alguien se postula)"
+  },
+  {
+    "id": "map-categorias",
+    "preguntas": ["¿Qué categorías hay?", "¿Qué causas puedo elegir?", "¿Qué tipos de voluntariado hay?", "¿Cuáles son las categorías del mapa?"],
+    "palabras_clave": ["categorías", "categoria", "causas", "causa", "tipos de voluntariado"],
+    "respuesta": "Las categorías son Desarrollo social, Salud, Educación, Medioambiente, Infancias y juventudes y Derechos humanos. Elegí una en el filtro de categoría del mapa.",
+    "fuente": "README.md (Vocabulario); pages/mapa.js (CATEGORIA_LABELS); pages/mapa.html"
+  },
+  {
+    "id": "map-en-revision",
+    "preguntas": ["¿Qué significa En revisión en el mapa?", "¿Por qué una ONG dice En revisión?", "¿Una ONG en revisión es confiable?", "¿Qué es una ONG verificada?"],
+    "palabras_clave": ["en revisión", "revisión", "verificada", "verificación", "confiable"],
+    "respuesta": "La etiqueta En revisión aparece en las ONGs que todavía no fueron verificadas por un administrador.",
+    "fuente": "pages/mapa.js (reviewBadge); backend/api/views.py (admin_verificar_ong)"
+  },
+  {
+    "id": "vol-donar-ong",
+    "preguntas": ["¿Cómo dono a una ONG?", "¿Puedo donar plata a una organización?", "¿Dónde está el botón Donar a esta ONG?", "¿Cuánto es el mínimo para donar?"],
+    "palabras_clave": ["donar", "donación", "donaciones", "donar a una ong", "mercado pago", "mínimo"],
+    "respuesta": "En el detalle de una convocatoria tocá Donar a esta ONG, elegí si es una vez o todos los meses y el monto (mínimo $1.000), y te llevamos a Mercado Pago para completar el pago.",
+    "fuente": "pages/mapa.js (detail-donar-btn); js/donar-ong.js (MONTO_MINIMO, modal)"
+  },
+  {
+    "id": "gen-donar-app",
+    "preguntas": ["¿Cómo dono a VoluntariApp?", "¿Cómo ayudo a mantener la app?", "¿Dónde está el botón Donar?", "Quiero apoyar a la plataforma"],
+    "palabras_clave": ["donar a la app", "donar", "apoyar", "mantener la app", "botón donar"],
+    "respuesta": "Por ahora las donaciones a VoluntariApp no están habilitadas. Si querés ayudar, podés donarle directamente a una ONG desde su ficha en el mapa, con el botón Donar a esta ONG.",
+    "fuente": "index.html (#donar-open); js/donar.js (MP_LINKS: «unica» vacío y «mensual» con preapproval_plan_id=XXXX)"
+  },
+  {
+    "id": "ong-registro",
+    "preguntas": ["¿Cómo registro mi ONG?", "¿Qué datos piden para registrar una organización?", "Soy una ONG, ¿cómo me sumo?", "¿Qué formato tiene el CUIT?"],
+    "palabras_clave": ["registrar ong", "registro ong", "organización", "cuit", "razón social", "soy una ong"],
+    "respuesta": "En Soy una ONG o Registrar mi organización son dos pasos: primero los datos legales (razón social, CUIT con formato 30-12345678-9, email, ubicación, domicilio y contraseña) y después el perfil público (categoría, descripción y contacto). Al enviar, tu solicitud queda en revisión.",
+    "fuente": "index.html; pages/register.js; backend/api/serializers.py (RegistroOngSerializer, CUIT_REGEX)"
+  },
+  {
+    "id": "ong-aprobacion",
+    "preguntas": ["¿Cuánto tarda en aprobarse mi ONG?", "¿Mi ONG quedó pendiente, qué significa?", "¿Cómo sé si mi ONG fue verificada?", "¿Quién aprueba a las organizaciones?"],
+    "palabras_clave": ["pendiente", "aprobación", "aprobar", "verificar", "verificada", "48 hs", "en revisión"],
+    "respuesta": "Las ONGs nuevas quedan pendientes hasta que un administrador las verifica; el registro informa que se revisa la documentación en 48 hs hábiles. En Mi Perfil ves si figurás como En revisión o Verificada.",
+    "fuente": "backend/api/views.py (register_ong: esta_verificada=False y mensaje de 48 hs); pages/mi-ong.js (badge ong-estado); pages/admin.js"
+  },
+  {
+    "id": "ong-pendiente-publicar",
+    "preguntas": ["¿Puedo publicar convocatorias si mi ONG está en revisión?", "¿Mi ONG pendiente aparece en el mapa?", "¿Qué puedo hacer mientras me verifican?", "¿Puedo entrar a mi cuenta de ONG sin estar verificada?"],
+    "palabras_clave": ["en revisión", "pendiente", "publicar", "mientras", "sin verificar"],
+    "respuesta": "Sí, mientras tu ONG está en revisión podés entrar a Mi Perfil y a Mis Convocatorias. Si tus convocatorias aparecen en el mapa, se muestran con la etiqueta En revisión.",
+    "fuente": "backend/api/views.py (login_view y obtener_ong_autenticada / ong_mis_convocatorias no chequean esta_verificada); pages/mapa.js (reviewBadge); qué filtra la vista vista_convocatorias_mapa de Supabase no está en el repo"
+  },
+  {
+    "id": "ong-publicar",
+    "preguntas": ["¿Cómo publico una convocatoria?", "¿Cómo creo una nueva convocatoria?", "¿Qué datos lleva una convocatoria?", "¿Qué es requiere aprobación?"],
+    "palabras_clave": ["publicar", "crear convocatoria", "nueva convocatoria", "requiere aprobación", "cupos", "mis convocatorias"],
+    "respuesta": "En Mis Convocatorias tocá el botón para crear una nueva y completá título, causa, provincia, localidad, cupos, fecha, hora, lugar, descripción y horas estimadas. Si tildás que requiere aprobación, vos confirmás cada postulación; si no, los voluntarios quedan confirmados al instante.",
+    "fuente": "pages/mis-convocatorias.js (guardarConvocatoria); backend/api/views.py (ong_mis_convocatorias, postular_convocatoria)"
+  },
+  {
+    "id": "ong-postulantes",
+    "preguntas": ["¿Cómo veo quién se postuló a mi convocatoria?", "¿Cómo acepto o rechazo a un voluntario?", "¿Dónde veo el contacto de los voluntarios?", "¿Puedo confirmar más gente que los cupos?"],
+    "palabras_clave": ["postulantes", "postulados", "confirmar", "rechazar", "aceptar", "contacto", "voluntarios"],
+    "respuesta": "En Mis Convocatorias tocá Postulantes en la convocatoria: ahí ves nombre, email y teléfono de cada voluntario. En los pendientes aparecen los botones Confirmar y Rechazar, y no se puede confirmar más gente que los cupos.",
+    "fuente": "pages/mis-convocatorias.js (renderizarPostulantesModal); backend/api/views.py (ong_actualizar_postulacion, PostulanteOngSerializer)"
+  },
+  {
+    "id": "ong-asistencia",
+    "preguntas": ["¿Cómo marco que un voluntario asistió?", "¿Se puede deshacer la asistencia?", "¿Cómo registro la asistencia?", "Marqué una asistencia por error"],
+    "palabras_clave": ["asistencia", "asistió", "marcar asistió", "asistio", "deshacer"],
+    "respuesta": "A los voluntarios confirmados les podés tocar Marcar Asistió en la lista de Postulantes. Una vez registrada la asistencia no se puede deshacer.",
+    "fuente": "pages/mis-convocatorias.js (accionesHtml, ejecutarCambioEstadoPostulante); backend/api/views.py (ong_actualizar_postulacion: estado ASISTIO terminal)"
+  },
+  {
+    "id": "ong-estado-convocatoria",
+    "preguntas": ["¿Cómo cierro o pauso una convocatoria?", "¿Cómo cancelo una convocatoria?", "¿Puedo volver a abrir una convocatoria cerrada?", "¿Puedo editar una convocatoria cancelada o finalizada?"],
+    "palabras_clave": ["cerrar", "pausar", "cancelar convocatoria", "finalizar", "estado", "reabrir", "editar"],
+    "respuesta": "Desde el selector Estado de cada convocatoria la podés pasar a Abierta, Cerrada, Finalizada o Cancelada. Cerrada deja de recibir postulaciones y la podés volver a abrir; Finalizada y Cancelada son definitivas y ya no se pueden editar.",
+    "fuente": "pages/mis-convocatorias.js (select-estado-rapido); backend/api/views.py (ong_detalle_convocatoria; postular_convocatoria exige estado ABIERTA); backend/api/serializers.py (validate_estado)"
+  },
+  {
+    "id": "ong-editar-perfil",
+    "preguntas": ["¿Cómo edito el perfil de mi ONG?", "¿Cómo cambio la descripción de mi organización?", "¿Puedo cambiar el CUIT o el email?", "¿Dónde actualizo mi teléfono o sitio web?"],
+    "palabras_clave": ["perfil", "editar perfil", "descripción", "cuit", "email", "teléfono", "sitio web"],
+    "respuesta": "En Mi Perfil podés editar nombre, descripción, dirección, sitio web, link de donación, contacto y teléfono, y guardar los cambios. El CUIT y el email de contacto no se pueden modificar desde ahí.",
+    "fuente": "pages/mi-ong.js (activarGuardado); backend/api/serializers.py (OngPerfilSerializer: cuit y email_contacto read_only)"
+  },
+  {
+    "id": "ong-recibir-donaciones",
+    "preguntas": ["¿Cómo recibo donaciones en mi ONG?", "¿Dónde cargo mi link de donación?", "¿Qué link de pago sirve?", "¿Por qué no aparece mi botón de donar?"],
+    "palabras_clave": ["donaciones", "link de donación", "link de pago", "mercado pago", "alias", "recibir"],
+    "respuesta": "Cargá tu link de donación en Mi Perfil. Tiene que ser un link de Mercado Pago (que empiece con https://): es el que usa el botón Donar a esta ONG del mapa.",
+    "fuente": "pages/mi-ong.js (f-pago, validUrl); js/donar-ong.js (validarLinkMercadoPago); pages/mapa.js (si el link no es de Mercado Pago usa https://link.mercadopago.com.ar/voluntariapp)"
+  }
+]
